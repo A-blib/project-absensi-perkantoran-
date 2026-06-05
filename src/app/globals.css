@@ -171,3 +171,86 @@ textarea:focus-visible {
   outline: 3px solid rgb(59 130 246 / 0.25);
   outline-offset: 2px;
 }
+
+.employee-futuristic {
+  isolation: isolate;
+}
+
+.employee-grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(0 240 255 / 0.055) 1px, transparent 1px),
+    linear-gradient(rgb(108 60 232 / 0.06) 1px, transparent 1px),
+    radial-gradient(circle at 18% 12%, rgb(0 240 255 / 0.15), transparent 30%),
+    radial-gradient(circle at 84% 18%, rgb(108 60 232 / 0.19), transparent 32%);
+  background-size: 48px 48px, 48px 48px, auto, auto;
+  animation: employee-grid-shift 18s linear infinite;
+}
+
+.employee-glow {
+  position: fixed;
+  z-index: 0;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.employee-glow-cyan {
+  left: -10rem;
+  top: 18%;
+  background: #00f0ff;
+}
+
+.employee-glow-violet {
+  bottom: -13rem;
+  right: -9rem;
+  background: #6c3ce8;
+}
+
+.employee-toast {
+  animation: employee-toast-in 260ms ease-out;
+}
+
+.employee-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgb(0 240 255 / 0.22);
+  border-top-color: #00f0ff;
+  box-shadow: 0 0 16px rgb(0 240 255 / 0.3);
+  animation: employee-spin 800ms linear infinite;
+}
+
+@keyframes employee-grid-shift {
+  from {
+    background-position: 0 0, 0 0, center, center;
+  }
+
+  to {
+    background-position: 48px 48px, 48px 48px, center, center;
+  }
+}
+
+@keyframes employee-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes employee-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -4,8 +4,11 @@ import {
   Building2,
   Camera,
   Clock3,
+  FilePenLine,
   Home,
   LayoutDashboard,
+  Bell,
+  CalendarDays,
   Settings,
   Table2,
   User,
@@ -13,10 +16,13 @@ import {
 } from "lucide-react";
 
 export const employeeNav = [
-  { label: "Home", href: "/employee", icon: Home },
+  { label: "Dashboard", href: "/employee", icon: Home },
   { label: "Absensi", href: "/employee/absensi", icon: Camera },
-  { label: "Riwayat", href: "/employee/riwayat", icon: Clock3 },
-  { label: "Profile", href: "/employee/profile", icon: User },
+  { label: "Riwayat Absensi", href: "/employee/riwayat", icon: Clock3 },
+  { label: "Pengajuan Izin", href: "/employee/izin", icon: FilePenLine },
+  { label: "Jadwal Kerja", href: "/employee/jadwal", icon: CalendarDays },
+  { label: "Profil Saya", href: "/employee/profile", icon: User },
+  { label: "Notifikasi", href: "/employee/notifikasi", icon: Bell },
 ];
 
 export const adminNav = [
