@@ -357,3 +357,252 @@ Project sudah memiliki fondasi cukup kuat untuk:
 - UI awal admin dan pegawai.
 
 Fitur absensi produksi masih menjadi tahap pengembangan berikutnya.
+
+## Boilerplate Menu Setting
+
+Menu:
+
+```txt
+/admin/setting
+```
+
+Status saat ini:
+
+- Masih berupa UI fondasi untuk review.
+- Belum menyimpan data ke Supabase.
+- Belum memakai API backend.
+- Belum mengubah `supabase/schema.sql`.
+- Tidak membaca lokasi GPS admin yang sedang membuka dashboard.
+- Tidak terhubung langsung ke fitur absensi produksi.
+
+File utama:
+
+```txt
+src/app/(admin)/admin/setting/page.jsx
+src/features/settings/admin-settings-panel.jsx
+```
+
+Bagian setting yang sudah disiapkan:
+
+```txt
+Perusahaan
+Jam Kerja
+Lokasi Kantor
+Aturan Absensi
+```
+
+### Perusahaan
+
+Field UI:
+
+```txt
+name
+email
+phone
+address
+timezone
+```
+
+Rencana pemakaian:
+
+- Identitas perusahaan di laporan.
+- Header export PDF.
+- Watermark atau metadata foto absensi.
+- Zona waktu perhitungan jam absensi.
+
+### Jam Kerja
+
+Field UI:
+
+```txt
+startTime
+lateTolerance
+endTime
+workDays
+shiftMode
+```
+
+Rencana pemakaian:
+
+- Menentukan status `hadir` atau `telat`.
+- Menghitung menit keterlambatan.
+- Menentukan hari kerja aktif.
+- Fondasi jika nanti sistem perlu mode shift.
+
+### Lokasi Kantor dan Google Maps
+
+Field UI:
+
+```txt
+name
+latitude
+longitude
+radiusMeters
+requireLocation
+```
+
+Konsep penting:
+
+- Latitude dan longitude adalah titik koordinat kantor/perusahaan.
+- `name`, `latitude`, dan `longitude` disiapkan untuk diisi otomatis dari Google Maps Places/Geocoding atau map picker.
+- `radiusMeters` adalah aturan sistem absensi yang tetap bisa diatur manual oleh admin.
+- Preview radius di peta harus mengikuti nilai `radiusMeters`.
+- Titik ini bukan lokasi admin yang sedang membuka dashboard.
+- Admin bisa berada di mana saja saat membuka dashboard.
+- Sistem absensi pegawai nantinya harus membandingkan GPS pegawai dengan titik kantor yang sudah disimpan di setting.
+- UI saat ini menyediakan preview peta fondasi dan link buka koordinat di Google Maps.
+
+Alur integrasi yang disarankan nanti:
+
+```txt
+Admin membuka Setting Lokasi Kantor
+Admin mencari alamat lewat Google Maps Places/Geocoding
+Admin memilih titik kantor di peta
+Sistem mengisi nama lokasi, latitude, dan longitude kantor
+Admin menyesuaikan radius valid secara manual
+Setting disimpan ke Supabase
+Pegawai melakukan absensi
+Browser pegawai mengambil GPS pegawai
+Backend menghitung jarak pegawai ke titik kantor
+Backend menentukan valid/tidak berdasarkan radiusMeters
+```
+
+Mapping field yang direkomendasikan:
+
+```txt
+Google Maps place.name/formatted_address -> location.name
+Google Maps geometry.location.lat()      -> location.latitude
+Google Maps geometry.location.lng()      -> location.longitude
+Input manual admin                       -> location.radiusMeters
+Toggle admin                             -> location.requireLocation
+```
+
+Fondasi aksesibilitas input link Google Maps:
+
+```txt
+location.googleMapsLink
+```
+
+UI Setting menyediakan field untuk menempel link Google Maps dan tombol
+`Terapkan Lokasi`. Saat ini parsing dilakukan di browser untuk link yang sudah
+memuat koordinat.
+
+Format yang didukung oleh fondasi UI:
+
+```txt
+https://www.google.com/maps/place/.../@-6.208763,106.845599,...
+https://www.google.com/maps/search/?api=1&query=-6.208763,106.845599
+https://www.google.com/maps?...&q=-6.208763,106.845599
+https://www.google.com/maps?...&ll=-6.208763,106.845599
+https://www.google.com/maps?...!3d-6.208763!4d106.845599
+```
+
+Perilaku:
+
+- Jika link berisi koordinat, tombol `Terapkan Lokasi` mengisi `latitude` dan `longitude`.
+- Jika link memiliki path `/place/...`, nama lokasi bisa diambil sebagai draft `name`.
+- Radius tidak diambil dari Google Maps; radius tetap aturan sistem yang diatur manual oleh admin.
+- Link pendek seperti `https://maps.app.goo.gl/...` atau link yang perlu redirect belum diproses di UI ini.
+
+Jika nanti ingin mendukung link pendek atau alamat tanpa koordinat, prosesnya
+lebih baik dilakukan lewat backend/API:
+
+```txt
+Terima link Google Maps
+Resolve redirect jika link pendek
+Ambil place id atau alamat
+Panggil Google Maps Geocoding/Places API
+Kembalikan name, latitude, longitude ke UI
+```
+
+Boilerplate teknis untuk fase berikutnya:
+
+```txt
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=google-maps-browser-key
+```
+
+Catatan keamanan:
+
+- Google Maps browser key boleh memakai prefix `NEXT_PUBLIC_`, tetapi wajib dibatasi di Google Cloud Console dengan HTTP referrer/domain.
+- Jangan taruh service account atau secret Google API di client.
+- Validasi jarak final tetap sebaiknya dilakukan di backend, bukan hanya di browser.
+
+Rumus jarak yang direkomendasikan:
+
+```txt
+Haversine formula
+```
+
+Input:
+
+```txt
+officeLatitude
+officeLongitude
+employeeLatitude
+employeeLongitude
+```
+
+Output:
+
+```txt
+distanceMeters
+isInsideRadius = distanceMeters <= radiusMeters
+```
+
+### Aturan Absensi
+
+Field UI:
+
+```txt
+requireCheckInPhoto
+requireCheckOutPhoto
+allowOutsideRadius
+allowEarlyCheckIn
+maxCheckOutTime
+oneCheckInPerDay
+```
+
+Rencana pemakaian:
+
+- Menentukan apakah foto wajib saat check-in/check-out.
+- Menentukan apakah absensi di luar radius boleh diterima.
+- Menentukan apakah check-in sebelum jam kerja boleh dilakukan.
+- Mencegah data check-in ganda dalam satu hari.
+
+### Rekomendasi Integrasi Database Nanti
+
+Jika UI setting sudah disetujui, buat penyimpanan terpisah agar tidak mengganggu tabel absensi.
+
+Contoh opsi tabel:
+
+```txt
+system_settings
+```
+
+Contoh kolom:
+
+```txt
+id
+company jsonb
+work_hours jsonb
+office_location jsonb
+attendance_rules jsonb
+updated_by
+updated_at
+```
+
+Atau jika ingin lebih normalized:
+
+```txt
+company_settings
+work_hour_settings
+office_locations
+attendance_rule_settings
+```
+
+Catatan untuk fitur absensi:
+
+- Jangan ambil setting dari localStorage.
+- Fitur absensi produksi harus membaca setting dari backend/Supabase.
+- Browser pegawai hanya mengirim koordinat pegawai dan data capture yang dibutuhkan.
+- Backend yang menentukan status akhir absensi berdasarkan setting.
