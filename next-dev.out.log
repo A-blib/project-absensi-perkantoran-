@@ -1,0 +1,16 @@
+
+> system-absen-perkantoran@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.210.45.173:3000
+- Environments: .env.local
+✓ Ready in 1208ms
+Creating turbopack project {
+  dir: 'C:\\Users\\HP\\Desktop\\project-absensi-perkantoran-',
+  testMode: true
+}
+
+ GET /login?from=%2Femployee 200 in 868ms (next.js: 265ms, application-code: 604ms)
+[?25h
