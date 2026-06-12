@@ -1,136 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronDown, Sparkles } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  ChevronDown,
+  Menu,
+  Settings,
+  X,
+} from "lucide-react";
 import { LogoutButton } from "@/features/auth/logout-button";
 import { employeeNav } from "@/lib/constants/navigation";
 
-export function EmployeeShell({ children }) {
-  const pathname = usePathname();
+const pageTitles = {
+  "/employee": "Dashboard Overview",
+  "/employee/absensi": "Panel Absensi",
+  "/employee/riwayat": "Data Kehadiran",
+  "/employee/izin": "Permohonan Izin",
+  "/employee/jadwal": "Kalender Kerja",
+  "/employee/profile": "Profil Karyawan",
+  "/employee/notifikasi": "Pusat Notifikasi",
+};
 
+const pageSubtitles = {
+  "/employee": "Employee Attendance & Activity Center",
+};
+
+function SidebarContent({ pathname, onNavigate }) {
   return (
-    <div className="employee-futuristic relative min-h-screen overflow-hidden bg-[#0A0F2C] text-slate-100">
-      <div className="employee-grid-bg" />
-      <div className="employee-glow employee-glow-cyan" />
-      <div className="employee-glow employee-glow-violet" />
-
-      <aside className="fixed left-5 top-5 z-30 hidden h-[calc(100vh-40px)] w-72 flex-col rounded-[28px] border border-white/10 bg-white/[0.07] p-4 shadow-2xl shadow-cyan-950/30 backdrop-blur-2xl lg:flex">
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-[#00F0FF] to-[#6C3CE8] text-[#0A0F2C] shadow-lg shadow-cyan-400/20">
-            <Sparkles size={24} aria-hidden="true" />
+    <>
+      <div className="px-6 pb-10">
+        <div className="flex items-center gap-3">
+          <div className="grid size-10 place-items-center rounded-xl bg-[#3B82F6] text-white">
+            <Building2 size={22} />
           </div>
-          <div>
-            <p className="text-base font-semibold tracking-wide text-white">
-              HR FUTURISTIC
+          <div className="min-w-0">
+            <p className="truncate text-xl font-extrabold tracking-tight text-[#3B82F6]">
+              Corporate EMS
             </p>
-            <p className="text-xs text-slate-400">Employee Portal</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C2C6D6]/60">
+              Management Portal
+            </p>
           </div>
         </div>
-
-        <nav className="mt-8 grid gap-2">
-          {employeeNav.map((item) => {
-            const isActive =
-              item.href === "/employee"
-                ? pathname === item.href
-                : pathname.startsWith(item.href);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={[
-                  "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold",
-                  "border border-transparent text-slate-300 hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-white hover:shadow-lg hover:shadow-cyan-400/10",
-                  isActive
-                    ? "border-cyan-300/40 bg-cyan-300/12 text-white shadow-lg shadow-cyan-400/10"
-                    : "",
-                ].join(" ")}
-              >
-                <item.icon
-                  size={20}
-                  className={isActive ? "text-[#00F0FF]" : "text-slate-400 group-hover:text-[#00F0FF]"}
-                />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto rounded-3xl border border-white/10 bg-[#0A0F2C]/45 p-4 shadow-inner shadow-white/5">
-          <p className="text-xs uppercase tracking-[0.22em] text-slate-500">
-            Radius Kantor
-          </p>
-          <p className="mt-2 text-sm font-semibold text-white">
-            Dalam 100 meter
-          </p>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full w-[88%] rounded-full bg-gradient-to-r from-emerald-400 to-[#00F0FF] shadow-lg shadow-cyan-300/30" />
-          </div>
-        </div>
-      </aside>
-
-      <div className="relative z-10 flex min-h-screen flex-col lg:pl-[20.5rem]">
-        <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0A0F2C]/70 px-4 py-3 backdrop-blur-2xl sm:px-6 lg:px-8">
-          <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div className="flex items-center gap-3 lg:hidden">
-              <div className="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-[#00F0FF] to-[#6C3CE8] text-[#0A0F2C]">
-                <Sparkles size={22} />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">
-                  HR FUTURISTIC
-                </p>
-                <p className="text-[11px] text-slate-400">Employee Portal</p>
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <p className="text-sm text-slate-400">Selamat datang kembali</p>
-              <h1 className="text-xl font-semibold text-white">
-                Dashboard Pegawai
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Link
-                href="/employee/notifikasi"
-                className="relative grid size-11 place-items-center rounded-2xl border border-white/10 bg-white/[0.07] text-slate-200 hover:border-cyan-300/40 hover:text-[#00F0FF] hover:shadow-lg hover:shadow-cyan-400/10"
-                aria-label="Buka notifikasi"
-              >
-                <Bell size={19} />
-                <span className="absolute right-2 top-2 size-2.5 rounded-full bg-red-500 shadow-[0_0_14px_rgba(239,68,68,0.95)]" />
-              </Link>
-              <div className="hidden items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.07] py-1.5 pl-2 pr-3 sm:flex">
-                <Image
-                  src="/avatar-rina.svg"
-                  alt="Foto profil Rina Pratiwi"
-                  width={36}
-                  height={36}
-                  className="size-9 rounded-full object-cover"
-                />
-                <div className="leading-tight">
-                  <p className="text-sm font-semibold text-white">
-                    Rina Pratiwi
-                  </p>
-                  <p className="text-xs text-slate-400">Finance Officer</p>
-                </div>
-                <ChevronDown size={16} className="text-slate-500" />
-              </div>
-              <div className="hidden sm:block">
-                <LogoutButton audience="employee" />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-10">
-          {children}
-        </main>
       </div>
 
-      <nav className="fixed bottom-0 left-0 z-40 grid w-full grid-cols-5 border-t border-white/10 bg-[#0A0F2C]/85 px-2 pb-3 pt-2 shadow-2xl shadow-cyan-950/50 backdrop-blur-2xl lg:hidden">
-        {employeeNav.slice(0, 4).map((item) => {
+      <nav className="flex flex-1 flex-col gap-2 px-3" aria-label="Navigasi pegawai">
+        {employeeNav.map((item) => {
           const isActive =
             item.href === "/employee"
               ? pathname === item.href
@@ -140,20 +59,144 @@ export function EmployeeShell({ children }) {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              onClick={onNavigate}
               className={[
-                "flex flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-semibold",
+                "group flex min-h-12 items-center gap-4 rounded-r-xl border-l-4 px-5 text-sm transition-all duration-300",
                 isActive
-                  ? "bg-cyan-300/12 text-[#00F0FF]"
-                  : "text-slate-400 hover:bg-white/10 hover:text-white",
+                  ? "border-[#3B82F6] bg-[linear-gradient(90deg,rgba(59,130,246,0.1)_0%,rgba(59,130,246,0)_100%)] font-bold text-[#3B82F6]"
+                  : "border-transparent text-[#C2C6D6] hover:bg-white/[0.05] hover:text-[#D4E4FA]",
               ].join(" ")}
             >
-              <item.icon size={19} />
-              <span className="max-w-full truncate">{item.label.replace(" Absensi", "")}</span>
+              <item.icon size={22} />
+              <span>{item.label}</span>
             </Link>
           );
         })}
-        <LogoutButton audience="employee" variant="bottom-nav" />
       </nav>
+
+      <div className="mt-auto border-t border-[#24344D]/50 px-6 pt-6">
+        <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.05] p-3">
+          <Image
+            src="/avatar-rina.svg"
+            alt="Foto profil Rina Pratiwi"
+            width={40}
+            height={40}
+            className="size-10 rounded-full object-cover ring-2 ring-[#3B82F6]/20"
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-[#D4E4FA]">
+              Rina Pratiwi
+            </p>
+            <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function EmployeeShell({ children }) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const title = pageTitles[pathname] || "Corporate EMS";
+  const subtitle = pageSubtitles[pathname];
+
+  return (
+    <div className="min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
+      {mobileOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Tutup navigasi"
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="relative flex h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 shadow-2xl">
+            <button
+              type="button"
+              aria-label="Tutup menu"
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-3 top-3 grid size-10 place-items-center rounded-xl border border-[#24344D] text-[#C2C6D6]"
+            >
+              <X size={18} />
+            </button>
+            <SidebarContent
+              pathname={pathname}
+              onNavigate={() => setMobileOpen(false)}
+            />
+          </aside>
+        </div>
+      ) : null}
+
+      <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 lg:flex">
+        <SidebarContent pathname={pathname} />
+      </aside>
+
+      <main className="min-h-screen bg-[#0B1220] lg:ml-[280px]">
+        <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b border-[#24344D] bg-[#0B1220]/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-4">
+            <button
+              type="button"
+              aria-label="Buka menu"
+              onClick={() => setMobileOpen(true)}
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#24344D] text-[#C2C6D6] lg:hidden"
+            >
+              <Menu size={21} />
+            </button>
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight text-[#D4E4FA]">
+                {title}
+              </h1>
+              {subtitle ? (
+                <p className="mt-0.5 hidden truncate text-xs font-medium text-[#C2C6D6] sm:block">
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 sm:gap-5">
+            <div className="hidden items-center gap-2 sm:flex">
+              <Link
+                href="/employee/notifikasi"
+                className="relative grid size-10 place-items-center rounded-xl text-[#C2C6D6] transition-colors hover:text-[#3B82F6]"
+                aria-label="Buka notifikasi"
+              >
+                <Bell size={24} />
+                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#0B1220]" />
+              </Link>
+              <button
+                type="button"
+                className="grid size-10 place-items-center rounded-xl text-[#C2C6D6] transition-colors hover:text-[#3B82F6]"
+                aria-label="Pengaturan"
+              >
+                <Settings size={24} />
+              </button>
+            </div>
+            <div className="hidden h-8 w-px bg-[#24344D] sm:block" />
+            <div className="flex items-center gap-3">
+              <div className="hidden text-right sm:block">
+                <p className="text-sm font-bold text-[#D4E4FA]">Rina Pratiwi</p>
+                <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+              </div>
+              <Image
+                src="/avatar-rina.svg"
+                alt="Foto profil Rina Pratiwi"
+                width={40}
+                height={40}
+                className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"
+              />
+              <ChevronDown size={16} className="hidden text-[#C2C6D6] sm:block" />
+              <div className="hidden sm:block">
+                <LogoutButton audience="employee" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+      </main>
     </div>
   );
 }

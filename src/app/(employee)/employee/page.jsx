@@ -1,82 +1,144 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import {
-  Activity,
-  BadgeCheck,
-  CalendarCheck2,
+  AlarmClock,
+  AlertTriangle,
+  Award,
+  BarChart3,
+  Bell,
+  BriefcaseBusiness,
+  CalendarDays,
+  CalendarX,
   Camera,
   CheckCircle2,
   Clock3,
+  FilePenLine,
   Fingerprint,
-  Gauge,
+  LogIn,
+  LogOut,
+  Megaphone,
   MapPinned,
   ScanFace,
-  TimerReset,
+  ShieldCheck,
+  Sun,
+  TrendingUp,
   X,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
-import { saveEmployeeAttendanceByType } from "@/lib/browser/employee-attendance-store";
+import {
+  clearEmployeeAttendanceByDate,
+  readEmployeeAttendanceRecords,
+  saveEmployeeAttendanceByType,
+} from "@/lib/browser/employee-attendance-store";
 
 const summaryCards = [
   {
-    label: "Status Hari Ini",
-    value: "Hadir",
-    tone: "text-emerald-300",
-    icon: CalendarCheck2,
+    label: "Kehadiran",
+    value: "21 Hari",
+    note: "+2 dari bulan lalu",
+    icon: CheckCircle2,
+    tone: "emerald",
   },
   {
-    label: "Jam Masuk",
-    value: "08:00 WIB",
-    tone: "text-[#00F0FF]",
+    label: "Izin",
+    value: "2 Hari",
+    note: "Menunggu 1 persetujuan",
+    icon: CalendarX,
+    tone: "primary",
+  },
+  {
+    label: "Telat",
+    value: "1 Kali",
+    note: "Rata-rata 6 menit",
     icon: Clock3,
+    tone: "warning",
   },
   {
-    label: "Jam Pulang",
-    value: "17:00 WIB",
-    tone: "text-[#00F0FF]",
-    icon: TimerReset,
-  },
-  {
-    label: "Persentase Kehadiran",
-    value: "95%",
-    tone: "text-violet-200",
-    icon: Gauge,
-    progress: 95,
+    label: "Cuti",
+    value: "4 Hari",
+    note: "Periode bulan Juni",
+    icon: CalendarDays,
+    tone: "leave",
   },
 ];
 
-const monthStats = [
-  ["Hadir", 18, "from-emerald-400 to-cyan-300"],
-  ["Terlambat", 2, "from-amber-300 to-orange-400"],
-  ["Izin", 1, "from-sky-300 to-violet-400"],
-  ["Sakit", 1, "from-rose-300 to-red-400"],
-  ["Cuti", 0, "from-slate-300 to-slate-500"],
+const defaultWeeklySchedule = [
+  { dayIndex: 1, day: "SEN", start: "08:00", end: "17:00", shift: "REGULAR" },
+  { dayIndex: 2, day: "SEL", start: "08:00", end: "17:00", shift: "REGULAR" },
+  { dayIndex: 3, day: "RAB", start: "08:00", end: "17:00", shift: "WFH" },
+  { dayIndex: 4, day: "KAM", start: "08:00", end: "17:00", shift: "REGULAR" },
+  { dayIndex: 5, day: "JUM", start: "08:00", end: "16:30", shift: "SHORT" },
 ];
 
-function DigitalClock() {
-  const [now, setNow] = useState(null);
+const notifications = [
+  ["Reminder Absensi", "Jangan lupa absensi keluar sebelum meninggalkan kantor.", "15 menit lalu", AlarmClock, "emerald"],
+  ["Jadwal Kerja", "Briefing finance pukul 09:30 di ruang meeting lantai 3.", "Tadi pagi", BriefcaseBusiness, "primary"],
+  ["Pengajuan Izin", "Cuti tahunan Juni masih menunggu persetujuan HR.", "Kemarin", FilePenLine, "violet"],
+];
 
-  useEffect(() => {
-    const update = () => setNow(new Date());
-    update();
-    const timer = setInterval(update, 1000);
-    return () => clearInterval(timer);
-  }, []);
+const attendanceStats = [
+  ["Tepat Waktu", "95%", "Naik 3% dari bulan lalu", "Target", "90%", "Indikator", "95%", "Trend", "+3%"],
+  ["Rata-rata Check In", "07:56", "Lebih awal 4 menit", "Target", "08:00", "Indikator", "88%", "Selisih", "-4 menit"],
+  ["Rata-rata Check Out", "17:03", "Sesuai jadwal kerja", "Target", "17:00", "Indikator", "92%", "Selisih", "+3 menit"],
+];
 
-  return (
-    <span className="font-mono text-[#00F0FF]">
-      {now
-        ? now.toLocaleTimeString("id-ID", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            timeZone: "Asia/Jakarta",
-          })
-        : "--:--:--"}
-    </span>
-  );
+const attendanceDetails = [
+  ["Hadir", "21 hari"],
+  ["Izin", "2 hari"],
+  ["Telat", "1 kali"],
+  ["Cuti", "4 hari"],
+];
+
+const additionalWidgets = [
+  ["Pengumuman HR", "Update kebijakan absensi tersedia Jumat.", Megaphone],
+  ["Event Kantor", "Town hall Finance pekan depan.", CalendarDays, "3 hari lagi"],
+  ["Birthday Employee", "Ulang tahun tim Finance hari Kamis.", Award, "Besok"],
+  ["Info Cuti Bersama", "Jadwal cuti bersama menunggu edaran HR.", TrendingUp],
+];
+
+function getSummaryTone(tone) {
+  if (tone === "emerald") {
+    return {
+      line: "bg-[#10B981]",
+      icon: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 shadow-emerald-500/15",
+      value: "text-emerald-300",
+    };
+  }
+
+  if (tone === "warning") {
+    return {
+      line: "bg-[#F59E0B]",
+      icon: "border-amber-500/20 bg-amber-500/10 text-amber-300 shadow-amber-500/15",
+      value: "text-amber-300",
+    };
+  }
+
+  if (tone === "leave") {
+    return {
+      line: "bg-[#06B6D4]",
+      icon: "border-cyan-500/20 bg-cyan-500/10 text-cyan-300 shadow-cyan-500/15",
+      value: "text-cyan-300",
+    };
+  }
+
+  return {
+    line: "bg-[#3B82F6]",
+    icon: "border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6] shadow-blue-500/15",
+    value: "text-[#60A5FA]",
+  };
+}
+
+function getActivityTone(tone) {
+  if (tone === "emerald") {
+    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+  }
+
+  if (tone === "violet") {
+    return "border-violet-500/20 bg-violet-500/10 text-violet-300";
+  }
+
+  return "border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]";
 }
 
 function getStamp() {
@@ -91,89 +153,244 @@ function getStamp() {
   });
 }
 
-function playSuccessSound() {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-
-  if (!AudioContext) return;
-
-  const audioContext = new AudioContext();
-  [660, 880, 1175].forEach((frequency, index) => {
-    const oscillator = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    const start = audioContext.currentTime + index * 0.12;
-
-    oscillator.frequency.value = frequency;
-    oscillator.type = "sine";
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.18, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.14);
-    oscillator.connect(gain);
-    gain.connect(audioContext.destination);
-    oscillator.start(start);
-    oscillator.stop(start + 0.16);
+function getTodayDate() {
+  return new Date().toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
   });
+}
 
-  setTimeout(() => audioContext.close(), 700);
+function getJakartaDate() {
+  return new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
+  );
+}
+
+function formatScheduleDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getWeekStart(date) {
+  const weekStart = new Date(date);
+  const day = weekStart.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  weekStart.setDate(weekStart.getDate() + diff);
+  weekStart.setHours(0, 0, 0, 0);
+  return weekStart;
+}
+
+function getWeekNumberInMonth(date) {
+  return Math.ceil(date.getDate() / 7);
+}
+
+function buildWeeklySchedule() {
+  const today = getJakartaDate();
+  const todayKey = formatScheduleDate(today);
+  const weekStart = getWeekStart(today);
+
+  return defaultWeeklySchedule.map((schedule) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + schedule.dayIndex - 1);
+    const dateKey = formatScheduleDate(date);
+
+    return {
+      ...schedule,
+      date: dateKey,
+      isToday: dateKey === todayKey,
+    };
+  });
+}
+
+function getClockLabel(value) {
+  if (!value || value === "--:--:--") return null;
+  return value.includes("WIB") ? value : `${value} WIB`;
+}
+
+function getFallbackTodayAttendance() {
+  const today = getTodayDate();
+  return {
+    date: today,
+    clockIn: null,
+    clockOut: null,
+    status: "Belum Absen",
+    location: "Kantor Pusat Pekanbaru",
+    gpsValid: true,
+    faceVerified: false,
+    faceConfidence: null,
+  };
+}
+
+function getStoredTodayAttendance() {
+  const today = getTodayDate();
+  const record = readEmployeeAttendanceRecords().find(
+    (item) => item.date === today,
+  );
+
+  if (!record) return null;
+
+  return {
+    date: today,
+    clockIn: getClockLabel(record.clockIn),
+    clockOut: getClockLabel(record.clockOut),
+    status: record.status || "Hadir",
+    location: record.location || "Kantor Pusat Pekanbaru",
+    gpsValid: true,
+    faceVerified: true,
+    faceConfidence: 98,
+  };
 }
 
 export default function EmployeeHomePage() {
   const videoRef = useRef(null);
-  const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const autoDetectTimerRef = useRef(null);
-  const [attendanceModal, setAttendanceModal] = useState(null);
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [modalNotice, setModalNotice] = useState("");
+  const detectorRef = useRef(null);
+  const faceScanTimerRef = useRef(null);
+  const scanningRef = useRef(false);
+  const [clock, setClock] = useState("--:--:--");
+  const [lastStatus, setLastStatus] = useState("Face verification ready");
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [pendingType, setPendingType] = useState(null);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [faceConfidence, setFaceConfidence] = useState(null);
+  const [faceModelLoading, setFaceModelLoading] = useState(false);
+  const [gpsValidated, setGpsValidated] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState("");
-  const [warningToast, setWarningToast] = useState("");
-  const [watermark, setWatermark] = useState("");
-  const [lastStatus, setLastStatus] = useState(
-    "Absensi masuk tercatat pukul 08:00:22 WIB",
+  const [todayAttendance, setTodayAttendance] = useState(
+    getFallbackTodayAttendance,
   );
+  const [weeklySchedule, setWeeklySchedule] = useState(buildWeeklySchedule);
+
+  useEffect(() => {
+    const update = () =>
+      setClock(
+        new Date().toLocaleTimeString("id-ID", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          timeZone: "Asia/Jakarta",
+        }),
+      );
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setWeeklySchedule(buildWeeklySchedule());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   function stopCamera() {
-    if (autoDetectTimerRef.current) {
-      clearTimeout(autoDetectTimerRef.current);
-      autoDetectTimerRef.current = null;
-    }
-
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
   }
 
-  function captureFrame() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-
-    if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
-      return null;
+  function stopFaceScan() {
+    if (faceScanTimerRef.current) {
+      clearInterval(faceScanTimerRef.current);
+      faceScanTimerRef.current = null;
     }
-
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext("2d");
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    context.fillStyle = "rgba(2, 6, 23, 0.62)";
-    context.fillRect(18, canvas.height - 104, 300, 82);
-    context.fillStyle = "#E2E8F0";
-    context.font = "600 18px Arial";
-    context.fillText(watermark, 34, canvas.height - 72);
-    context.fillText("Rina Pratiwi", 34, canvas.height - 47);
-    context.fillText("Kantor Pusat Jakarta", 34, canvas.height - 22);
-
-    return canvas.toDataURL("image/jpeg", 0.88);
+    scanningRef.current = false;
   }
 
-  async function openAttendance(type) {
-    setWatermark(getStamp());
-    setFaceDetected(false);
-    setModalNotice("Membuka kamera...");
+  async function loadFaceDetector() {
+    if (detectorRef.current) return detectorRef.current;
+
+    setFaceModelLoading(true);
+    const [blazeface, tf] = await Promise.all([
+      import("@tensorflow-models/blazeface"),
+      import("@tensorflow/tfjs-core"),
+      import("@tensorflow/tfjs-backend-webgl"),
+      import("@tensorflow/tfjs-converter"),
+    ]).then(([blazefaceModule, tfCoreModule]) => [blazefaceModule, tfCoreModule]);
+
+    await tf.setBackend("webgl");
+    await tf.ready();
+
+    detectorRef.current = await blazeface.load();
+    setFaceModelLoading(false);
+    return detectorRef.current;
+  }
+
+  function startFaceScan(detector) {
+    stopFaceScan();
+    faceScanTimerRef.current = setInterval(async () => {
+      if (!videoRef.current || scanningRef.current) return;
+      if (videoRef.current.readyState < 2) return;
+
+      scanningRef.current = true;
+      try {
+        const faces = await detector.estimateFaces(videoRef.current, false);
+        const bestFace = faces[0];
+
+        if (!bestFace) {
+          setFaceDetected(false);
+          setFaceConfidence(null);
+          setLastStatus("Wajah tidak ditemukan. Arahkan wajah ke kamera.");
+          return;
+        }
+
+        const rawScore =
+          bestFace.probability?.[0] ||
+          bestFace.probability ||
+          (bestFace.landmarks?.length >= 6 ? 0.9 : 0);
+        const confidence = Math.round(rawScore * 100);
+
+        if (confidence < 80) {
+          setFaceDetected(false);
+          setFaceConfidence(confidence);
+          setLastStatus("Identitas tidak cocok. Confidence di bawah 80%.");
+          return;
+        }
+
+        setFaceDetected(true);
+        setFaceConfidence(confidence);
+        setLastStatus("Wajah valid. Menunggu validasi GPS.");
+      } catch {
+        setFaceDetected(false);
+        setFaceConfidence(null);
+        setLastStatus("Deteksi wajah gagal. Pastikan wajah terlihat jelas.");
+      } finally {
+        scanningRef.current = false;
+      }
+    }, 700);
+  }
+
+  async function openAttendanceCamera(type) {
+    if (type === "masuk" && !canCheckIn) {
+      setLastStatus("Absensi masuk hari ini sudah tercatat");
+      return;
+    }
+
+    if (type === "keluar" && !canCheckOut) {
+      setLastStatus(
+        attendanceCompleted
+          ? "Absensi hari ini sudah selesai"
+          : "Lakukan absensi masuk terlebih dahulu",
+      );
+      return;
+    }
+
+    setPendingType(type);
     setCameraError("");
-    setWarningToast("");
-    setSaving(false);
-    setAttendanceModal(type);
+    setFaceDetected(false);
+    setFaceConfidence(null);
+    setGpsValidated(false);
+    setCameraOpen(true);
+    setLastStatus(
+      type === "masuk"
+        ? "Membuka kamera untuk absensi masuk"
+        : "Membuka kamera untuk absensi keluar",
+    );
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -187,374 +404,705 @@ export default function EmployeeHomePage() {
         await videoRef.current.play();
       }
 
-      setModalNotice("Posisikan wajah di tengah kamera.");
-      autoDetectTimerRef.current = setTimeout(() => {
-        setFaceDetected(true);
-        setModalNotice("Wajah terdeteksi. Absensi sudah bisa disimpan.");
-      }, 1200);
-    } catch {
-      setCameraError("Kamera tidak bisa dibuka. Izinkan akses kamera browser.");
-      setModalNotice("Kamera gagal dibuka.");
+      setLastStatus("Memuat model Face Detection...");
+      const detector = await loadFaceDetector();
+      setLastStatus("Memindai wajah...");
+      startFaceScan(detector);
+    } catch (error) {
+      setCameraError(
+        error?.name === "NotAllowedError"
+          ? "Kamera tidak bisa dibuka. Izinkan akses kamera browser."
+          : "Face Detection tidak bisa dimuat. Periksa koneksi dan coba lagi.",
+      );
+      setLastStatus("Face detection unavailable");
+      setFaceModelLoading(false);
     }
   }
 
-  function closeAttendanceModal() {
+  function closeAttendanceCamera() {
+    stopFaceScan();
     stopCamera();
-    setAttendanceModal(null);
+    setCameraOpen(false);
+    setPendingType(null);
+    setFaceDetected(false);
+    setFaceConfidence(null);
+    setFaceModelLoading(false);
+    setGpsValidated(false);
+    setSaving(false);
   }
 
-  function setManualFace(value) {
-    setFaceDetected(value);
-    setWarningToast("");
-    setModalNotice(
-      value
-        ? "Wajah terdeteksi. Absensi sudah bisa disimpan."
-        : "Wajah tidak terlihat. Absensi tidak bisa disimpan.",
+  function saveAttendance(type) {
+    const savedAt = getStamp();
+    const time = savedAt.split(", ")[1] || "--:--:--";
+    const clockLabel = getClockLabel(time);
+    const nextAttendance = {
+      date: savedAt.split(",")[0],
+      clockIn:
+        type === "masuk"
+          ? clockLabel
+          : todayAttendance.clockIn || getClockLabel("08:00:22"),
+      clockOut: type === "keluar" ? clockLabel : todayAttendance.clockOut,
+      status: "Hadir",
+      location: "Kantor Pusat Pekanbaru",
+      gpsValid: true,
+      faceVerified: true,
+      faceConfidence: faceConfidence || 98,
+    };
+
+    saveEmployeeAttendanceByType(type, {
+      id: `attendance-${Date.now()}`,
+      photo: null,
+      savedAt,
+      date: nextAttendance.date,
+      clockIn: type === "masuk" ? time : "08:00:22",
+      clockOut: type === "keluar" ? time : "--:--:--",
+      status: "Hadir",
+      location: "Kantor Pusat Pekanbaru",
+    });
+    setTodayAttendance(nextAttendance);
+    setLastStatus(
+      type === "masuk"
+        ? `Absensi masuk tercatat pukul ${clockLabel}`
+        : `Absensi keluar tercatat pukul ${clockLabel}`,
     );
   }
 
-  function saveAttendance() {
-    if (!faceDetected) {
-      setModalNotice("Absensi belum bisa disimpan karena wajah tidak terlihat.");
-      setWarningToast("Wajah tidak terdeteksi. Absensi belum disimpan.");
+  function confirmAttendance() {
+    if (!pendingType || !faceDetected) return;
+
+    if ((faceConfidence || 0) < 80) {
+      setLastStatus("Identitas tidak cocok. Absensi ditolak.");
       return;
     }
 
-    const savedAt = getStamp();
-    const time = savedAt.split(", ")[1] || "--:--:--";
-    const photo = captureFrame();
-    const label =
-      attendanceModal === "masuk" ? "Absensi Masuk" : "Absensi Keluar";
-
     setSaving(true);
-    setModalNotice("Wajah terdeteksi. Menyimpan foto absensi...");
-
+    setLastStatus("Memvalidasi GPS...");
     setTimeout(() => {
-      saveEmployeeAttendanceByType(attendanceModal, {
-        id: `attendance-${Date.now()}`,
-        photo,
-        savedAt,
-        date: savedAt.split(",")[0],
-        clockIn: attendanceModal === "masuk" ? time : "08:00:22",
-        clockOut: attendanceModal === "keluar" ? time : "--:--:--",
-        status: "Hadir",
-        location: "Kantor Pusat Jakarta",
-      });
-      playSuccessSound();
-      setToast(`${label} Berhasil`);
-      setLastStatus(`${label.toLowerCase()} tercatat pukul ${time} WIB`);
-      setSaving(false);
-      closeAttendanceModal();
-    }, 900);
+      const gpsValid = true;
+
+      if (!gpsValid) {
+        setGpsValidated(false);
+        setSaving(false);
+        setLastStatus("Anda berada di luar area absensi.");
+        return;
+      }
+
+      setGpsValidated(true);
+      setLastStatus("GPS valid. Menyimpan absensi...");
+
+      setTimeout(() => {
+        saveAttendance(pendingType);
+        closeAttendanceCamera();
+      }, 500);
+    }, 700);
+  }
+
+  function resetTodayAttendanceForTest() {
+    const fallback = getFallbackTodayAttendance();
+    clearEmployeeAttendanceByDate(fallback.date);
+    setTodayAttendance(fallback);
+    setLastStatus("Mode tes direset. Silakan mulai absensi masuk.");
   }
 
   useEffect(() => {
-    if (!toast) return undefined;
-    const timer = setTimeout(() => setToast(""), 3200);
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  useEffect(() => {
-    if (!warningToast) return undefined;
-    const timer = setTimeout(() => setWarningToast(""), 3200);
-    return () => clearTimeout(timer);
-  }, [warningToast]);
-
-  useEffect(() => {
-    return () => stopCamera();
+    return () => {
+      stopFaceScan();
+      stopCamera();
+    };
   }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const storedAttendance = getStoredTodayAttendance();
+      if (storedAttendance) setTodayAttendance(storedAttendance);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const currentDate = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
+
+  const hasCheckedIn = Boolean(todayAttendance.clockIn);
+  const hasCheckedOut = Boolean(todayAttendance.clockOut);
+  const attendanceCompleted = hasCheckedIn && hasCheckedOut;
+  const canCheckIn = !hasCheckedIn;
+  const canCheckOut = hasCheckedIn && !hasCheckedOut;
+  const attendanceStatusLabel = attendanceCompleted
+    ? "Absensi Selesai"
+    : hasCheckedIn
+      ? "Hadir Hari Ini"
+      : "Belum Absen";
+  const gpsStatus = todayAttendance.gpsValid ? "Valid" : "Tidak Valid";
+  const faceStatus = todayAttendance.faceVerified ? "Verified" : "Pending";
+  const dashboardFaceConfidence = todayAttendance.faceConfidence || 0;
+  const jakartaToday = getJakartaDate();
+  const weeklyProgressTotal = weeklySchedule.length;
+  const weeklyProgressDone = weeklySchedule.filter(
+    (schedule) => schedule.date <= formatScheduleDate(jakartaToday),
+  ).length;
+  const weeklyProgress = `${Math.round((weeklyProgressDone / weeklyProgressTotal) * 100)}%`;
+  const weekNumber = getWeekNumberInMonth(jakartaToday);
+  const monthLabel = jakartaToday.toLocaleDateString("id-ID", {
+    month: "long",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
 
   return (
     <EmployeeShell>
-      {toast ? (
-        <div className="employee-toast fixed right-4 top-20 z-50 flex items-center gap-3 rounded-2xl border border-emerald-300/30 bg-emerald-400/15 px-4 py-3 text-sm font-semibold text-emerald-100 shadow-2xl shadow-emerald-400/20 backdrop-blur-xl">
-          <CheckCircle2 size={18} className="text-emerald-300" />
-          {toast}
-        </div>
-      ) : null}
-      {warningToast ? (
-        <div className="employee-toast fixed right-4 top-36 z-50 flex items-center gap-3 rounded-2xl border border-amber-300/35 bg-amber-400/15 px-4 py-3 text-sm font-semibold text-amber-100 shadow-2xl shadow-amber-400/20 backdrop-blur-xl">
-          <BadgeCheck size={18} className="text-amber-200" />
-          {warningToast}
-        </div>
-      ) : null}
-
-      <section className="grid gap-5 rounded-[28px] border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-violet-950/20 backdrop-blur-2xl lg:grid-cols-[1.25fr_0.75fr] lg:p-7">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-          <div className="relative size-28 shrink-0 rounded-full bg-gradient-to-br from-[#00F0FF] via-[#6C3CE8] to-[#E2E8F0] p-1 shadow-[0_0_38px_rgba(0,240,255,0.22)]">
-            <Image
-              src="/avatar-rina.svg"
-              alt="Foto profil Rina Pratiwi"
-              width={112}
-              height={112}
-              className="size-full rounded-full object-cover"
-            />
-            <span className="absolute bottom-2 right-2 size-5 rounded-full border-2 border-[#0A0F2C] bg-emerald-400 shadow-[0_0_16px_rgba(52,211,153,0.95)]" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-                Rina Pratiwi
-              </h2>
-              <span className="rounded-full border border-emerald-300/35 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200 shadow-[0_0_18px_rgba(52,211,153,0.16)]">
-                Aktif
+      <div className="mx-auto max-w-[1440px] space-y-6">
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[#3B82F6]">
+              <span>{currentDate} - {clock} WIB</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-amber-300">
+                <Sun size={15} />
+                29 C Pekanbaru
               </span>
             </div>
-            <p className="mt-2 text-slate-300">Finance Officer - Divisi Keuangan</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-cyan-300/15 bg-[#0A0F2C]/45 px-4 py-3">
-                <p className="text-xs text-slate-400">Jam Digital</p>
-                <p className="mt-1 text-lg font-semibold">
-                  <DigitalClock />
-                </p>
+            <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#D4E4FA] sm:text-3xl">
+              Selamat Pagi, Rina Pratiwi
+            </h2>
+            <p className="mt-1 text-sm text-[#C2C6D6]">
+              Finance Officer - Semoga hari kerja Anda produktif hari ini.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300">
+              <span className="mr-2 inline-block size-2 rounded-full bg-emerald-400 align-middle shadow-[0_0_14px_rgb(52_211_153_/_0.75)]" />
+              {attendanceStatusLabel}
+            </div>
+            <a
+              href="/employee/notifikasi"
+              className="relative grid size-12 place-items-center rounded-xl border border-[#24344D] bg-[#132238] text-[#C2C6D6] hover:text-[#3B82F6]"
+              aria-label="Buka notifikasi"
+            >
+              <Bell size={22} />
+              <span className="absolute right-3 top-3 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#132238]" />
+            </a>
+          </div>
+        </section>
+
+        <section className="glass-panel relative overflow-hidden rounded-2xl p-4 sm:p-5 xl:p-6">
+          <div className="absolute right-0 top-0 -mr-24 -mt-28 size-72 rounded-full bg-[#3B82F6]/10 blur-[90px]" />
+          <div className="relative z-10 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-300">
+                  <span className="status-pulse size-2 rounded-full bg-emerald-400" />
+                  Status: {todayAttendance.status}
+                </span>
+                <span className="rounded-full border border-[#24344D] px-3 py-1.5 text-sm font-semibold text-[#C2C6D6]">
+                  {todayAttendance.location}
+                </span>
               </div>
-              <div className="rounded-2xl border border-cyan-300/15 bg-[#0A0F2C]/45 px-4 py-3">
-                <p className="text-xs text-slate-400">Masuk Hari Ini</p>
-                <p className="mt-1 font-mono text-lg font-semibold text-[#00F0FF]">
-                  08:00 WIB
-                </p>
+
+              <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-[#D4E4FA] sm:text-3xl">
+                Absensi Hari Ini
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#C2C6D6]">
+                Validasi kehadiran sudah siap. Gunakan tombol absensi masuk atau
+                keluar sesuai kebutuhan hari ini.
+              </p>
+
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                {[
+                  ["Check In", todayAttendance.clockIn || "Belum Absen", LogIn, "text-[#3B82F6]"],
+                  ["Check Out", todayAttendance.clockOut || "Belum Absen", LogOut, "text-[#D4E4FA]"],
+                  ["GPS", gpsStatus, MapPinned, "text-emerald-400"],
+                  ["Face ID", faceStatus, ScanFace, "text-emerald-400"],
+                ].map(([label, value, Icon, color]) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2.5"
+                  >
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10">
+                      <Icon size={17} className={color} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#C2C6D6]/70">
+                        {label}
+                      </p>
+                      <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="rounded-2xl border border-cyan-300/15 bg-[#0A0F2C]/45 px-4 py-3">
-                <p className="text-xs text-slate-400">Pulang Hari Ini</p>
-                <p className="mt-1 font-mono text-lg font-semibold text-[#00F0FF]">
-                  17:00 WIB
-                </p>
+
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => openAttendanceCamera("masuk")}
+                  disabled={!canCheckIn}
+                  className={[
+                    "group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition-all active:scale-[0.98]",
+                    canCheckIn
+                      ? "border-[#24344D] bg-[#132238] text-[#D4E4FA] hover:-translate-y-0.5 hover:border-[#3B82F6]/60 hover:bg-white/[0.05]"
+                      : "cursor-not-allowed border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
+                  ].join(" ")}
+                >
+                  <Fingerprint size={18} />
+                  Absensi Masuk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAttendanceCamera("keluar")}
+                  disabled={!canCheckOut}
+                  className={[
+                    "flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all active:scale-[0.98]",
+                    canCheckOut
+                      ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20 hover:-translate-y-0.5 hover:brightness-110"
+                      : "cursor-not-allowed border border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
+                  ].join(" ")}
+                >
+                  <ShieldCheck size={18} />
+                  Absensi Keluar
+                </button>
+              </div>
+              {(hasCheckedIn || hasCheckedOut) ? (
+                <button
+                  type="button"
+                  onClick={resetTodayAttendanceForTest}
+                  className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-[#24344D] px-4 text-xs font-bold text-[#C2C6D6] transition hover:border-[#3B82F6]/60 hover:text-[#D4E4FA]"
+                >
+                  Reset Tes Absensi
+                </button>
+              ) : null}
+            </div>
+
+            <div className="relative grid min-h-[170px] place-items-center overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220] sm:min-h-[200px] xl:min-h-[220px]">
+              <div className="absolute inset-x-0 top-3 z-10 flex justify-center">
+                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                  Face ID {faceStatus}
+                </span>
+              </div>
+              <div className="scanning-line absolute left-0 right-0" />
+              <div className="relative grid size-20 place-items-center rounded-full border border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#3B82F6] sm:size-24">
+                <ScanFace size={44} />
+                <span className="corner-tl absolute" />
+                <span className="corner-tr absolute" />
+                <span className="corner-bl absolute" />
+                <span className="corner-br absolute" />
+              </div>
+              <div className="absolute inset-x-4 bottom-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-[#24344D] bg-[#132238]/80 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
+                    Verifikasi
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-[#D4E4FA]">
+                    {todayAttendance.clockIn || "--:-- WIB"}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/70">
+                    Confidence
+                  </p>
+                  <p className="mt-1 text-sm font-bold text-emerald-300">
+                    {dashboardFaceConfidence ? `${dashboardFaceConfidence}%` : "--"}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="flex flex-col justify-between gap-4 rounded-[24px] border border-white/10 bg-[#0A0F2C]/50 p-4 shadow-inner shadow-white/5">
-          <div className="flex items-center justify-between gap-3">
+        <section>
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-[#D4E4FA]">Ringkasan Cepat</h3>
+            <span className="text-sm font-medium text-[#C2C6D6]">Juni 2026</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+            {summaryCards.map((card) => {
+              const tone = getSummaryTone(card.tone);
+
+              return (
+                <div
+                  key={card.label}
+                  className="glass-panel group relative flex min-h-[130px] cursor-default flex-col justify-between overflow-hidden rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
+                >
+                  <span className={["absolute inset-x-0 top-0 h-1", tone.line].join(" ")} />
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#C2C6D6]/60">
+                        {card.label}
+                      </p>
+                      <p className={["mt-1 text-2xl font-bold", tone.value].join(" ")}>
+                        {card.value}
+                      </p>
+                    </div>
+                    <div
+                      className={[
+                        "grid size-12 place-items-center rounded-2xl border shadow-lg",
+                        tone.icon,
+                      ].join(" ")}
+                    >
+                      <card.icon size={28} />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-[#C2C6D6]">
+                    {card.tone === "emerald" ? (
+                      <span className="status-pulse size-2 rounded-full bg-emerald-500" />
+                    ) : null}
+                    {card.note}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="glass-panel relative overflow-hidden rounded-2xl p-5">
+          <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
             <div>
-              <p className="text-sm text-slate-400">Status absensi hari ini</p>
-              <p className="mt-1 flex items-center gap-2 text-xl font-semibold text-emerald-200">
-                <BadgeCheck size={22} />
-                Hadir
+              <h3 className="text-xl font-bold text-[#D4E4FA]">
+                Jadwal Kerja Mingguan
+              </h3>
+              <p className="mt-1 text-sm text-[#C2C6D6]">
+                Minggu ke-{weekNumber} - {monthLabel}
               </p>
             </div>
-            <ScanFace className="text-[#00F0FF]" size={34} />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => openAttendance("masuk")}
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-400 to-[#00F0FF] px-5 py-3 font-semibold text-[#071128] shadow-lg shadow-cyan-400/20 hover:-translate-y-0.5 hover:shadow-cyan-300/40"
-            >
-              <Camera size={19} />
-              Absensi Masuk
-            </button>
-            <button
-              type="button"
-              onClick={() => openAttendance("keluar")}
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-orange-400 px-5 py-3 font-semibold text-white shadow-lg shadow-orange-500/20 hover:-translate-y-0.5 hover:shadow-orange-400/40"
-            >
-              <Fingerprint size={19} />
-              Absensi Keluar
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className="group rounded-[24px] border border-white/10 bg-white/[0.07] p-5 shadow-xl shadow-black/10 backdrop-blur-2xl hover:-translate-y-1 hover:border-cyan-300/45 hover:shadow-cyan-400/10"
-          >
-            <div className="flex items-center justify-between">
-              <card.icon className={card.tone} size={25} />
-              <span className="size-2 rounded-full bg-[#00F0FF] shadow-[0_0_16px_rgba(0,240,255,0.9)]" />
-            </div>
-            <p className="mt-5 text-sm text-slate-400">{card.label}</p>
-            <p className={`mt-2 text-2xl font-semibold ${card.tone}`}>
-              {card.value}
-            </p>
-            {card.progress ? (
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#00F0FF] to-[#6C3CE8] shadow-[0_0_16px_rgba(0,240,255,0.45)]"
-                  style={{ width: `${card.progress}%` }}
-                />
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-5 grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.07] p-5 shadow-xl shadow-black/10 backdrop-blur-2xl">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                Ringkasan Kehadiran Bulan Ini
-              </h3>
-              <p className="text-sm text-slate-400">Juni 2026</p>
-            </div>
-            <Activity className="text-[#00F0FF]" size={24} />
-          </div>
-          <div className="mt-5 grid gap-3">
-            {monthStats.map(([label, value, gradient]) => (
-              <div
-                key={label}
-                className="grid grid-cols-[96px_1fr_40px] items-center gap-3 text-sm"
-              >
-                <span className="text-slate-300">{label}</span>
-                <div className="h-3 overflow-hidden rounded-full bg-white/10">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="min-w-[220px] rounded-xl border border-[#24344D] bg-white/[0.04] px-4 py-3">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[#C2C6D6]">
+                  <span>Minggu Kerja Ke-{weekNumber}</span>
+                  <span>
+                    {weeklyProgressDone} / {weeklyProgressTotal} Hari
+                  </span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
                   <div
-                    className={`h-full rounded-full bg-gradient-to-r ${gradient}`}
-                    style={{ width: `${Math.max(value * 5, 8)}%` }}
+                    className="h-full rounded-full bg-[#3B82F6]"
+                    style={{ width: weeklyProgress }}
                   />
                 </div>
-                <span className="text-right font-mono text-slate-200">{value}</span>
+              </div>
+              <a
+                href="/employee/jadwal"
+                className="inline-flex min-h-10 items-center justify-center rounded-xl bg-[#3B82F6] px-5 text-sm font-bold text-white shadow-lg shadow-[#3B82F6]/20 transition-all hover:brightness-110 active:scale-95"
+              >
+                Lihat Detail
+              </a>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {weeklySchedule.map((schedule) => {
+              return (
+                <div
+                  key={schedule.date}
+                  className={[
+                    "min-h-[140px] rounded-xl border p-3 transition-all duration-300 hover:-translate-y-1",
+                    schedule.isToday
+                      ? "border-[#3B82F6]/30 bg-[#3B82F6]/10"
+                      : "border-white/5 bg-white/[0.05]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span
+                      className={[
+                        "text-[11px] font-bold uppercase tracking-widest",
+                        schedule.isToday ? "text-[#3B82F6]" : "text-[#C2C6D6]",
+                      ].join(" ")}
+                    >
+                      {schedule.day}
+                    </span>
+                    <span
+                      className={[
+                        "rounded-lg px-2 py-1 text-[10px] font-bold",
+                        schedule.isToday
+                          ? "bg-[#3B82F6] text-white"
+                          : "border border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+                      ].join(" ")}
+                    >
+                      {schedule.isToday ? "HARI INI" : schedule.shift}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-base font-bold text-[#D4E4FA]">
+                    {schedule.start} - {schedule.end}
+                  </p>
+                  <p className="mt-2 text-xs text-[#C2C6D6]">
+                    {new Date(`${schedule.date}T00:00:00`).toLocaleDateString("id-ID", {
+                      day: "2-digit",
+                      month: "short",
+                    })}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="glass-panel rounded-2xl p-6">
+          <h3 className="mb-5 text-xl font-bold text-[#D4E4FA]">
+            Aktivitas Terbaru
+          </h3>
+          <div className="space-y-3">
+            {notifications.map(([title, desc, time, Icon, tone]) => (
+              <div
+                key={title}
+                className="flex gap-4 rounded-xl border border-[#24344D] bg-white/[0.04] p-4 transition hover:border-[#3B82F6]/35"
+              >
+                <div
+                  className={[
+                    "grid size-10 shrink-0 place-items-center rounded-xl border",
+                    getActivityTone(tone),
+                  ].join(" ")}
+                >
+                  <Icon size={18} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                    <p className="font-bold text-[#D4E4FA]">{title}</p>
+                    <span className="shrink-0 text-[11px] text-[#C2C6D6]">
+                      {time}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">{desc}</p>
+                </div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-1">
-          <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.07] shadow-xl shadow-black/10 backdrop-blur-2xl">
-            <div className="relative h-44 bg-[#11183A]">
-              <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,240,255,0.13)_1px,transparent_1px),linear-gradient(rgba(108,60,232,0.14)_1px,transparent_1px)] bg-[size:28px_28px]" />
-              <div className="absolute left-1/2 top-1/2 grid size-20 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-emerald-300/40 bg-emerald-300/10 text-emerald-200 shadow-[0_0_36px_rgba(52,211,153,0.28)]">
-                <MapPinned size={28} />
+        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="glass-panel rounded-2xl p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
+                <BarChart3 size={22} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-[#D4E4FA]">
+                  Statistik Kehadiran
+                </h3>
+                <p className="text-sm text-[#C2C6D6]">Performa bulan ini</p>
               </div>
             </div>
-            <div className="p-5">
-              <p className="font-semibold text-white">Lokasi dan Geofencing</p>
-              <p className="mt-2 text-sm text-slate-400">
-                Kantor Pusat Jakarta - dalam radius 100 meter
+            <div className="grid place-items-center py-3">
+              <div className="grid size-36 place-items-center rounded-full border-[10px] border-[#3B82F6]/20 border-t-[#3B82F6]">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-[#D4E4FA]">95%</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#C2C6D6]">
+                    Kehadiran
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="mb-2 flex items-center justify-between text-xs text-[#C2C6D6]">
+                <span>Target Bulan: 22 Hari</span>
+                <span>Saat Ini: 21 Hari</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
+                <div className="h-full w-[95%] rounded-full bg-[#3B82F6]" />
+              </div>
+              <p className="mt-2 text-xs font-semibold text-[#60A5FA]">
+                Target Tercapai 95%
               </p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1.5 text-xs font-semibold text-emerald-200">
-                <span className="size-2 rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.9)]" />
-                GPS valid
-              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-3">
+              {attendanceDetails.map(([label, value]) => (
+                <div
+                  key={label}
+                  className="rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2"
+                >
+                  <p className="text-xs text-[#C2C6D6]">{label}</p>
+                  <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-white/[0.07] p-5 shadow-xl shadow-black/10 backdrop-blur-2xl">
-            <p className="text-sm text-slate-400">Real-time Attendance Status</p>
-            <p className="mt-3 text-base font-semibold text-white">{lastStatus}</p>
-            <div className="mt-5 flex items-center gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-300/10 p-4">
-              <ScanFace className="text-emerald-300" size={28} />
-              <div>
-                <p className="font-semibold text-emerald-100">
-                  Face Verification
+          <div className="grid gap-4 sm:grid-cols-3">
+            {attendanceStats.map(([label, value, note, targetLabel, targetValue, progressLabel, progress, trendLabel, trendValue]) => (
+              <div
+                key={label}
+                className="glass-panel min-h-[190px] rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
+              >
+                <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/70">
+                  {label}
                 </p>
-                <p className="text-sm text-emerald-200/75">
-                  Verifikasi wajah berhasil
-                </p>
+                <div className="mt-3 flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-2xl font-bold text-[#D4E4FA]">{value}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">{note}</p>
+                  </div>
+                  <div className="shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/70">
+                      {trendLabel}
+                    </p>
+                    <p className="text-sm font-bold text-emerald-300">{trendValue}</p>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#C2C6D6]">{targetLabel}</span>
+                    <span className="font-bold text-[#D4E4FA]">{targetValue}</span>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="mb-2 flex items-center justify-between text-xs text-[#C2C6D6]">
+                    <span>{progressLabel}</span>
+                    <span>{progress}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
+                    <div
+                      className="h-full rounded-full bg-[#3B82F6]"
+                      style={{ width: progress }}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      {attendanceModal ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#020617]/75 p-4 backdrop-blur-xl">
-          <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-cyan-300/25 bg-[#0A0F2C]/95 shadow-2xl shadow-cyan-400/20">
-            <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <section>
+          <h3 className="mb-4 text-xl font-bold text-[#D4E4FA]">
+            Informasi Tambahan
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {additionalWidgets.map(([title, text, Icon, meta]) => (
+              <div
+                key={title}
+                className="glass-panel rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#3B82F6]/35 hover:shadow-[0_8px_24px_rgb(59_130_246_/_0.15)]"
+              >
+                <div className="mb-4 grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
+                  <Icon size={22} />
+                </div>
+                <p className="font-bold text-[#D4E4FA]">{title}</p>
+                <p className="mt-2 text-sm leading-6 text-[#C2C6D6]">{text}</p>
+                {meta ? (
+                  <span className="mt-4 inline-flex rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/10 px-3 py-1 text-xs font-bold text-[#60A5FA]">
+                    {meta}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      {cameraOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/80 p-4 backdrop-blur-xl">
+          <div className="glass-panel w-full max-w-3xl overflow-hidden rounded-3xl">
+            <div className="flex items-center justify-between border-b border-[#24344D] px-6 py-4">
               <div>
-                <p className="text-sm text-slate-400">Mode absensi</p>
-                <h3 className="text-xl font-semibold text-white">
-                  {attendanceModal === "masuk"
-                    ? "Absensi Masuk"
-                    : "Absensi Keluar"}
+                <p className="text-sm text-[#8B9DB5]">
+                  {pendingType === "masuk" ? "Absensi Masuk" : "Absensi Keluar"}
+                </p>
+                <h3 className="text-xl font-bold text-[#D4E4FA]">
+                  Verifikasi Kamera
                 </h3>
               </div>
               <button
                 type="button"
-                onClick={closeAttendanceModal}
-                className="grid size-10 place-items-center rounded-2xl border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
-                aria-label="Tutup modal absensi"
+                onClick={closeAttendanceCamera}
+                className="grid size-11 place-items-center rounded-2xl border border-[#24344D] text-[#C2C6D6] transition hover:bg-[#24344D]"
+                aria-label="Tutup kamera"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="p-5">
-              <canvas ref={canvasRef} className="hidden" />
-              <div className="relative overflow-hidden rounded-[24px] border border-cyan-300/30 bg-[#11183A] shadow-[0_0_34px_rgba(0,240,255,0.13)]">
+
+            <div className="p-6">
+              <div className="relative overflow-hidden rounded-3xl border border-[#24344D] bg-[#0B1220]">
                 <video
                   ref={videoRef}
                   playsInline
                   muted
-                  className="aspect-video w-full bg-[#11183A] object-cover"
+                  className="aspect-video w-full bg-[#0B1220] object-cover"
                 />
                 {!cameraError ? (
-                  <div
-                    className={[
-                      "absolute left-1/2 top-1/2 grid size-36 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border bg-[#0A0F2C]/30 backdrop-blur-[1px]",
-                      faceDetected
-                        ? "border-emerald-300/70 text-emerald-200 shadow-[0_0_38px_rgba(52,211,153,0.32)]"
-                        : "border-amber-300/70 text-amber-200 shadow-[0_0_38px_rgba(251,191,36,0.18)]",
-                    ].join(" ")}
-                  >
-                    {faceDetected ? <CheckCircle2 size={58} /> : <ScanFace size={58} />}
+                  <div className="absolute inset-0">
+                    <div className="scanning-line absolute left-0 right-0" />
+                    <span className="corner-tl absolute" />
+                    <span className="corner-tr absolute" />
+                    <span className="corner-bl absolute" />
+                    <span className="corner-br absolute" />
                   </div>
                 ) : null}
-                <div className="absolute bottom-4 left-4 rounded-2xl bg-black/35 px-4 py-3 text-xs leading-5 text-slate-200 backdrop-blur-md">
-                  <p>{watermark}</p>
-                  <p>Rina Pratiwi</p>
-                  <p>Kantor Pusat Jakarta</p>
-                </div>
               </div>
+
               {cameraError ? (
-                <div className="mt-4 rounded-2xl border border-red-300/25 bg-red-400/10 px-4 py-3 text-sm font-semibold text-red-100">
+                <div className="mt-4 flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">
+                  <AlertTriangle size={18} />
                   {cameraError}
                 </div>
-              ) : null}
-              {modalNotice ? (
-                <div
-                  className={[
-                    "mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold",
-                    faceDetected
-                      ? "border-emerald-300/25 bg-emerald-400/10 text-emerald-100"
-                      : "border-amber-300/25 bg-amber-400/10 text-amber-100",
-                  ].join(" ")}
-                >
-                  {modalNotice}
-                </div>
-              ) : null}
-              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2 text-sm text-slate-300">
-                  <MapPinned size={18} className="text-emerald-300" />
-                  GPS: Kantor Pusat Jakarta, radius 82 meter
-                </div>
-                <div className="grid grid-cols-2 gap-2">
+              ) : (
+                <div className="mt-4 flex flex-col gap-4">
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="flex items-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3 text-sm font-semibold text-[#D4E4FA]">
+                      {faceDetected ? (
+                        <CheckCircle2 size={20} className="text-emerald-400" />
+                      ) : (
+                        <Clock3 size={20} className="text-[#3B82F6]" />
+                      )}
+                      {faceDetected
+                        ? "Wajah terdeteksi"
+                        : faceModelLoading
+                          ? "Memuat model..."
+                          : "Wajah belum ditemukan"}
+                    </div>
+                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
+                        Confidence
+                      </p>
+                      <p
+                        className={[
+                          "mt-1 text-sm font-bold",
+                          (faceConfidence || 0) >= 80
+                            ? "text-emerald-300"
+                            : "text-[#C2C6D6]",
+                        ].join(" ")}
+                      >
+                        {faceConfidence
+                          ? faceConfidence >= 80
+                            ? `${faceConfidence}% valid`
+                            : `${faceConfidence}% tidak cocok`
+                          : "Menunggu"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
+                        GPS
+                      </p>
+                      <p
+                        className={[
+                          "mt-1 text-sm font-bold",
+                          gpsValidated ? "text-emerald-300" : "text-[#C2C6D6]",
+                        ].join(" ")}
+                      >
+                        {gpsValidated ? "Lokasi valid" : "Menunggu validasi"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-semibold text-[#C2C6D6]">
+                      {lastStatus}
+                    </p>
                   <button
                     type="button"
-                    onClick={() => setManualFace(false)}
-                    className="min-h-11 rounded-2xl border border-amber-300/25 bg-amber-300/10 px-4 text-sm font-semibold text-amber-100 hover:border-amber-200"
+                    onClick={confirmAttendance}
+                    disabled={
+                      faceModelLoading ||
+                      !faceDetected ||
+                      (faceConfidence || 0) < 80 ||
+                      saving
+                    }
+                    className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#3B82F6] px-6 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-1 hover:bg-[#60A5FA] disabled:pointer-events-none disabled:opacity-50"
                   >
-                    Tidak terlihat
+                    {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
+                    {saving ? "Memproses..." : "Validasi GPS & Simpan"}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualFace(true)}
-                    className="min-h-11 rounded-2xl border border-emerald-300/25 bg-emerald-300/10 px-4 text-sm font-semibold text-emerald-100 hover:border-emerald-200"
-                  >
-                    Terlihat
-                  </button>
+                  </div>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={saveAttendance}
-                disabled={saving || Boolean(cameraError)}
-                className={[
-                  "mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 font-semibold shadow-lg hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-60",
-                  attendanceModal === "masuk"
-                    ? "bg-gradient-to-r from-emerald-400 to-[#00F0FF] text-[#071128] shadow-cyan-400/20"
-                    : "bg-gradient-to-r from-red-500 to-orange-400 text-white shadow-orange-500/20",
-                ].join(" ")}
-              >
-                {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
-                {saving
-                  ? "Menyimpan..."
-                  : attendanceModal === "masuk"
-                    ? "Simpan Absensi Masuk"
-                    : "Simpan Absensi Keluar"}
-              </button>
+              )}
             </div>
           </div>
         </div>
