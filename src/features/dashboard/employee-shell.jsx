@@ -25,6 +25,10 @@ const pageTitles = {
   "/employee/notifikasi": "Pusat Notifikasi",
 };
 
+const pageSubtitles = {
+  "/employee": "Employee Attendance & Activity Center",
+};
+
 function SidebarContent({ pathname, onNavigate }) {
   return (
     <>
@@ -96,6 +100,7 @@ export function EmployeeShell({ children }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = pageTitles[pathname] || "Corporate EMS";
+  const subtitle = pageSubtitles[pathname];
 
   return (
     <div className="min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
@@ -139,9 +144,16 @@ export function EmployeeShell({ children }) {
             >
               <Menu size={21} />
             </button>
-            <h1 className="truncate text-xl font-bold tracking-tight text-[#D4E4FA]">
-              {title}
-            </h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight text-[#D4E4FA]">
+                {title}
+              </h1>
+              {subtitle ? (
+                <p className="mt-0.5 hidden truncate text-xs font-medium text-[#C2C6D6] sm:block">
+                  {subtitle}
+                </p>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5">

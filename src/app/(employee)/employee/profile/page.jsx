@@ -31,7 +31,7 @@ const employee = {
   department: "Keuangan",
   email: "rina.pratiwi@hr-futuristic.test",
   phone: "+62 812 3344 8899",
-  address: "Jl. Sudirman Kav. 52, Jakarta Pusat",
+  address: "Jl. Jenderal Sudirman, Pekanbaru",
   education: "S1 Akuntansi dan Keuangan",
   joinDate: "12 Januari 2024",
   status: "Karyawan Aktif",

@@ -47,6 +47,13 @@ export function saveEmployeeAttendanceByType(type, record) {
       photo: record.photo || nextRecords[todayIndex].photo,
       savedAt: record.savedAt,
       location: record.location,
+      latitude: record.latitude,
+      longitude: record.longitude,
+      radius: record.radius,
+      distance: record.distance,
+      faceVerified: record.faceVerified,
+      faceConfidence: record.faceConfidence,
+      device: record.device,
     };
     window.localStorage.setItem(
       ATTENDANCE_STORAGE_KEY,
@@ -56,4 +63,16 @@ export function saveEmployeeAttendanceByType(type, record) {
   }
 
   return saveEmployeeAttendanceRecord(record);
+}
+
+export function clearEmployeeAttendanceByDate(date) {
+  if (typeof window === "undefined") return [];
+
+  const records = readEmployeeAttendanceRecords();
+  const nextRecords = records.filter((item) => item.date !== date);
+  window.localStorage.setItem(
+    ATTENDANCE_STORAGE_KEY,
+    JSON.stringify(nextRecords),
+  );
+  return nextRecords;
 }
