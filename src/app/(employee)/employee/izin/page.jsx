@@ -18,6 +18,7 @@ import {
   readEmployeeLeaveRequests,
   saveEmployeeLeaveRequest,
 } from "@/lib/browser/employee-leave-store";
+import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
 const defaultRequests = [
   {
@@ -112,6 +113,17 @@ export default function EmployeeLeavePage() {
     pageStart,
     pageStart + REQUESTS_PER_PAGE,
   );
+  const monthlySummary = useMemo(() => {
+    return {
+      total: requests.length,
+      approved: requests.filter(
+        (request) => request.status === "Disetujui",
+      ).length,
+      pending: requests.filter(
+        (request) => request.status === "Menunggu",
+      ).length,
+    };
+  }, [requests]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -148,6 +160,12 @@ export default function EmployeeLeavePage() {
       };
 
       const nextRequests = saveEmployeeLeaveRequest(request);
+      createEmployeeNotification({
+        title: "Pengajuan izin dikirim",
+        message: `${request.type} tanggal ${request.dateRange} menunggu persetujuan admin.`,
+        category: "izin",
+        type: "info",
+      });
       setStoredRequests(nextRequests);
       setCurrentPage(1);
       setRequestType("Izin");
@@ -291,13 +309,13 @@ export default function EmployeeLeavePage() {
         <aside className="space-y-6">
           <div className="glass-panel rounded-3xl p-6">
             <h3 className="text-lg font-bold text-[#d4e4fa]">
-              Ringkasan Bulan Ini
+              Ringkasan Pengajuan
             </h3>
             <div className="mt-5 grid grid-cols-3 gap-3">
               {[
-                ["Total", "4"],
-                ["Approved", "2"],
-                ["Pending", "1"],
+                ["Total", monthlySummary.total],
+                ["Disetujui", monthlySummary.approved],
+                ["Menunggu", monthlySummary.pending],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-[#0B1220] p-4">
                   <p className="text-xs text-[#8B9DB5]">{label}</p>

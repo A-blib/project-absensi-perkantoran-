@@ -44,7 +44,7 @@ export function saveEmployeeAttendanceByType(type, record) {
       ...nextRecords[todayIndex],
       clockOut: record.clockOut,
       outPhoto: record.photo,
-      photo: record.photo || nextRecords[todayIndex].photo,
+      photo: nextRecords[todayIndex].photo || record.photo,
       savedAt: record.savedAt,
       location: record.location,
       latitude: record.latitude,

@@ -128,6 +128,7 @@ export default function EmployeeHistoryPage() {
       status: record.status,
       shift: record.location,
       photo: record.photo,
+      outPhoto: record.outPhoto,
     }));
 
     return saved.length
@@ -140,6 +141,7 @@ export default function EmployeeHistoryPage() {
           status,
           shift,
           photo: null,
+          outPhoto: null,
         }));
   }, [storedRows]);
 
@@ -383,8 +385,10 @@ export default function EmployeeHistoryPage() {
                     <td className="px-6 py-5">
                       <button
                         type="button"
-                        onClick={() => row.photo && setActivePhoto(row)}
-                        disabled={!row.photo}
+                        onClick={() =>
+                          (row.photo || row.outPhoto) && setActivePhoto(row)
+                        }
+                        disabled={!row.photo && !row.outPhoto}
                         className="grid size-10 place-items-center rounded-lg border border-[#24344D] text-[#C2C6D6] disabled:opacity-40"
                       >
                         <ImageIcon size={17} />
@@ -412,8 +416,33 @@ export default function EmployeeHistoryPage() {
                 <X size={20} />
               </button>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={activePhoto.photo} alt="Foto absensi" className="max-h-[70vh] w-full object-contain p-5" />
+            <div className="grid gap-4 p-5 md:grid-cols-2">
+              {[
+                ["Foto Masuk", activePhoto.photo],
+                ["Foto Keluar", activePhoto.outPhoto],
+              ].map(([label, photo]) => (
+                <div
+                  key={label}
+                  className="overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220]"
+                >
+                  <div className="border-b border-[#24344D] px-4 py-3 text-sm font-bold text-[#D4E4FA]">
+                    {label}
+                  </div>
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photo}
+                      alt={label}
+                      className="max-h-[60vh] w-full object-contain p-3"
+                    />
+                  ) : (
+                    <div className="grid min-h-52 place-items-center p-5 text-sm font-semibold text-[#8B9DB5]">
+                      Belum ada foto
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}

@@ -19,6 +19,7 @@ import {
   saveEmployeeAttendanceRecord,
   saveEmployeeAttendanceByType,
 } from "@/lib/browser/employee-attendance-store";
+import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
 const OFFICE_LOCATION = {
   latitude: 0.507068,
@@ -425,15 +426,40 @@ export default function EmployeeAttendancePage() {
 
       if (verificationType === "keluar") {
         saveEmployeeAttendanceByType("keluar", baseRecord);
+        createEmployeeNotification({
+          title: "Absensi keluar berhasil",
+          message: `Absensi keluar tercatat pukul ${time} WIB.`,
+          category: "absensi",
+          type: "success",
+        });
       } else {
         saveEmployeeAttendanceRecord(baseRecord);
+        createEmployeeNotification({
+          title:
+            baseRecord.status === "Terlambat"
+              ? "Terlambat masuk"
+              : "Absensi berhasil",
+          message:
+            baseRecord.status === "Terlambat"
+              ? `Absensi masuk tercatat pukul ${time} WIB dengan status terlambat.`
+              : `Absensi masuk tercatat pukul ${time} WIB.`,
+          category: "absensi",
+          type: baseRecord.status === "Terlambat" ? "warning" : "success",
+        });
       }
 
       playSuccessSound();
       setSavedAttendance((previous) => ({
         ...(previous || {}),
         ...baseRecord,
-        photo: baseRecord.photo || previous?.photo,
+        photo:
+          verificationType === "keluar"
+            ? previous?.photo || baseRecord.photo
+            : baseRecord.photo,
+        outPhoto:
+          verificationType === "keluar"
+            ? baseRecord.photo
+            : previous?.outPhoto,
       }));
       setNotice(
         verificationType === "keluar"
