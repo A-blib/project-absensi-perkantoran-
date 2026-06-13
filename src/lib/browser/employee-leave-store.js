@@ -1,10 +1,14 @@
 const LEAVE_STORAGE_KEY = "employee-leave-requests-v1";
 
-export function readEmployeeLeaveRequests() {
+function getLeaveStorageKey(ownerKey) {
+  return ownerKey ? `employee-leave-requests-${ownerKey}` : LEAVE_STORAGE_KEY;
+}
+
+export function readEmployeeLeaveRequests(ownerKey) {
   if (typeof window === "undefined") return [];
 
   try {
-    const value = window.localStorage.getItem(LEAVE_STORAGE_KEY);
+    const value = window.localStorage.getItem(getLeaveStorageKey(ownerKey));
     const requests = value ? JSON.parse(value) : [];
     return Array.isArray(requests) ? requests : [];
   } catch {
@@ -12,11 +16,11 @@ export function readEmployeeLeaveRequests() {
   }
 }
 
-export function saveEmployeeLeaveRequest(request) {
+export function saveEmployeeLeaveRequest(request, ownerKey) {
   if (typeof window === "undefined") return [];
 
-  const requests = readEmployeeLeaveRequests();
+  const requests = readEmployeeLeaveRequests(ownerKey);
   const nextRequests = [request, ...requests].slice(0, 20);
-  window.localStorage.setItem(LEAVE_STORAGE_KEY, JSON.stringify(nextRequests));
+  window.localStorage.setItem(getLeaveStorageKey(ownerKey), JSON.stringify(nextRequests));
   return nextRequests;
 }

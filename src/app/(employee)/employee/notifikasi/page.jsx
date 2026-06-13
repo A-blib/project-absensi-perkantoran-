@@ -12,6 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
   markAllEmployeeNotificationsRead,
   markEmployeeNotificationRead,
@@ -91,9 +92,9 @@ function parseSavedAt(value) {
   return new Date(`${year}-${month}-${day}T${normalizedTime}+07:00`).toISOString();
 }
 
-function getAttendanceNotifications() {
+function getAttendanceNotifications(ownerKey) {
   const latestRecordByDate = new Map();
-  readEmployeeAttendanceRecords().forEach((record) => {
+  readEmployeeAttendanceRecords(ownerKey).forEach((record) => {
     if (!record.date) return;
     const current = latestRecordByDate.get(record.date);
     if (
@@ -144,23 +145,26 @@ function getAttendanceNotifications() {
 }
 
 export default function EmployeeNotificationsPage() {
+  const { user } = useCurrentUser();
+  const ownerKey = user?.id;
   const [activeCategory, setActiveCategory] = useState("semua");
   const [notificationsData, setNotificationsData] = useState([]);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const attendanceNotifications = getAttendanceNotifications();
+      const attendanceNotifications = getAttendanceNotifications(ownerKey);
       setNotificationsData(
         syncEmployeeNotifications(
           attendanceNotifications,
           (notification) => notification.category === "absensi",
+          ownerKey,
         ),
       );
     }, 0);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [ownerKey]);
 
   const notifications = useMemo(() => {
     return notificationsData.filter((item) => {
@@ -176,15 +180,15 @@ export default function EmployeeNotificationsPage() {
   const summary = getSummary(notificationsData);
 
   function handleMarkAllRead() {
-    setNotificationsData(markAllEmployeeNotificationsRead());
+    setNotificationsData(markAllEmployeeNotificationsRead(ownerKey));
   }
 
   function handleOpenNotification(id) {
-    setNotificationsData(markEmployeeNotificationRead(id));
+    setNotificationsData(markEmployeeNotificationRead(id, ownerKey));
   }
 
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm text-[#8B9DB5]">Notification center</p>

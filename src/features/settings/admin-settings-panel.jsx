@@ -7,45 +7,16 @@ import {
   CheckCircle2,
   Clock3,
   ExternalLink,
+  Loader2,
   MapPin,
   RotateCcw,
   Save,
   ShieldCheck,
+  TriangleAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const defaultSettings = {
-  company: {
-    name: "PT Kantor Sejahtera",
-    email: "hr@kantor.test",
-    phone: "021-555-0199",
-    address: "Jl. Sudirman No. 10, Jakarta Pusat",
-    timezone: "Asia/Jakarta",
-  },
-  workHours: {
-    startTime: "08:00",
-    lateTolerance: 15,
-    endTime: "17:00",
-    workDays: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"],
-    shiftMode: "non-shift",
-  },
-  location: {
-    name: "Kantor Pusat Jakarta",
-    googleMapsLink: "",
-    latitude: "-6.208763",
-    longitude: "106.845599",
-    radiusMeters: 100,
-    requireLocation: true,
-  },
-  attendanceRules: {
-    requireCheckInPhoto: true,
-    requireCheckOutPhoto: false,
-    allowOutsideRadius: false,
-    allowEarlyCheckIn: true,
-    maxCheckOutTime: "21:00",
-    oneCheckInPerDay: true,
-  },
-};
+import { defaultSystemSettings } from "@/lib/validations/settings";
+import { parseGoogleMapsLink } from "@/lib/maps/google-maps";
 
 const tabs = [
   { id: "company", label: "Perusahaan", icon: Building2 },
@@ -64,10 +35,18 @@ const workDayOptions = [
   "Minggu",
 ];
 
-export function AdminSettingsPanel() {
+export function AdminSettingsPanel({ initialSettings = defaultSystemSettings }) {
   const [activeTab, setActiveTab] = useState("company");
-  const [settings, setSettings] = useState(defaultSettings);
+  const [settings, setSettings] = useState(initialSettings);
+  const [savedSettings, setSavedSettings] = useState(initialSettings);
   const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [saving, setSaving] = useState(false);
+
+  const hasChanges = useMemo(
+    () => JSON.stringify(settings) !== JSON.stringify(savedSettings),
+    [settings, savedSettings],
+  );
 
   const activeSummary = useMemo(() => {
     if (activeTab === "company") {
@@ -116,13 +95,43 @@ export function AdminSettingsPanel() {
     setMessage("");
   }
 
+  async function persistSettings(nextSettings, successMessage) {
+    setSaving(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(nextSettings),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Pengaturan gagal disimpan.");
+      }
+
+      setSettings(result.settings);
+      setSavedSettings(result.settings);
+      setMessageType("success");
+      setMessage(successMessage);
+    } catch (error) {
+      setMessageType("error");
+      setMessage(error.message || "Pengaturan gagal disimpan.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function saveSettings() {
-    setMessage("Draft UI tersimpan sementara selama halaman ini masih terbuka.");
+    persistSettings(settings, "Pengaturan sistem berhasil disimpan.");
   }
 
   function resetSettings() {
-    setSettings(defaultSettings);
-    setMessage("Pengaturan dikembalikan ke nilai awal.");
+    persistSettings(
+      defaultSystemSettings,
+      "Pengaturan dikembalikan ke nilai awal dan tersimpan.",
+    );
   }
 
   return (
@@ -142,19 +151,30 @@ export function AdminSettingsPanel() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button variant="outline" onClick={resetSettings}>
-            <RotateCcw size={18} />
+            {saving ? <Loader2 className="size-5 animate-spin" /> : <RotateCcw size={18} />}
             Reset
           </Button>
-          <Button onClick={saveSettings}>
-            <Save size={18} />
-            Simpan
+          <Button onClick={saveSettings} disabled={saving || !hasChanges}>
+            {saving ? <Loader2 className="size-5 animate-spin" /> : <Save size={18} />}
+            {saving ? "Menyimpan..." : hasChanges ? "Simpan" : "Tersimpan"}
           </Button>
         </div>
       </div>
 
       {message ? (
-        <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-          <CheckCircle2 size={18} />
+        <div
+          className={[
+            "flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold",
+            messageType === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700",
+          ].join(" ")}
+        >
+          {messageType === "error" ? (
+            <TriangleAlert size={18} />
+          ) : (
+            <CheckCircle2 size={18} />
+          )}
           {message}
         </div>
       ) : null}
@@ -345,21 +365,62 @@ function WorkHoursSettings({ values, onChange, onToggleDay }) {
 }
 
 function LocationSettings({ values, onChange }) {
+  const [mapsMessage, setMapsMessage] = useState("");
+  const [mapsMessageType, setMapsMessageType] = useState("success");
+  const [resolvingMapsLink, setResolvingMapsLink] = useState(false);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${values.latitude},${values.longitude}`,
+  )}`;
+  const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    values.name || "kantor",
   )}`;
   const radiusSize = Math.max(96, Math.min(240, Number(values.radiusMeters) * 1.4));
   const parsedMapsLink = parseGoogleMapsLink(values.googleMapsLink);
 
-  function applyGoogleMapsLink() {
-    if (!parsedMapsLink) return;
-
-    if (parsedMapsLink.name) {
-      onChange("name", parsedMapsLink.name);
+  function applyParsedLocation(location) {
+    if (location.name) {
+      onChange("name", location.name);
     }
 
-    onChange("latitude", parsedMapsLink.latitude);
-    onChange("longitude", parsedMapsLink.longitude);
+    onChange("latitude", location.latitude);
+    onChange("longitude", location.longitude);
+  }
+
+  async function applyGoogleMapsLink() {
+    if (!values.googleMapsLink.trim()) return;
+
+    setResolvingMapsLink(true);
+    setMapsMessage("");
+
+    if (parsedMapsLink) {
+      applyParsedLocation(parsedMapsLink);
+      setMapsMessageType("success");
+      setMapsMessage("Koordinat berhasil diterapkan dari link Google Maps.");
+      setResolvingMapsLink(false);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/settings/resolve-maps-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: values.googleMapsLink }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || "Link Google Maps tidak bisa dibaca.");
+      }
+
+      applyParsedLocation(result.location);
+      setMapsMessageType("success");
+      setMapsMessage("Koordinat berhasil diterapkan dari link Google Maps.");
+    } catch (error) {
+      setMapsMessageType("error");
+      setMapsMessage(error.message || "Link Google Maps tidak bisa dibaca.");
+    } finally {
+      setResolvingMapsLink(false);
+    }
   }
 
   return (
@@ -385,13 +446,29 @@ function LocationSettings({ values, onChange }) {
               type="button"
               variant="outline"
               onClick={applyGoogleMapsLink}
-              disabled={!parsedMapsLink}
+              disabled={!values.googleMapsLink.trim() || resolvingMapsLink}
             >
-              <MapPin size={17} />
-              Terapkan Lokasi
+              {resolvingMapsLink ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <MapPin size={17} />
+              )}
+              {resolvingMapsLink ? "Membaca Link..." : "Terapkan Lokasi"}
             </Button>
           </div>
         </label>
+        {mapsMessage ? (
+          <div
+            className={[
+              "rounded-lg border px-3 py-2 text-xs font-semibold",
+              mapsMessageType === "error"
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700",
+            ].join(" ")}
+          >
+            {mapsMessage}
+          </div>
+        ) : null}
         <p className="text-xs font-medium leading-5 text-slate-500">
           Mendukung link Google Maps yang memuat koordinat seperti{" "}
           <span className="font-bold text-slate-700">@-6.208763,106.845599</span>
@@ -399,8 +476,7 @@ function LocationSettings({ values, onChange }) {
           <span className="font-bold text-slate-700">
             query=-6.208763,106.845599
           </span>
-          . Link pendek yang perlu redirect bisa diproses nanti lewat backend
-          atau Google Maps API.
+          . Link pendek seperti maps.app.goo.gl akan dicoba dibaca lewat backend.
         </p>
       </div>
 
@@ -414,15 +490,37 @@ function LocationSettings({ values, onChange }) {
               placeholder="Cari nama kantor, gedung, atau alamat"
               className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none placeholder:text-slate-400"
             />
-            <Button type="button" variant="outline">
+            <Button
+              variant="outline"
+              asChild
+              href={mapsSearchUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
               <MapPin size={17} />
-              Pilih dari Maps
+              Cari di Maps
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!navigator.geolocation) return;
+
+                navigator.geolocation.getCurrentPosition((position) => {
+                  onChange("latitude", String(position.coords.latitude));
+                  onChange("longitude", String(position.coords.longitude));
+                });
+              }}
+            >
+              <MapPin size={17} />
+              Pakai Lokasi Saat Ini
             </Button>
           </div>
         </label>
         <p className="text-xs font-medium leading-5 text-slate-500">
-          Tombol ini masih berupa fondasi UI. Saat Google Maps API dipasang,
-          komponen ini bisa membuka Places autocomplete atau map picker.
+          Cari lokasi di Google Maps, salin link titik kantor, lalu tempel ke
+          field Link Google Maps dan tekan Terapkan Lokasi. Tombol lokasi saat
+          ini hanya memakai GPS perangkat admin saat memang diperlukan.
         </p>
       </div>
 
@@ -521,40 +619,6 @@ function LocationSettings({ values, onChange }) {
       />
     </div>
   );
-}
-
-function parseGoogleMapsLink(value) {
-  if (!value || typeof value !== "string") return null;
-
-  const normalizedValue = decodeURIComponent(value.trim());
-  const coordinatePattern = "(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)";
-  const patterns = [
-    new RegExp(`@${coordinatePattern}`),
-    new RegExp(`[?&](?:q|query|ll)=${coordinatePattern}`),
-    new RegExp("!3d(-?\\d+(?:\\.\\d+)?)!4d(-?\\d+(?:\\.\\d+)?)"),
-  ];
-
-  for (const pattern of patterns) {
-    const match = normalizedValue.match(pattern);
-
-    if (match) {
-      return {
-        name: extractGoogleMapsPlaceName(normalizedValue),
-        latitude: match[1],
-        longitude: match[2],
-      };
-    }
-  }
-
-  return null;
-}
-
-function extractGoogleMapsPlaceName(value) {
-  const placeMatch = value.match(/\/place\/([^/?@]+)/);
-
-  if (!placeMatch) return "";
-
-  return decodeURIComponent(placeMatch[1]).replaceAll("+", " ");
 }
 
 function InfoRow({ label, value }) {

@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 import { readEmployeeAttendanceRecords } from "@/lib/browser/employee-attendance-store";
 
 const fallbackRows = [
@@ -105,6 +106,8 @@ function parseRowDate(dateText) {
 }
 
 export default function EmployeeHistoryPage() {
+  const { user } = useCurrentUser();
+  const ownerKey = user?.id;
   const [storedRows, setStoredRows] = useState([]);
   const [activePhoto, setActivePhoto] = useState(null);
   const [startDate, setStartDate] = useState(() => getMonthRange().start);
@@ -115,9 +118,12 @@ export default function EmployeeHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(() => setStoredRows(readEmployeeAttendanceRecords()), 0);
+    const timer = setTimeout(
+      () => setStoredRows(readEmployeeAttendanceRecords(ownerKey)),
+      0,
+    );
     return () => clearTimeout(timer);
-  }, []);
+  }, [ownerKey]);
 
   const rows = useMemo(() => {
     const saved = storedRows.map((record) => ({
@@ -193,7 +199,7 @@ export default function EmployeeHistoryPage() {
   }
 
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       <div className="mx-auto max-w-[1440px] space-y-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>

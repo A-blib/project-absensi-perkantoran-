@@ -3,11 +3,18 @@ import { Bell, Search } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { LogoutButton } from "@/features/auth/logout-button";
 import { AdminMobileMenu } from "@/features/dashboard/admin-mobile-menu";
+import { AdminSessionGuard } from "@/features/dashboard/admin-session-guard";
 import { adminNav } from "@/lib/constants/navigation";
+import { getCurrentUser } from "@/server/auth/guards";
 
-export function AdminShell({ children }) {
+export async function AdminShell({ children }) {
+  const user = await getCurrentUser();
+  const displayName = user?.name || "Admin";
+  const displayEmail = user?.email || "-";
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
+      <AdminSessionGuard />
       <aside className="fixed inset-y-0 left-0 hidden w-72 border-r border-slate-200 bg-white px-4 py-5 lg:block">
         <Logo />
         <nav className="mt-8 grid gap-1">
@@ -27,7 +34,7 @@ export function AdminShell({ children }) {
       <div className="lg:pl-72">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex h-16 items-center justify-between gap-4 px-5">
-            <AdminMobileMenu />
+            <AdminMobileMenu user={user} />
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 lg:max-w-md">
               <Search size={18} className="shrink-0 text-slate-400" />
               <input
@@ -41,8 +48,8 @@ export function AdminShell({ children }) {
             <LogoutButton />
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold">Admin HR</p>
-                <p className="text-xs text-slate-500">hr@kantor.test</p>
+                <p className="text-sm font-bold">{displayName}</p>
+                <p className="text-xs text-slate-500">{displayEmail}</p>
               </div>
               <div className="size-10 rounded-full bg-blue-100" />
             </div>

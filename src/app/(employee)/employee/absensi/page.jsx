@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Camera,
@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
   clearEmployeeAttendanceByDate,
   readEmployeeAttendanceRecords,
@@ -21,18 +22,22 @@ import {
 } from "@/lib/browser/employee-attendance-store";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
-const OFFICE_LOCATION = {
-  latitude: 0.507068,
-  longitude: 101.447777,
-  radius: 5000,
-  label: "Area Sudirman Pekanbaru",
-};
-
-const TODAY_SCHEDULE = {
-  hasSchedule: true,
-  start: "08:00",
-  toleranceMinutes: 15,
-  shift: "Regular",
+const DEFAULT_ATTENDANCE_CONFIG = {
+  workHours: {
+    startTime: "08:00",
+    lateTolerance: 15,
+    endTime: "17:00",
+  },
+  location: {
+    name: "Kantor Pusat",
+    latitude: "-6.208763",
+    longitude: "106.845599",
+    radiusMeters: 100,
+    requireLocation: true,
+  },
+  attendanceRules: {
+    allowOutsideRadius: false,
+  },
 };
 
 function getStamp() {
@@ -70,11 +75,15 @@ function getMinutesFromTime(value) {
   return hour * 60 + minute;
 }
 
-function getAttendanceStatus(clockIn) {
+function getAttendanceStatus(clockIn, schedule) {
   const clockInMinutes = getMinutesFromTime(clockIn);
   const targetMinutes =
-    getMinutesFromTime(TODAY_SCHEDULE.start) + TODAY_SCHEDULE.toleranceMinutes;
+    getMinutesFromTime(schedule.startTime) + schedule.lateTolerance;
   return clockInMinutes <= targetMinutes ? "Hadir" : "Terlambat";
+}
+
+function getEmployeeTitle(user) {
+  return user?.position || user?.division || "Pegawai";
 }
 
 function getDistanceMeters(from, to) {
@@ -87,6 +96,29 @@ function getDistanceMeters(from, to) {
     Math.sin(deltaLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatMeters(value) {
+  return new Intl.NumberFormat("id-ID").format(Math.round(Number(value) || 0));
+}
+
+function getOutsideRadiusMessage(distance, radius, accuracy) {
+  const accuracyText = Number.isFinite(accuracy)
+    ? ` Akurasi GPS sekitar ${formatMeters(accuracy)} meter.`
+    : "";
+
+  return `Anda berada ${formatMeters(distance)} meter dari kantor. Radius valid hanya ${formatMeters(radius)} meter.${accuracyText}`;
+}
+
+function toOfficeLocation(config) {
+  return {
+    latitude: Number(config.location.latitude),
+    longitude: Number(config.location.longitude),
+    radius: Number(config.location.radiusMeters),
+    label: config.location.name,
+    requireLocation: config.location.requireLocation,
+    allowOutsideRadius: config.attendanceRules.allowOutsideRadius,
+  };
 }
 
 function playSuccessSound() {
@@ -113,6 +145,10 @@ function playSuccessSound() {
 }
 
 export default function EmployeeAttendancePage() {
+  const { user } = useCurrentUser();
+  const ownerKey = user?.id;
+  const employeeName = user?.name || "Pegawai";
+  const employeeTitle = getEmployeeTitle(user);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -126,6 +162,7 @@ export default function EmployeeAttendancePage() {
   const [faceModelLoading, setFaceModelLoading] = useState(false);
   const [gpsStatus, setGpsStatus] = useState("idle");
   const [gpsDistance, setGpsDistance] = useState(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [warning, setWarning] = useState("");
@@ -133,6 +170,13 @@ export default function EmployeeAttendancePage() {
   const [lastStatus, setLastStatus] = useState("Ready for verification");
   const [savedAttendance, setSavedAttendance] = useState(null);
   const [verificationType, setVerificationType] = useState("masuk");
+  const [attendanceConfig, setAttendanceConfig] = useState(
+    DEFAULT_ATTENDANCE_CONFIG,
+  );
+  const officeLocation = useMemo(
+    () => toOfficeLocation(attendanceConfig),
+    [attendanceConfig],
+  );
 
   function stopFaceScan() {
     if (faceScanTimerRef.current) {
@@ -217,11 +261,6 @@ export default function EmployeeAttendancePage() {
   }
 
   async function openCamera(type = "masuk") {
-    if (!TODAY_SCHEDULE.hasSchedule) {
-      setWarning("Tidak ada jadwal kerja hari ini.");
-      return;
-    }
-
     if (type === "masuk" && savedAttendance?.clockIn) {
       setWarning("Anda sudah absen masuk hari ini.");
       return;
@@ -282,6 +321,7 @@ export default function EmployeeAttendancePage() {
     setFaceConfidence(null);
     setFaceModelLoading(false);
     setGpsStatus("idle");
+    setGpsAccuracy(null);
   }
 
   function validateGps() {
@@ -303,22 +343,30 @@ export default function EmployeeAttendancePage() {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
           };
+          const accuracy = Math.round(position.coords.accuracy || 0);
           const distance = Math.round(
-            getDistanceMeters(currentLocation, OFFICE_LOCATION),
+            getDistanceMeters(currentLocation, officeLocation),
           );
-          const valid = distance <= OFFICE_LOCATION.radius;
+          const insideRadius = distance <= officeLocation.radius;
+          const valid =
+            !officeLocation.requireLocation ||
+            insideRadius ||
+            officeLocation.allowOutsideRadius;
 
           setGpsDistance(distance);
+          setGpsAccuracy(accuracy);
           setGpsStatus(valid ? "valid" : "invalid");
           if (!valid) {
-            setWarning("Anda berada di luar radius kantor.");
+            setWarning(
+              getOutsideRadiusMessage(distance, officeLocation.radius, accuracy),
+            );
             setLastStatus("GPS di luar radius kantor");
             resolve(null);
             return;
           }
 
           setLastStatus("GPS valid. Menyimpan absensi...");
-          resolve({ ...currentLocation, distance });
+          resolve({ ...currentLocation, distance, accuracy });
         },
         (error) => {
           setGpsStatus("error");
@@ -349,18 +397,13 @@ export default function EmployeeAttendancePage() {
     context.fillStyle = "#d4e4fa";
     context.font = "600 18px Arial";
     context.fillText(stamp, 38, canvas.height - 78);
-    context.fillText("Rina Pratiwi", 38, canvas.height - 52);
-    context.fillText(OFFICE_LOCATION.label, 38, canvas.height - 26);
+    context.fillText(employeeName, 38, canvas.height - 52);
+    context.fillText(officeLocation.label, 38, canvas.height - 26);
 
     return canvas.toDataURL("image/jpeg", 0.88);
   }
 
   async function handleCapture() {
-    if (!TODAY_SCHEDULE.hasSchedule) {
-      setWarning("Tidak ada jadwal kerja hari ini.");
-      return;
-    }
-
     if (verificationType === "masuk" && savedAttendance?.clockIn) {
       setWarning("Anda sudah absen masuk hari ini.");
       return;
@@ -405,6 +448,8 @@ export default function EmployeeAttendancePage() {
       const date = savedAt.split(",")[0];
       const baseRecord = {
         id: savedAttendance?.id || `attendance-${Date.now()}`,
+        userId: ownerKey,
+        employeeName,
         photo: capturedPhoto,
         savedAt,
         date,
@@ -412,28 +457,29 @@ export default function EmployeeAttendancePage() {
         clockOut: verificationType === "keluar" ? time : "--:--:--",
         status:
           verificationType === "masuk"
-            ? getAttendanceStatus(time)
+            ? getAttendanceStatus(time, attendanceConfig.workHours)
             : savedAttendance?.status || "Hadir",
-        location: OFFICE_LOCATION.label,
+        location: officeLocation.label,
         latitude: String(gps.latitude),
         longitude: String(gps.longitude),
-        radius: OFFICE_LOCATION.radius,
+        radius: officeLocation.radius,
         distance: gps.distance,
+        accuracy: gps.accuracy,
         faceVerified: true,
         faceConfidence,
         device: navigator.userAgent,
       };
 
       if (verificationType === "keluar") {
-        saveEmployeeAttendanceByType("keluar", baseRecord);
+        saveEmployeeAttendanceByType("keluar", baseRecord, ownerKey);
         createEmployeeNotification({
           title: "Absensi keluar berhasil",
           message: `Absensi keluar tercatat pukul ${time} WIB.`,
           category: "absensi",
           type: "success",
-        });
+        }, ownerKey);
       } else {
-        saveEmployeeAttendanceRecord(baseRecord);
+        saveEmployeeAttendanceRecord(baseRecord, ownerKey);
         createEmployeeNotification({
           title:
             baseRecord.status === "Terlambat"
@@ -445,7 +491,7 @@ export default function EmployeeAttendancePage() {
               : `Absensi masuk tercatat pukul ${time} WIB.`,
           category: "absensi",
           type: baseRecord.status === "Terlambat" ? "warning" : "success",
-        });
+        }, ownerKey);
       }
 
       playSuccessSound();
@@ -473,7 +519,7 @@ export default function EmployeeAttendancePage() {
   }
 
   function resetAttendanceForTest() {
-    clearEmployeeAttendanceByDate(getTodayDate());
+    clearEmployeeAttendanceByDate(getTodayDate(), ownerKey);
     setSavedAttendance(null);
     setNotice("Mode tes direset. Silakan mulai verifikasi ulang.");
     setWarning("");
@@ -481,13 +527,42 @@ export default function EmployeeAttendancePage() {
   }
 
   useEffect(() => {
+    let active = true;
+
+    async function loadAttendanceConfig() {
+      try {
+        const response = await fetch("/api/employee/attendance-config", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (active && payload.config) {
+          setAttendanceConfig(payload.config);
+        }
+      } catch {
+        if (active) setAttendanceConfig(DEFAULT_ATTENDANCE_CONFIG);
+      }
+    }
+
+    loadAttendanceConfig();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const loadTimer = setTimeout(() => {
-      const todayRecord = readEmployeeAttendanceRecords().find(
+      const todayRecord = readEmployeeAttendanceRecords(ownerKey).find(
         (record) => record.date === getTodayDate(),
       );
       if (todayRecord) {
         setSavedAttendance(todayRecord);
         setLastStatus(`Saved at ${todayRecord.savedAt}`);
+      } else {
+        setSavedAttendance(null);
       }
     }, 0);
 
@@ -501,7 +576,7 @@ export default function EmployeeAttendancePage() {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     };
-  }, []);
+  }, [ownerKey]);
 
   useEffect(() => {
     if (!notice && !warning) return undefined;
@@ -513,7 +588,7 @@ export default function EmployeeAttendancePage() {
   }, [notice, warning]);
 
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       {notice || warning ? (
         <div className="fixed right-4 top-24 z-50 rounded-2xl border border-[#24344D] bg-[#132238]/95 px-4 py-3 text-sm font-semibold text-[#d4e4fa] shadow-2xl backdrop-blur-xl">
           {notice || warning}
@@ -531,7 +606,7 @@ export default function EmployeeAttendancePage() {
             </div>
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#24344D] bg-[#0B1220] px-4 py-2 text-sm text-[#c2c6d6]">
               <Radio size={16} className="text-[#3b82f6]" />
-              {OFFICE_LOCATION.label}
+              {officeLocation.label}
             </span>
           </div>
 
@@ -544,8 +619,8 @@ export default function EmployeeAttendancePage() {
             </div>
             <div className="absolute bottom-6 left-6 rounded-2xl border border-[#24344D] bg-[#132238]/90 px-4 py-3 text-sm text-[#c2c6d6] backdrop-blur-xl">
               <p>{stamp}</p>
-              <p className="font-semibold text-[#d4e4fa]">Rina Pratiwi</p>
-              <p>Finance Officer</p>
+              <p className="font-semibold text-[#d4e4fa]">{employeeName}</p>
+              <p>{employeeTitle}</p>
             </div>
           </div>
 
@@ -553,7 +628,7 @@ export default function EmployeeAttendancePage() {
             <button
               type="button"
               onClick={() => openCamera("masuk")}
-              disabled={!TODAY_SCHEDULE.hasSchedule || Boolean(savedAttendance)}
+              disabled={Boolean(savedAttendance)}
               className={[
                 "flex min-h-14 items-center justify-center gap-3 rounded-2xl px-5 font-semibold shadow-lg transition hover:-translate-y-1 disabled:pointer-events-none disabled:opacity-55",
                 savedAttendance
@@ -648,7 +723,17 @@ export default function EmployeeAttendancePage() {
                   <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
                     <span className="text-[#8B9DB5]">Radius</span>
                     <span className="font-semibold text-[#d4e4fa]">
-                      {savedAttendance.distance ?? "-"} m
+                      {savedAttendance.distance
+                        ? `${formatMeters(savedAttendance.distance)} m`
+                        : "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
+                    <span className="text-[#8B9DB5]">Akurasi GPS</span>
+                    <span className="font-semibold text-[#d4e4fa]">
+                      {savedAttendance.accuracy
+                        ? `${formatMeters(savedAttendance.accuracy)} m`
+                        : "-"}
                     </span>
                   </div>
                 </div>
@@ -664,14 +749,14 @@ export default function EmployeeAttendancePage() {
             <h3 className="font-semibold text-[#d4e4fa]">Office Radius</h3>
             <div className="mt-4 flex items-center gap-3 text-sm text-[#c2c6d6]">
               <MapPin size={20} className="text-[#3b82f6]" />
-              Radius maksimal {OFFICE_LOCATION.radius} meter
+              Radius maksimal {officeLocation.radius} meter
             </div>
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#0B1220]">
               <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[#3b82f6] to-emerald-400" />
             </div>
             <p className="mt-3 text-sm text-[#8B9DB5]">
               {savedAttendance?.distance
-                ? `Jarak terakhir ${savedAttendance.distance} meter`
+                ? `Jarak terakhir ${formatMeters(savedAttendance.distance)} meter`
                 : "GPS akan divalidasi setelah wajah cocok."}
             </p>
           </div>
@@ -718,8 +803,8 @@ export default function EmployeeAttendancePage() {
                 ) : null}
                 <div className="absolute bottom-5 left-5 rounded-2xl border border-[#24344D] bg-[#132238]/85 px-4 py-3 text-sm text-[#c2c6d6] backdrop-blur-xl">
                   <p>{stamp}</p>
-                  <p className="font-semibold text-[#d4e4fa]">Rina Pratiwi</p>
-                  <p>{OFFICE_LOCATION.label}</p>
+                  <p className="font-semibold text-[#d4e4fa]">{employeeName}</p>
+                  <p>{officeLocation.label}</p>
                 </div>
               </div>
 
@@ -778,9 +863,15 @@ export default function EmployeeAttendancePage() {
                         {gpsStatus === "checking"
                           ? "Mengecek lokasi"
                           : gpsStatus === "valid"
-                            ? `Valid ${gpsDistance} m`
+                            ? `Valid ${formatMeters(gpsDistance)} m${
+                                gpsAccuracy ? `, akurasi ${formatMeters(gpsAccuracy)} m` : ""
+                              }`
                             : gpsStatus === "invalid"
-                              ? `Di luar radius ${gpsDistance} m`
+                              ? `Di luar radius ${formatMeters(gpsDistance)} m${
+                                  gpsAccuracy
+                                    ? `, akurasi ${formatMeters(gpsAccuracy)} m`
+                                    : ""
+                                }`
                               : gpsStatus === "error"
                                 ? "GPS gagal"
                                 : "Menunggu validasi"}

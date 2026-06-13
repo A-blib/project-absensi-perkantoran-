@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
   AlertTriangle,
@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
   clearEmployeeAttendanceByDate,
   readEmployeeAttendanceRecords,
@@ -96,6 +97,24 @@ const additionalWidgets = [
   ["Birthday Employee", "Ulang tahun tim Finance hari Kamis.", Award, "Besok"],
   ["Info Cuti Bersama", "Jadwal cuti bersama menunggu edaran HR.", TrendingUp],
 ];
+
+const DEFAULT_ATTENDANCE_CONFIG = {
+  workHours: {
+    startTime: "08:00",
+    lateTolerance: 15,
+    endTime: "17:00",
+  },
+  location: {
+    name: "Kantor Pusat",
+    latitude: "-6.208763",
+    longitude: "106.845599",
+    radiusMeters: 100,
+    requireLocation: true,
+  },
+  attendanceRules: {
+    allowOutsideRadius: false,
+  },
+};
 
 function getSummaryTone(tone) {
   if (tone === "emerald") {
@@ -168,6 +187,41 @@ function getJakartaDate() {
   );
 }
 
+function getDistanceMeters(from, to) {
+  const earthRadius = 6371000;
+  const lat1 = (from.latitude * Math.PI) / 180;
+  const lat2 = (to.latitude * Math.PI) / 180;
+  const deltaLat = ((to.latitude - from.latitude) * Math.PI) / 180;
+  const deltaLon = ((to.longitude - from.longitude) * Math.PI) / 180;
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatMeters(value) {
+  return new Intl.NumberFormat("id-ID").format(Math.round(Number(value) || 0));
+}
+
+function getOutsideRadiusMessage(distance, radius, accuracy) {
+  const accuracyText = Number.isFinite(accuracy)
+    ? ` Akurasi GPS sekitar ${formatMeters(accuracy)} meter.`
+    : "";
+
+  return `Anda berada ${formatMeters(distance)} meter dari kantor. Radius valid hanya ${formatMeters(radius)} meter.${accuracyText}`;
+}
+
+function toOfficeLocation(config) {
+  return {
+    latitude: Number(config.location.latitude),
+    longitude: Number(config.location.longitude),
+    radius: Number(config.location.radiusMeters),
+    label: config.location.name,
+    requireLocation: config.location.requireLocation,
+    allowOutsideRadius: config.attendanceRules.allowOutsideRadius,
+  };
+}
+
 function formatScheduleDate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -211,23 +265,27 @@ function getClockLabel(value) {
   return value.includes("WIB") ? value : `${value} WIB`;
 }
 
-function getFallbackTodayAttendance() {
+function getFallbackTodayAttendance(locationLabel = "Kantor Pusat") {
   const today = getTodayDate();
   return {
     date: today,
     clockIn: null,
     clockOut: null,
     status: "Belum Absen",
-    location: "Kantor Pusat Pekanbaru",
-    gpsValid: true,
+    location: locationLabel,
+    gpsValid: false,
     faceVerified: false,
     faceConfidence: null,
   };
 }
 
-function getStoredTodayAttendance() {
+function getEmployeeTitle(user) {
+  return user?.position || user?.division || "Pegawai";
+}
+
+function getStoredTodayAttendance(ownerKey, fallbackLocation) {
   const today = getTodayDate();
-  const record = readEmployeeAttendanceRecords().find(
+  const record = readEmployeeAttendanceRecords(ownerKey).find(
     (item) => item.date === today,
   );
 
@@ -238,14 +296,21 @@ function getStoredTodayAttendance() {
     clockIn: getClockLabel(record.clockIn),
     clockOut: getClockLabel(record.clockOut),
     status: record.status || "Hadir",
-    location: record.location || "Kantor Pusat Pekanbaru",
-    gpsValid: true,
+    location: record.location || fallbackLocation,
+    gpsValid:
+      record.distance && record.radius
+        ? Number(record.distance) <= Number(record.radius)
+        : true,
     faceVerified: true,
     faceConfidence: 98,
   };
 }
 
 export default function EmployeeHomePage() {
+  const { user } = useCurrentUser();
+  const ownerKey = user?.id;
+  const employeeName = user?.name || "Pegawai";
+  const employeeTitle = getEmployeeTitle(user);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const detectorRef = useRef(null);
@@ -261,10 +326,19 @@ export default function EmployeeHomePage() {
   const [faceModelLoading, setFaceModelLoading] = useState(false);
   const [gpsValidated, setGpsValidated] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [attendanceConfig, setAttendanceConfig] = useState(
+    DEFAULT_ATTENDANCE_CONFIG,
+  );
+  const [gpsDistance, setGpsDistance] = useState(null);
+  const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [todayAttendance, setTodayAttendance] = useState(
     getFallbackTodayAttendance,
   );
   const [weeklySchedule, setWeeklySchedule] = useState(buildWeeklySchedule);
+  const officeLocation = useMemo(
+    () => toOfficeLocation(attendanceConfig),
+    [attendanceConfig],
+  );
 
   useEffect(() => {
     const update = () =>
@@ -287,6 +361,37 @@ export default function EmployeeHomePage() {
     }, 60000);
 
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAttendanceConfig() {
+      try {
+        const response = await fetch("/api/employee/attendance-config", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (active && payload.config) {
+          setAttendanceConfig(payload.config);
+          setTodayAttendance((current) => ({
+            ...current,
+            location: current.clockIn ? current.location : payload.config.location.name,
+          }));
+        }
+      } catch {
+        if (active) setAttendanceConfig(DEFAULT_ATTENDANCE_CONFIG);
+      }
+    }
+
+    loadAttendanceConfig();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function stopCamera() {
@@ -431,7 +536,7 @@ export default function EmployeeHomePage() {
     setSaving(false);
   }
 
-  function saveAttendance(type) {
+  function saveAttendance(type, gpsResult) {
     const savedAt = getStamp();
     const time = savedAt.split(", ")[1] || "--:--:--";
     const clockLabel = getClockLabel(time);
@@ -443,22 +548,31 @@ export default function EmployeeHomePage() {
           : todayAttendance.clockIn || getClockLabel("08:00:22"),
       clockOut: type === "keluar" ? clockLabel : todayAttendance.clockOut,
       status: "Hadir",
-      location: "Kantor Pusat Pekanbaru",
+      location: officeLocation.label,
       gpsValid: true,
       faceVerified: true,
       faceConfidence: faceConfidence || 98,
     };
 
-    saveEmployeeAttendanceByType(type, {
-      id: `attendance-${Date.now()}`,
-      photo: null,
-      savedAt,
-      date: nextAttendance.date,
-      clockIn: type === "masuk" ? time : "08:00:22",
-      clockOut: type === "keluar" ? time : "--:--:--",
-      status: "Hadir",
-      location: "Kantor Pusat Pekanbaru",
-    });
+    saveEmployeeAttendanceByType(
+      type,
+      {
+        id: `attendance-${Date.now()}`,
+        userId: ownerKey,
+        employeeName,
+        photo: null,
+        savedAt,
+        date: nextAttendance.date,
+        clockIn: type === "masuk" ? time : "08:00:22",
+        clockOut: type === "keluar" ? time : "--:--:--",
+        status: "Hadir",
+        location: officeLocation.label,
+        radius: officeLocation.radius,
+        distance: gpsResult?.distance ?? gpsDistance,
+        accuracy: gpsResult?.accuracy ?? gpsAccuracy,
+      },
+      ownerKey,
+    );
     setTodayAttendance(nextAttendance);
     setLastStatus(
       type === "masuk"
@@ -466,6 +580,88 @@ export default function EmployeeHomePage() {
         : `Absensi keluar tercatat pukul ${clockLabel}`,
     );
   }
+
+  const updateGpsStatus = useCallback((valid, distance = null, accuracy = null) => {
+    setGpsDistance(distance);
+    setGpsAccuracy(accuracy);
+    setGpsValidated(valid);
+    setTodayAttendance((current) => ({
+      ...current,
+      gpsValid: valid,
+    }));
+  }, []);
+
+  const checkGpsReachability = useCallback(({ forAttendance = false } = {}) => {
+    if (forAttendance) {
+      setLastStatus("Memvalidasi GPS...");
+    }
+
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        updateGpsStatus(false);
+        if (forAttendance) {
+          setLastStatus("GPS tidak tersedia di perangkat ini.");
+        }
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          const accuracy = Math.round(position.coords.accuracy || 0);
+          const distance = Math.round(
+            getDistanceMeters(currentLocation, officeLocation),
+          );
+          const insideRadius = distance <= officeLocation.radius;
+          const valid =
+            !officeLocation.requireLocation ||
+            insideRadius ||
+            officeLocation.allowOutsideRadius;
+
+          updateGpsStatus(valid, distance, accuracy);
+
+          if (!valid) {
+            if (forAttendance) {
+              setLastStatus(
+                getOutsideRadiusMessage(distance, officeLocation.radius, accuracy),
+              );
+            }
+            resolve(null);
+            return;
+          }
+
+          if (forAttendance) {
+            setLastStatus("GPS valid. Menyimpan absensi...");
+          }
+          resolve({ distance, accuracy });
+        },
+        (error) => {
+          updateGpsStatus(false);
+          if (forAttendance) {
+            setLastStatus(
+              error.code === error.PERMISSION_DENIED
+                ? "Aktifkan izin lokasi agar bisa absen."
+                : "Lokasi tidak dapat dideteksi.",
+            );
+          }
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      );
+    });
+  }, [officeLocation, updateGpsStatus]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      checkGpsReachability();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [checkGpsReachability]);
 
   function confirmAttendance() {
     if (!pendingType || !faceDetected) return;
@@ -476,30 +672,22 @@ export default function EmployeeHomePage() {
     }
 
     setSaving(true);
-    setLastStatus("Memvalidasi GPS...");
-    setTimeout(() => {
-      const gpsValid = true;
-
-      if (!gpsValid) {
-        setGpsValidated(false);
+    checkGpsReachability({ forAttendance: true }).then((gpsResult) => {
+      if (!gpsResult) {
         setSaving(false);
-        setLastStatus("Anda berada di luar area absensi.");
         return;
       }
 
-      setGpsValidated(true);
-      setLastStatus("GPS valid. Menyimpan absensi...");
-
       setTimeout(() => {
-        saveAttendance(pendingType);
+        saveAttendance(pendingType, gpsResult);
         closeAttendanceCamera();
       }, 500);
-    }, 700);
+    });
   }
 
   function resetTodayAttendanceForTest() {
-    const fallback = getFallbackTodayAttendance();
-    clearEmployeeAttendanceByDate(fallback.date);
+    const fallback = getFallbackTodayAttendance(officeLocation.label);
+    clearEmployeeAttendanceByDate(fallback.date, ownerKey);
     setTodayAttendance(fallback);
     setLastStatus("Mode tes direset. Silakan mulai absensi masuk.");
   }
@@ -513,12 +701,14 @@ export default function EmployeeHomePage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const storedAttendance = getStoredTodayAttendance();
-      if (storedAttendance) setTodayAttendance(storedAttendance);
+      const storedAttendance = getStoredTodayAttendance(ownerKey, officeLocation.label);
+      setTodayAttendance(
+        storedAttendance || getFallbackTodayAttendance(officeLocation.label),
+      );
     }, 0);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [ownerKey, officeLocation.label]);
 
   const currentDate = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
@@ -538,7 +728,10 @@ export default function EmployeeHomePage() {
     : hasCheckedIn
       ? "Hadir Hari Ini"
       : "Belum Absen";
-  const gpsStatus = todayAttendance.gpsValid ? "Valid" : "Tidak Valid";
+  const gpsStatus = todayAttendance.gpsValid ? "Valid" : "Invalid";
+  const gpsStatusColor = todayAttendance.gpsValid
+    ? "text-emerald-400"
+    : "text-red-400";
   const faceStatus = todayAttendance.faceVerified ? "Verified" : "Pending";
   const dashboardFaceConfidence = todayAttendance.faceConfidence || 0;
   const jakartaToday = getJakartaDate();
@@ -555,7 +748,7 @@ export default function EmployeeHomePage() {
   });
 
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       <div className="mx-auto max-w-[1440px] space-y-6">
         <section className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -567,10 +760,10 @@ export default function EmployeeHomePage() {
               </span>
             </div>
             <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#D4E4FA] sm:text-3xl">
-              Selamat Pagi, Rina Pratiwi
+              Selamat Pagi, {employeeName}
             </h2>
             <p className="mt-1 text-sm text-[#C2C6D6]">
-              Finance Officer - Semoga hari kerja Anda produktif hari ini.
+              {employeeTitle} - Semoga hari kerja Anda produktif hari ini.
             </p>
           </div>
 
@@ -616,7 +809,7 @@ export default function EmployeeHomePage() {
                 {[
                   ["Check In", todayAttendance.clockIn || "Belum Absen", LogIn, "text-[#3B82F6]"],
                   ["Check Out", todayAttendance.clockOut || "Belum Absen", LogOut, "text-[#D4E4FA]"],
-                  ["GPS", gpsStatus, MapPinned, "text-emerald-400"],
+                  ["GPS", gpsStatus, MapPinned, gpsStatusColor],
                   ["Face ID", faceStatus, ScanFace, "text-emerald-400"],
                 ].map(([label, value, Icon, color]) => (
                   <div

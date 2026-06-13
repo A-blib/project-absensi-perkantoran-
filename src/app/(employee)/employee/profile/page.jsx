@@ -23,8 +23,9 @@ import {
   UserRound,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { getCurrentUser } from "@/server/auth/guards";
 
-const employee = {
+const fallbackEmployee = {
   name: "Rina Pratiwi",
   id: "EMP-2026-041",
   position: "Finance Officer",
@@ -39,13 +40,36 @@ const employee = {
   supervisor: "Andika Pratama",
 };
 
-const personalInfo = [
-  ["Email Karyawan", employee.email, Mail],
-  ["Nomor Telepon", employee.phone, Phone],
-  ["Departemen", employee.department, Building2],
-  ["Pendidikan", employee.education, GraduationCap],
-  ["Alamat Tinggal", employee.address, MapPin],
-];
+function getEmployeeProfile(user) {
+  return {
+    ...fallbackEmployee,
+    name: user?.name || fallbackEmployee.name,
+    id: user?.employeeCode || user?.id || fallbackEmployee.id,
+    position: user?.position || fallbackEmployee.position,
+    department: user?.division || fallbackEmployee.department,
+    email: user?.email || fallbackEmployee.email,
+    phone: user?.phone || fallbackEmployee.phone,
+    status: user?.status === "active" ? "Karyawan Aktif" : "Karyawan Nonaktif",
+    joinDate: user?.createdAt
+      ? new Intl.DateTimeFormat("id-ID", {
+          day: "2-digit",
+          month: "long",
+          year: "numeric",
+          timeZone: "Asia/Jakarta",
+        }).format(new Date(user.createdAt))
+      : fallbackEmployee.joinDate,
+  };
+}
+
+function getPersonalInfo(employee) {
+  return [
+    ["Email Karyawan", employee.email, Mail],
+    ["Nomor Telepon", employee.phone, Phone],
+    ["Departemen", employee.department, Building2],
+    ["Pendidikan", employee.education, GraduationCap],
+    ["Alamat Tinggal", employee.address, MapPin],
+  ];
+}
 
 const careerTimeline = [
   {
@@ -108,9 +132,16 @@ function StatPill({ label, value, icon: Icon }) {
   );
 }
 
-export default function EmployeeProfilePage() {
+export default async function EmployeeProfilePage() {
+  const user = await getCurrentUser();
+  const employee = getEmployeeProfile(user);
+  const personalInfo = getPersonalInfo(employee);
+  const timeline = careerTimeline.map((item, index) =>
+    index === 0 ? { ...item, title: employee.position } : item,
+  );
+
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       <div className="space-y-4">
         <section className="relative overflow-hidden rounded-[28px] border border-[#24344D] bg-[#0F1B2E] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,.10),0_20px_48px_rgba(0,0,0,.28)] sm:p-6">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(173,198,255,.22),transparent_34%),radial-gradient(circle_at_82%_20%,rgba(59,130,246,.18),transparent_32%),linear-gradient(135deg,#0F1B2E_0%,#1A3A63_48%,#0B1220_100%)]" />
@@ -120,7 +151,7 @@ export default function EmployeeProfilePage() {
               <div className="group relative mx-auto size-36 shrink-0 rounded-full bg-gradient-to-br from-[#adc6ff] via-[#3b82f6] to-[#0267b8] p-1 shadow-[0_0_38px_rgba(173,198,255,.20)] md:mx-0 md:size-44">
                 <Image
                   src="/avatar-rina.svg"
-                  alt="Foto profil Rina Pratiwi"
+                        alt={`Foto profil ${employee.name}`}
                   width={224}
                   height={224}
                   priority
@@ -240,7 +271,7 @@ export default function EmployeeProfilePage() {
               </div>
 
               <div className="relative space-y-0 before:absolute before:left-[21px] before:top-4 before:h-[calc(100%-32px)] before:w-px before:bg-[#24344D]">
-                {careerTimeline.map((item) => (
+                {timeline.map((item) => (
                   <div key={item.title} className="relative pb-4 pl-14 last:pb-0">
                     <div
                       className={[
