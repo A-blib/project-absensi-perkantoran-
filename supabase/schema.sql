@@ -118,10 +118,42 @@ create table if not exists public.attendances (
   unique (user_id, attendance_date)
 );
 
+create table if not exists public.leave_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  type varchar(20) not null,
+  start_date date not null,
+  end_date date not null,
+  reason text not null,
+  attachment_name varchar(180),
+  attachment_type varchar(80),
+  attachment_data text,
+  status varchar(20) not null default 'Menunggu',
+  admin_note text,
+  submitted_at timestamptz default now(),
+  decided_at timestamptz,
+  decided_by uuid references public.users(id) on delete set null,
+  constraint leave_requests_type_check check (type in ('Izin', 'Sakit', 'Cuti')),
+  constraint leave_requests_status_check check (status in ('Menunggu', 'Disetujui', 'Ditolak')),
+  constraint leave_requests_date_check check (end_date >= start_date)
+);
+
+alter table public.leave_requests add column if not exists attachment_type varchar(80);
+alter table public.leave_requests add column if not exists attachment_data text;
+
+create table if not exists public.app_settings (
+  key varchar(120) primary key,
+  value jsonb not null default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
 alter table public.users enable row level security;
 alter table public.attendances enable row level security;
 alter table public.divisions enable row level security;
 alter table public.positions enable row level security;
+alter table public.app_settings enable row level security;
+alter table public.leave_requests enable row level security;
 
 drop policy if exists "service role can manage users" on public.users;
 create policy "service role can manage users"
@@ -150,6 +182,58 @@ on public.positions
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage app settings" on public.app_settings;
+create policy "service role can manage app settings"
+on public.app_settings
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage leave requests" on public.leave_requests;
+create policy "service role can manage leave requests"
+on public.leave_requests
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+insert into public.app_settings (key, value)
+values (
+  'system_settings',
+  '{
+    "company": {
+      "name": "PT Kantor Sejahtera",
+      "email": "hr@kantor.test",
+      "phone": "021-555-0199",
+      "address": "Jl. Sudirman No. 10, Jakarta Pusat",
+      "timezone": "Asia/Jakarta"
+    },
+    "workHours": {
+      "startTime": "08:00",
+      "lateTolerance": 15,
+      "endTime": "17:00",
+      "workDays": ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"],
+      "shiftMode": "non-shift"
+    },
+    "location": {
+      "name": "Kantor Pusat Jakarta",
+      "googleMapsLink": "",
+      "latitude": "-6.208763",
+      "longitude": "106.845599",
+      "radiusMeters": 100,
+      "requireLocation": true
+    },
+    "attendanceRules": {
+      "requireCheckInPhoto": true,
+      "requireCheckOutPhoto": false,
+      "allowOutsideRadius": false,
+      "allowEarlyCheckIn": true,
+      "maxCheckOutTime": "21:00",
+      "oneCheckInPerDay": true
+    }
+  }'::jsonb
+)
+on conflict (key) do nothing;
 
 insert into public.divisions (name, code, description, status)
 values

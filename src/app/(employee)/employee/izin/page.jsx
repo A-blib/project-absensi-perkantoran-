@@ -14,34 +14,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
-import {
-  readEmployeeLeaveRequests,
-  saveEmployeeLeaveRequest,
-} from "@/lib/browser/employee-leave-store";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
-const defaultRequests = [
-  {
-    id: "default-cuti-2026-06-10",
-    type: "Cuti",
-    date: "10/06/2026 - 12/06/2026",
-    status: "Menunggu",
-  },
-  {
-    id: "default-sakit-2026-05-28",
-    type: "Sakit",
-    date: "28/05/2026",
-    status: "Disetujui",
-  },
-  {
-    id: "default-izin-2026-05-22",
-    type: "Izin",
-    date: "22/05/2026",
-    status: "Ditolak",
-  },
-];
-
 const REQUESTS_PER_PAGE = 5;
+const MAX_ATTACHMENT_SIZE = 1.5 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 
 const statusStyles = {
   Menunggu: {
@@ -70,24 +53,101 @@ function getDateRange(startDate, endDate) {
   return start === end ? start : `${start} - ${end}`;
 }
 
+function formatDecisionTime(value) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(value));
+}
+
 export default function EmployeeLeavePage() {
+  const { user } = useCurrentUser();
+  const ownerKey = user?.id;
   const [requestType, setRequestType] = useState("Izin");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [reason, setReason] = useState("");
   const [attachmentName, setAttachmentName] = useState("");
+  const [attachmentType, setAttachmentType] = useState("");
+  const [attachmentData, setAttachmentData] = useState("");
   const [storedRequests, setStoredRequests] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [notice, setNotice] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const loadTimer = setTimeout(() => {
-      setStoredRequests(readEmployeeLeaveRequests());
-    }, 0);
+    if (!ownerKey) return undefined;
 
-    return () => clearTimeout(loadTimer);
-  }, []);
+    let active = true;
+
+    async function loadRequests({ showError = false } = {}) {
+      try {
+        const response = await fetch("/api/employee/leave-requests", {
+          cache: "no-store",
+          credentials: "same-origin",
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.message || "Status pengajuan gagal dimuat.");
+        }
+
+        if (!active) return;
+
+        payload.requests.forEach((request) => {
+          if (!["Disetujui", "Ditolak"].includes(request.status)) return;
+
+          const approved = request.status === "Disetujui";
+          createEmployeeNotification(
+            {
+              id: `leave-decision-${request.id}-${request.status}`,
+              title: approved ? "Pengajuan izin disetujui" : "Pengajuan izin ditolak",
+              message: `${request.type} tanggal ${request.dateRange} ${request.status.toLowerCase()} oleh admin.${request.adminNote ? ` Catatan: ${request.adminNote}` : ""}`,
+              category: "izin",
+              type: approved ? "success" : "danger",
+              createdAt: request.decidedAt || request.submittedAt,
+            },
+            ownerKey,
+          );
+        });
+
+        setStoredRequests(payload.requests);
+      } catch (error) {
+        if (active && showError) {
+          setNotice({
+            type: "error",
+            message: error.message || "Status pengajuan gagal dimuat.",
+          });
+        }
+      } finally {
+        if (active) setIsLoadingRequests(false);
+      }
+    }
+
+    loadRequests({ showError: true });
+    const interval = window.setInterval(loadRequests, 15000);
+
+    function refreshWhenVisible() {
+      if (document.visibilityState === "visible") loadRequests();
+    }
+
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [ownerKey]);
 
   useEffect(() => {
     if (!notice) return undefined;
@@ -96,14 +156,17 @@ export default function EmployeeLeavePage() {
   }, [notice]);
 
   const requests = useMemo(() => {
-    const savedRequests = storedRequests.map((request) => ({
+    return storedRequests.map((request) => ({
       id: request.id,
       type: request.type,
-      date: request.dateRange,
+      date: request.dateRange || request.date,
       status: request.status,
+      reason: request.reason,
+      attachmentName: request.attachmentName,
+      adminNote: request.adminNote,
+      decidedAt: request.decidedAt,
+      submittedAt: request.submittedAt,
     }));
-
-    return [...savedRequests, ...defaultRequests];
   }, [storedRequests]);
 
   const totalPages = Math.max(1, Math.ceil(requests.length / REQUESTS_PER_PAGE));
@@ -136,6 +199,14 @@ export default function EmployeeLeavePage() {
       return;
     }
 
+    if (!attachmentData || !attachmentName || !attachmentType) {
+      setNotice({
+        type: "error",
+        message: "Lampiran dokumen wajib dipilih sebelum mengirim pengajuan.",
+      });
+      return;
+    }
+
     if (new Date(endDate) < new Date(startDate)) {
       setNotice({
         type: "error",
@@ -146,43 +217,108 @@ export default function EmployeeLeavePage() {
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
+    async function submitRequest() {
       const request = {
-        id: `leave-${Date.now()}`,
         type: requestType,
-        dateRange: getDateRange(startDate, endDate),
         startDate,
         endDate,
         reason: reason.trim(),
         attachmentName,
-        status: "Menunggu",
-        submittedAt: new Date().toISOString(),
+        attachmentType,
+        attachmentData,
       };
 
-      const nextRequests = saveEmployeeLeaveRequest(request);
-      createEmployeeNotification({
-        title: "Pengajuan izin dikirim",
-        message: `${request.type} tanggal ${request.dateRange} menunggu persetujuan admin.`,
-        category: "izin",
-        type: "info",
-      });
-      setStoredRequests(nextRequests);
-      setCurrentPage(1);
-      setRequestType("Izin");
-      setStartDate("");
-      setEndDate("");
-      setReason("");
+      try {
+        const response = await fetch("/api/employee/leave-requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(request),
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || "Pengajuan gagal dikirim.");
+        }
+
+        const savedRequest = result.request;
+        createEmployeeNotification(
+          {
+            title: "Pengajuan izin dikirim",
+            message: `${savedRequest.type} tanggal ${savedRequest.dateRange} menunggu persetujuan admin.`,
+            category: "izin",
+            type: "info",
+          },
+          ownerKey,
+        );
+        setStoredRequests((current) => [savedRequest, ...current]);
+        setCurrentPage(1);
+        setRequestType("Izin");
+        setStartDate("");
+        setEndDate("");
+        setReason("");
+        setAttachmentName("");
+        setAttachmentType("");
+        setAttachmentData("");
+        setNotice({
+          type: "success",
+          message: "Pengajuan berhasil dikirim dan menunggu persetujuan admin.",
+        });
+      } catch (error) {
+        setNotice({
+          type: "error",
+          message:
+            error.message ||
+            "Pengajuan gagal dikirim. Pastikan database izin sudah aktif.",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    }
+
+    submitRequest();
+  }
+
+  function handleAttachmentChange(file) {
+    if (!file) {
       setAttachmentName("");
+      setAttachmentType("");
+      setAttachmentData("");
+      return;
+    }
+
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type)) {
       setNotice({
-        type: "success",
-        message: "Pengajuan berhasil dikirim dan menunggu persetujuan.",
+        type: "error",
+        message: "Lampiran harus berupa JPG, PNG, WebP, atau PDF.",
       });
-      setIsSubmitting(false);
-    }, 500);
+      return;
+    }
+
+    if (file.size > MAX_ATTACHMENT_SIZE) {
+      setNotice({
+        type: "error",
+        message: "Ukuran lampiran maksimal 1.5MB.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachmentName(file.name);
+      setAttachmentType(file.type);
+      setAttachmentData(String(reader.result || ""));
+    };
+    reader.onerror = () => {
+      setNotice({
+        type: "error",
+        message: "Lampiran gagal dibaca. Coba pilih file lain.",
+      });
+    };
+    reader.readAsDataURL(file);
   }
 
   return (
-    <EmployeeShell>
+    <EmployeeShell initialUser={user}>
       {notice ? (
         <div
           className={[
@@ -233,7 +369,7 @@ export default function EmployeeLeavePage() {
 
             <label className="block">
               <span className="text-sm font-medium text-[#c2c6d6]">
-                Lampiran Dokumen
+                Lampiran Dokumen <span className="text-red-300">*</span>
               </span>
               <span className="mt-2 flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-[#3b82f6]/35 bg-[#3b82f6]/10 px-4 text-sm font-semibold text-[#d4e4fa]">
                 <FileUp size={18} className="text-[#60a5fa]" />
@@ -242,10 +378,10 @@ export default function EmployeeLeavePage() {
                 </span>
                 <input
                   type="file"
+                  required
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
                   className="sr-only"
-                  onChange={(event) =>
-                    setAttachmentName(event.target.files?.[0]?.name || "")
-                  }
+                  onChange={(event) => handleAttachmentChange(event.target.files?.[0])}
                 />
               </span>
             </label>
@@ -334,9 +470,12 @@ export default function EmployeeLeavePage() {
                   Status Pengajuan
                 </h3>
                 <p className="mt-1 text-xs text-[#8B9DB5]">
-                  Menampilkan {pageStart + 1}-
-                  {Math.min(pageStart + REQUESTS_PER_PAGE, requests.length)} dari{" "}
-                  {requests.length} pengajuan
+                  {requests.length
+                    ? `Menampilkan ${pageStart + 1}-${Math.min(
+                        pageStart + REQUESTS_PER_PAGE,
+                        requests.length,
+                      )} dari ${requests.length} pengajuan`
+                    : "Belum ada pengajuan izin"}
                 </p>
               </div>
               <CalendarDays size={20} className="text-[#60a5fa]" />
@@ -369,9 +508,55 @@ export default function EmployeeLeavePage() {
                         {request.status}
                       </span>
                     </div>
+                    {request.status !== "Menunggu" ? (
+                      <div
+                        className={[
+                          "mt-3 rounded-xl border px-3 py-3 text-sm",
+                          request.status === "Disetujui"
+                            ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-100"
+                            : "border-red-400/20 bg-red-400/[0.07] text-red-100",
+                        ].join(" ")}
+                      >
+                        <p className="font-semibold">
+                          {request.status === "Disetujui"
+                            ? "Permohonan kamu telah disetujui."
+                            : "Permohonan kamu tidak disetujui."}
+                        </p>
+                        {request.adminNote ? (
+                          <p className="mt-1 text-[#c2c6d6]">
+                            Catatan admin: {request.adminNote}
+                          </p>
+                        ) : null}
+                        {request.decidedAt ? (
+                          <p className="mt-2 text-xs text-[#8B9DB5]">
+                            Diproses {formatDecisionTime(request.decidedAt)}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs leading-5 text-[#8B9DB5]">
+                        Menunggu admin memeriksa alasan dan lampiran{" "}
+                        {request.attachmentName || "pengajuan"}.
+                      </p>
+                    )}
                   </div>
                 );
               })}
+              {!paginatedRequests.length ? (
+                <div className="grid min-h-[300px] place-items-center rounded-2xl border border-dashed border-[#24344D] text-center">
+                  <div>
+                    <FileText className="mx-auto text-[#3b82f6]" size={32} />
+                    <p className="mt-3 font-semibold text-[#d4e4fa]">
+                      {isLoadingRequests
+                        ? "Memuat status pengajuan..."
+                        : "Belum ada pengajuan"}
+                    </p>
+                    <p className="mt-1 text-sm text-[#8B9DB5]">
+                      Pengajuan yang dikirim akan tampil di sini.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
             </div>
             <div className="mt-5 flex flex-col gap-3 border-t border-[#24344D] pt-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-[#8B9DB5]">

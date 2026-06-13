@@ -31,6 +31,7 @@ export const adminNav = [
   { label: "Divisi", href: "/admin/divisi", icon: Building2 },
   { label: "Jabatan", href: "/admin/jabatan", icon: BriefcaseBusiness },
   { label: "Absensi", href: "/admin/absensi", icon: Camera },
+  { label: "Izin", href: "/admin/izin", icon: FilePenLine },
   { label: "Rekap", href: "/admin/rekap", icon: Table2 },
   { label: "Grafik", href: "/admin/grafik", icon: BarChart3 },
   { label: "Setting", href: "/admin/setting", icon: Settings },

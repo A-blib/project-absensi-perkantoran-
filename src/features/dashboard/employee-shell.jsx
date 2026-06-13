@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { LogoutButton } from "@/features/auth/logout-button";
 import { employeeNav } from "@/lib/constants/navigation";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 
 const pageTitles = {
   "/employee": "Dashboard Overview",
@@ -29,7 +30,15 @@ const pageSubtitles = {
   "/employee": "Employee Attendance & Activity Center",
 };
 
-function SidebarContent({ pathname, onNavigate }) {
+function getEmployeeTitle(user) {
+  return user?.position || user?.division || "Pegawai";
+}
+
+function SidebarContent({ pathname, onNavigate, user }) {
+  const displayName = user?.name || "Pegawai";
+  const displayTitle = getEmployeeTitle(user);
+  const avatarAlt = `Foto profil ${displayName}`;
+
   return (
     <>
       <div className="px-6 pb-10">
@@ -79,16 +88,16 @@ function SidebarContent({ pathname, onNavigate }) {
         <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.05] p-3">
           <Image
             src="/avatar-rina.svg"
-            alt="Foto profil Rina Pratiwi"
+            alt={avatarAlt}
             width={40}
             height={40}
             className="size-10 rounded-full object-cover ring-2 ring-[#3B82F6]/20"
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-[#D4E4FA]">
-              Rina Pratiwi
+              {displayName}
             </p>
-            <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+            <p className="text-[11px] text-[#C2C6D6]">{displayTitle}</p>
           </div>
         </div>
       </div>
@@ -96,14 +105,18 @@ function SidebarContent({ pathname, onNavigate }) {
   );
 }
 
-export function EmployeeShell({ children }) {
+export function EmployeeShell({ children, initialUser = null }) {
   const pathname = usePathname();
+  const { user } = useCurrentUser(initialUser);
   const [mobileOpen, setMobileOpen] = useState(false);
   const title = pageTitles[pathname] || "Corporate EMS";
   const subtitle = pageSubtitles[pathname];
+  const displayName = user?.name || "Pegawai";
+  const displayTitle = getEmployeeTitle(user);
+  const avatarAlt = `Foto profil ${displayName}`;
 
   return (
-    <div className="min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
+    <div className="employee-theme min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
@@ -124,13 +137,14 @@ export function EmployeeShell({ children }) {
             <SidebarContent
               pathname={pathname}
               onNavigate={() => setMobileOpen(false)}
+              user={user}
             />
           </aside>
         </div>
       ) : null}
 
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 lg:flex">
-        <SidebarContent pathname={pathname} />
+        <SidebarContent pathname={pathname} user={user} />
       </aside>
 
       <main className="min-h-screen bg-[#0B1220] lg:ml-[280px]">
@@ -177,12 +191,12 @@ export function EmployeeShell({ children }) {
             <div className="hidden h-8 w-px bg-[#24344D] sm:block" />
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold text-[#D4E4FA]">Rina Pratiwi</p>
-                <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+                <p className="text-sm font-bold text-[#D4E4FA]">{displayName}</p>
+                <p className="text-[11px] text-[#C2C6D6]">{displayTitle}</p>
               </div>
               <Image
                 src="/avatar-rina.svg"
-                alt="Foto profil Rina Pratiwi"
+                alt={avatarAlt}
                 width={40}
                 height={40}
                 className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"

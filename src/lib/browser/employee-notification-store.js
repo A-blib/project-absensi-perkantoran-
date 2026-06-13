@@ -1,5 +1,11 @@
 const NOTIFICATION_STORAGE_KEY = "employee-notifications-v1";
 
+function getNotificationStorageKey(ownerKey) {
+  return ownerKey
+    ? `employee-notifications-${ownerKey}`
+    : NOTIFICATION_STORAGE_KEY;
+}
+
 const defaultNotifications = [
   {
     id: "notif-absensi-success-default",
@@ -62,20 +68,20 @@ function dedupeNotifications(notifications) {
   return Array.from(byId.values());
 }
 
-function writeNotifications(notifications) {
+function writeNotifications(notifications, ownerKey) {
   window.localStorage.setItem(
-    NOTIFICATION_STORAGE_KEY,
+    getNotificationStorageKey(ownerKey),
     JSON.stringify(dedupeNotifications(notifications)),
   );
 }
 
-export function readEmployeeNotifications() {
+export function readEmployeeNotifications(ownerKey) {
   if (typeof window === "undefined") return defaultNotifications;
 
   try {
-    const value = window.localStorage.getItem(NOTIFICATION_STORAGE_KEY);
+    const value = window.localStorage.getItem(getNotificationStorageKey(ownerKey));
     if (!value) {
-      writeNotifications(defaultNotifications);
+      writeNotifications(defaultNotifications, ownerKey);
       return defaultNotifications;
     }
 
@@ -86,10 +92,10 @@ export function readEmployeeNotifications() {
   }
 }
 
-export function createEmployeeNotification(input) {
+export function createEmployeeNotification(input, ownerKey) {
   if (typeof window === "undefined") return [];
 
-  const currentNotifications = readEmployeeNotifications();
+  const currentNotifications = readEmployeeNotifications(ownerKey);
   const notification = {
     id: input.id || `notification-${Date.now()}`,
     title: input.title,
@@ -103,14 +109,18 @@ export function createEmployeeNotification(input) {
     notification,
     ...currentNotifications.filter((item) => item.id !== notification.id),
   ]).slice(0, 50);
-  writeNotifications(nextNotifications);
+  writeNotifications(nextNotifications, ownerKey);
   return nextNotifications;
 }
 
-export function syncEmployeeNotifications(generatedNotifications, shouldRemove) {
+export function syncEmployeeNotifications(
+  generatedNotifications,
+  shouldRemove,
+  ownerKey,
+) {
   if (typeof window === "undefined") return [];
 
-  const current = readEmployeeNotifications();
+  const current = readEmployeeNotifications(ownerKey);
   const currentById = new Map(
     current.map((notification) => [notification.id, notification]),
   );
@@ -128,27 +138,27 @@ export function syncEmployeeNotifications(generatedNotifications, shouldRemove) 
     ...mergedGeneratedNotifications,
     ...currentNotifications,
   ]).slice(0, 50);
-  writeNotifications(nextNotifications);
+  writeNotifications(nextNotifications, ownerKey);
   return nextNotifications;
 }
 
-export function markEmployeeNotificationRead(id) {
+export function markEmployeeNotificationRead(id, ownerKey) {
   if (typeof window === "undefined") return [];
 
-  const nextNotifications = readEmployeeNotifications().map((notification) =>
+  const nextNotifications = readEmployeeNotifications(ownerKey).map((notification) =>
     notification.id === id ? { ...notification, isRead: true } : notification,
   );
-  writeNotifications(nextNotifications);
+  writeNotifications(nextNotifications, ownerKey);
   return nextNotifications;
 }
 
-export function markAllEmployeeNotificationsRead() {
+export function markAllEmployeeNotificationsRead(ownerKey) {
   if (typeof window === "undefined") return [];
 
-  const nextNotifications = readEmployeeNotifications().map((notification) => ({
+  const nextNotifications = readEmployeeNotifications(ownerKey).map((notification) => ({
     ...notification,
     isRead: true,
   }));
-  writeNotifications(nextNotifications);
+  writeNotifications(nextNotifications, ownerKey);
   return nextNotifications;
 }

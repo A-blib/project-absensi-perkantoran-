@@ -7,8 +7,10 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
 import { adminNav } from "@/lib/constants/navigation";
 
-export function AdminMobileMenu() {
+export function AdminMobileMenu({ user }) {
   const [isOpen, setIsOpen] = useState(false);
+  const displayName = user?.name || "Admin";
+  const displayEmail = user?.email || "-";
 
   return (
     <>
@@ -60,8 +62,8 @@ export function AdminMobileMenu() {
 
                 <div className="mt-auto border-t border-slate-100 p-4">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-bold text-slate-950">Admin HR</p>
-                    <p className="mt-1 text-xs text-slate-500">hr@kantor.test</p>
+                    <p className="text-sm font-bold text-slate-950">{displayName}</p>
+                    <p className="mt-1 text-xs text-slate-500">{displayEmail}</p>
                     <p className="mt-3 text-xs leading-5 text-slate-500">
                       Pilih menu untuk berpindah halaman dashboard.
                     </p>

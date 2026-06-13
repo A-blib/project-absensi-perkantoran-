@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Loader2, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -55,12 +56,20 @@ export function LoginForm() {
         <Input
           label="Password"
           name="password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Masukkan password"
-          className="pl-10 pr-10"
+          className="pl-10 pr-12"
           required
         />
-        <Eye className="pointer-events-none absolute right-3 top-[38px] size-5 text-slate-400" />
+        <button
+          type="button"
+          onClick={() => setShowPassword((value) => !value)}
+          className="absolute right-2 top-[31px] grid size-9 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+          aria-pressed={showPassword}
+        >
+          {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+        </button>
       </div>
       {message ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -72,8 +81,8 @@ export function LoginForm() {
         {isLoading ? "Memproses..." : "Login"}
       </Button>
       <div className="rounded-lg bg-slate-50 p-4 text-xs leading-6 text-slate-500">
-        Demo: gunakan format email admin atau pegawai. Integrasi database Supabase,
-        Drizzle, dan bcryptjs sudah disiapkan di layer server.
+        Gunakan akun admin atau pegawai yang sudah terdaftar di menu Pegawai.
+        Role akun akan menentukan dashboard tujuan setelah login.
       </div>
     </form>
   );
