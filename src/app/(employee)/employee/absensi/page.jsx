@@ -129,10 +129,57 @@ export default function EmployeeAttendancePage() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [warning, setWarning] = useState("");
-  const [stamp, setStamp] = useState(getStamp());
+  const [stamp, setStamp] = useState("");
   const [lastStatus, setLastStatus] = useState("Ready for verification");
   const [savedAttendance, setSavedAttendance] = useState(null);
   const [verificationType, setVerificationType] = useState("masuk");
+  const hasCheckedOut =
+    savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--";
+  const savedStatusBadgeClass =
+    savedAttendance?.status === "Terlambat"
+      ? "border border-[#F59E0B]/28 bg-[#F59E0B]/15 text-[#F59E0B]"
+      : "border border-[#34D399]/25 bg-[#34D399]/12 text-[#34D399]";
+  const infoRowClass = "rounded-2xl px-4 py-3";
+  const cardStyles = {
+    main: {
+      background: "linear-gradient(145deg, #275C87 0%, #1B4163 100%)",
+      borderColor: "rgba(147, 197, 253, 0.46)",
+      boxShadow: "0 24px 52px rgba(0,0,0,.38)",
+    },
+    verification: {
+      background: "linear-gradient(145deg, #172F47 0%, #102235 100%)",
+      borderColor: "rgba(147, 197, 253, 0.2)",
+      boxShadow: "0 14px 34px rgba(0,0,0,.28), 0 0 22px rgba(52,211,153,.08)",
+    },
+    activity: {
+      background: "linear-gradient(145deg, #315F8E 0%, #254A72 100%)",
+      borderColor: "rgba(147, 197, 253, 0.34)",
+      boxShadow: "0 16px 36px rgba(0,0,0,.3)",
+    },
+    radius: {
+      background: "linear-gradient(145deg, #164A50 0%, #10333A 100%)",
+      borderColor: "rgba(45, 212, 191, 0.28)",
+      boxShadow: "0 16px 36px rgba(0,0,0,.3)",
+    },
+    row: {
+      background: "linear-gradient(180deg, #234F75 0%, #183B5D 100%)",
+      border: "1px solid rgba(255,255,255,.09)",
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,.08)",
+    },
+    photoFrame: {
+      background:
+        "#0C2338 linear-gradient(90deg, rgba(147,197,253,.05) 1px, transparent 1px), linear-gradient(rgba(147,197,253,.04) 1px, transparent 1px)",
+      backgroundSize: "28px 28px",
+      borderColor: "rgba(147, 197, 253, 0.32)",
+      boxShadow: "0 12px 34px rgba(0,0,0,.34)",
+    },
+  };
+  const radiusUsage = savedAttendance?.distance
+    ? Math.min(
+        100,
+        Math.round((savedAttendance.distance / OFFICE_LOCATION.radius) * 100),
+      )
+    : 0;
 
   function stopFaceScan() {
     if (faceScanTimerRef.current) {
@@ -346,7 +393,7 @@ export default function EmployeeAttendancePage() {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     context.fillStyle = "rgba(11, 18, 32, 0.78)";
     context.fillRect(20, canvas.height - 112, 330, 88);
-    context.fillStyle = "#d4e4fa";
+    context.fillStyle = "#F3F7FF";
     context.font = "600 18px Arial";
     context.fillText(stamp, 38, canvas.height - 78);
     context.fillText("Rina Pratiwi", 38, canvas.height - 52);
@@ -482,6 +529,7 @@ export default function EmployeeAttendancePage() {
 
   useEffect(() => {
     const loadTimer = setTimeout(() => {
+      setStamp(getStamp());
       const todayRecord = readEmployeeAttendanceRecords().find(
         (record) => record.date === getTodayDate(),
       );
@@ -515,163 +563,234 @@ export default function EmployeeAttendancePage() {
   return (
     <EmployeeShell>
       {notice || warning ? (
-        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-[#24344D] bg-[#132238]/95 px-4 py-3 text-sm font-semibold text-[#d4e4fa] shadow-2xl backdrop-blur-xl">
+        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-[#8ABFFF]/30 bg-[#1B4164]/95 px-4 py-3 text-sm font-semibold text-[#F3F7FF] shadow-2xl backdrop-blur-xl">
           {notice || warning}
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <section className="glass-panel rounded-3xl p-6">
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid items-start gap-4 xl:grid-cols-12">
+        <section
+          className="h-fit self-start rounded-3xl border p-5 xl:col-span-8"
+          style={cardStyles.main}
+        >
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm text-[#8B9DB5]">Face recognition attendance</p>
-              <h2 className="mt-1 text-2xl font-bold text-[#d4e4fa]">
-                Verifikasi Kehadiran
+              <p className="text-sm text-[#A8B5C7]">Face recognition attendance</p>
+              <h2 className="mt-1 text-2xl font-bold text-[#F3F7FF]">
+                {savedAttendance ? "Ringkasan Kehadiran" : "Verifikasi Kehadiran"}
               </h2>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#24344D] bg-[#0B1220] px-4 py-2 text-sm text-[#c2c6d6]">
-              <Radio size={16} className="text-[#3b82f6]" />
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#8ABFFF]/22 bg-gradient-to-b from-[#244D73] to-[#173B5B] px-4 py-2 text-sm text-[#B6C7DA]">
+              <Radio size={16} className="text-[#8ABFFF]" />
               {OFFICE_LOCATION.label}
             </span>
           </div>
 
-          <div className="relative grid min-h-[420px] place-items-center overflow-hidden rounded-3xl border border-[#24344D] bg-[#0B1220]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,.15),transparent_40%),linear-gradient(90deg,rgba(59,130,246,.08)_1px,transparent_1px),linear-gradient(rgba(59,130,246,.08)_1px,transparent_1px)] bg-[size:auto,48px_48px,48px_48px]" />
-            <div className="absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-[#3b82f6] to-transparent opacity-60" />
-            <div className="relative grid size-56 place-items-center rounded-full border border-[#3b82f6]/35 bg-[#132238] shadow-[0_0_80px_rgba(59,130,246,.22)]">
-              <div className="absolute inset-4 rounded-full border border-dashed border-[#3b82f6]/30" />
-              <ScanFace size={108} className="text-[#3b82f6]" />
-            </div>
-            <div className="absolute bottom-6 left-6 rounded-2xl border border-[#24344D] bg-[#132238]/90 px-4 py-3 text-sm text-[#c2c6d6] backdrop-blur-xl">
-              <p>{stamp}</p>
-              <p className="font-semibold text-[#d4e4fa]">Rina Pratiwi</p>
-              <p>Finance Officer</p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => openCamera("masuk")}
-              disabled={!TODAY_SCHEDULE.hasSchedule || Boolean(savedAttendance)}
-              className={[
-                "flex min-h-14 items-center justify-center gap-3 rounded-2xl px-5 font-semibold shadow-lg transition hover:-translate-y-1 disabled:pointer-events-none disabled:opacity-55",
-                savedAttendance
-                  ? "border border-[#24344D] bg-[#0B1220] text-[#c2c6d6] shadow-none"
-                  : "bg-[#3b82f6] text-white shadow-blue-500/20 hover:bg-[#60a5fa]",
-              ].join(" ")}
-            >
-              <Camera size={20} />
-              {savedAttendance ? "Sudah Absen Hari Ini" : "Mulai Verifikasi"}
-            </button>
-            <div className="flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 text-sm font-semibold text-[#c2c6d6]">
-              <ShieldCheck size={20} className="text-emerald-400" />
-              GPS validation online
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => openCamera("keluar")}
-            disabled={
-              !savedAttendance?.clockIn ||
-              (savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--")
-            }
-            className="mt-3 flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 font-semibold text-[#c2c6d6] transition hover:-translate-y-1 hover:border-[#3b82f6]/60 hover:text-[#d4e4fa] disabled:pointer-events-none disabled:opacity-55"
-          >
-            <Clock3 size={20} />
-            {savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--"
-              ? "Sudah Absen Keluar"
-              : "Absensi Keluar"}
-          </button>
           {savedAttendance ? (
-            <button
-              type="button"
-              onClick={resetAttendanceForTest}
-              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-[#24344D] px-4 text-xs font-bold text-[#c2c6d6] transition hover:border-[#3b82f6]/60 hover:text-[#d4e4fa]"
-            >
-              Reset Tes Absensi
-            </button>
-          ) : null}
+            <div className="grid items-start gap-5 lg:grid-cols-[minmax(260px,.85fr)_minmax(320px,1.15fr)]">
+              {savedAttendance.photo ? (
+                <div
+                  className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] border p-2"
+                  style={cardStyles.photoFrame}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={savedAttendance.photo}
+                    alt="Foto absensi tersimpan"
+                    className="size-full rounded-2xl"
+                    style={{ objectFit: "contain", objectPosition: "center" }}
+                  />
+                </div>
+              ) : (
+                <div
+                  className="grid aspect-[4/3] place-items-center rounded-[20px] border text-sm font-semibold text-[#B6C7DA]"
+                  style={cardStyles.photoFrame}
+                >
+                  Foto absensi tersimpan
+                </div>
+              )}
+              <div className="flex flex-col gap-4">
+                <div className="grid gap-3 text-sm">
+                  {[
+                    ["Status Kehadiran", savedAttendance.status],
+                    ["Jam Masuk", savedAttendance.clockIn],
+                    ["Jam Keluar", savedAttendance.clockOut || "--:--:--"],
+                    ["Face ID", `${savedAttendance.faceConfidence || 0}%`],
+                    ["Radius", `${savedAttendance.distance ?? "-"} m`],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className={`${infoRowClass} flex items-center justify-between px-4 py-3`}
+                      style={cardStyles.row}
+                    >
+                      <span className="text-[#A8B5C7]">{label}</span>
+                      <span
+                        className={[
+                          "font-semibold",
+                          label === "Status Kehadiran"
+                            ? `rounded-full px-3 py-1 ${savedStatusBadgeClass}`
+                            : label === "Face ID"
+                              ? "text-[#34D399]"
+                            : "text-[#F3F7FF]",
+                        ].join(" ")}
+                      >
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => openCamera("keluar")}
+                    disabled={!savedAttendance?.clockIn || hasCheckedOut}
+                    className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-55"
+                  >
+                    <Clock3 size={20} />
+                    {hasCheckedOut ? "Sudah Absen Keluar" : "Absensi Keluar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetAttendanceForTest}
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#3B82F6]/55 bg-transparent px-4 text-xs font-bold text-[#C7D6EC] transition hover:bg-[#3B82F6]/12 hover:text-[#F3F7FF]"
+                  >
+                    Reset Tes Absensi
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div
+                className="relative grid min-h-[280px] place-items-center overflow-hidden rounded-3xl border lg:min-h-[310px]"
+                style={cardStyles.photoFrame}
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(138,191,255,.14),transparent_40%),linear-gradient(90deg,rgba(138,191,255,.04)_1px,transparent_1px),linear-gradient(rgba(138,191,255,.034)_1px,transparent_1px)] bg-[size:auto,34px_34px,34px_34px]" />
+                <div className="absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-[#8ABFFF] to-transparent opacity-45" />
+                <div className="relative grid size-44 place-items-center rounded-full border border-[#8ABFFF]/34 bg-[#1B4164] shadow-[0_0_70px_rgba(138,191,255,.2)]">
+                  <div className="absolute inset-4 rounded-full border border-dashed border-[#8ABFFF]/28" />
+                  <ScanFace size={84} className="text-[#8ABFFF]" />
+                </div>
+                <div className="absolute bottom-5 left-5 rounded-2xl border border-[#8ABFFF]/24 bg-[#1B4164]/90 p-4 text-sm text-[#B6C7DA] backdrop-blur-xl">
+                  <p>{stamp || "Menyiapkan waktu"}</p>
+                  <p className="font-semibold text-[#F3F7FF]">Rina Pratiwi</p>
+                  <p>Finance Officer</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => openCamera("masuk")}
+                  disabled={!TODAY_SCHEDULE.hasSchedule}
+                  className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-55 sm:min-w-[220px]"
+                >
+                  <Camera size={20} />
+                  Mulai Verifikasi
+                </button>
+                <div className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#8ABFFF]/16 bg-gradient-to-b from-[#1B4568] to-[#143452] px-6 text-sm font-semibold text-[#B6C7DA] sm:min-w-[240px]">
+                  <ShieldCheck size={20} className="text-[#34D399]" />
+                  GPS validation online
+                </div>
+              </div>
+            </>
+          )}
         </section>
 
-        <aside className="space-y-6">
-          <div className="glass-panel rounded-3xl p-6">
-            <p className="text-sm text-[#8B9DB5]">Verification status</p>
+        <aside className="space-y-4 xl:col-span-4">
+          <div className="rounded-3xl border p-5" style={cardStyles.verification}>
+            <p className="text-sm text-[#A8B5C7]">Verification status</p>
             <div className="mt-4 flex items-center gap-3">
-              <div className="grid size-12 place-items-center rounded-2xl bg-emerald-500/15 text-emerald-400">
+              <div className="grid size-12 place-items-center rounded-2xl bg-[#34D399]/12 text-[#34D399]">
                 <CheckCircle2 size={24} />
               </div>
               <div>
-                <p className="font-semibold text-[#d4e4fa]">{lastStatus}</p>
-                <p className="text-sm text-[#8B9DB5]">Realtime biometric check</p>
+                <p className="font-semibold text-[#F3F7FF]">{lastStatus}</p>
+                <p className="text-sm text-[#A8B5C7]">Realtime biometric check</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-panel rounded-3xl p-6">
-            <h3 className="font-semibold text-[#d4e4fa]">Attendance Record</h3>
+          <div className="rounded-3xl border p-5" style={cardStyles.activity}>
+            <h3 className="font-semibold text-[#F3F7FF]">Aktivitas Hari Ini</h3>
             {savedAttendance ? (
-              <div className="mt-4 space-y-4">
-                {savedAttendance.photo ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={savedAttendance.photo}
-                    alt="Foto absensi terakhir"
-                    className="aspect-video w-full rounded-2xl border border-[#24344D] object-cover"
-                  />
-                ) : null}
+              <div className="mt-4 space-y-3">
                 <div className="grid gap-3 text-sm">
-                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
-                    <span className="text-[#8B9DB5]">Status</span>
-                    <span className="font-semibold text-emerald-400">
-                      {savedAttendance.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
-                    <span className="text-[#8B9DB5]">Clock In</span>
-                    <span className="font-semibold text-[#d4e4fa]">
+                  <div
+                    className={`${infoRowClass} flex items-center justify-between px-4 py-3`}
+                    style={cardStyles.row}
+                  >
+                    <span className="text-[#A8B5C7]">Jam Masuk</span>
+                    <span className="font-semibold text-[#F3F7FF]">
                       {savedAttendance.clockIn}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
-                    <span className="text-[#8B9DB5]">Clock Out</span>
-                    <span className="font-semibold text-[#d4e4fa]">
+                  <div
+                    className={`${infoRowClass} flex items-center justify-between px-4 py-3`}
+                    style={cardStyles.row}
+                  >
+                    <span className="text-[#A8B5C7]">Jam Keluar</span>
+                    <span className="font-semibold text-[#F3F7FF]">
                       {savedAttendance.clockOut || "--:--:--"}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
-                    <span className="text-[#8B9DB5]">Face ID</span>
-                    <span className="font-semibold text-emerald-400">
-                      {savedAttendance.faceConfidence || 0}%
+                  <div
+                    className={`${infoRowClass} flex items-center justify-between px-4 py-3`}
+                    style={cardStyles.row}
+                  >
+                    <span className="text-[#A8B5C7]">Status</span>
+                    <span className={`rounded-full px-3 py-1 font-semibold ${savedStatusBadgeClass}`}>
+                      {savedAttendance.status}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between rounded-2xl bg-[#0B1220] px-4 py-3">
-                    <span className="text-[#8B9DB5]">Radius</span>
-                    <span className="font-semibold text-[#d4e4fa]">
-                      {savedAttendance.distance ?? "-"} m
+                  <div className={`${infoRowClass} px-4 py-3`} style={cardStyles.row}>
+                    <span className="text-[#A8B5C7]">Lokasi</span>
+                    <p className="mt-1 font-semibold text-[#F3F7FF]">
+                      {savedAttendance.location || OFFICE_LOCATION.label}
+                    </p>
+                  </div>
+                  <div
+                    className={`${infoRowClass} flex items-center justify-between px-4 py-3`}
+                    style={cardStyles.row}
+                  >
+                    <span className="text-[#A8B5C7]">Face ID</span>
+                    <span className="font-semibold text-[#F3F7FF]">
+                      {savedAttendance.faceConfidence || 0}%
                     </span>
                   </div>
                 </div>
               </div>
             ) : (
-              <p className="mt-4 text-sm leading-6 text-[#8B9DB5]">
+              <p className="mt-4 text-sm leading-6 text-[#A8B5C7]">
                 Belum ada absensi tersimpan untuk sesi ini.
               </p>
             )}
           </div>
 
-          <div className="glass-panel rounded-3xl p-6">
-            <h3 className="font-semibold text-[#d4e4fa]">Office Radius</h3>
-            <div className="mt-4 flex items-center gap-3 text-sm text-[#c2c6d6]">
-              <MapPin size={20} className="text-[#3b82f6]" />
-              Radius maksimal {OFFICE_LOCATION.radius} meter
+          <div className="rounded-3xl border p-5" style={cardStyles.radius}>
+            <h3 className="font-semibold text-[#F3F7FF]">Radius Kantor</h3>
+            <div className="mt-4 flex items-start gap-3 text-sm text-[#A8B5C7]">
+              <MapPin size={20} className="mt-0.5 text-[#67E8F9]" />
+              <div>
+                <p className="font-semibold text-[#F3F7FF]">
+                  {savedAttendance?.distance
+                    ? `${savedAttendance.distance} m dari lokasi kantor`
+                    : "Menunggu validasi GPS"}
+                </p>
+                <p className="mt-1 text-[#A8B5C7]">
+                  Batas maksimum {OFFICE_LOCATION.radius} meter
+                </p>
+              </div>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#0B1220]">
-              <div className="h-full w-[82%] rounded-full bg-gradient-to-r from-[#3b82f6] to-emerald-400" />
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#0A1E30]">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#67E8F9] to-[#2DD4BF]"
+                style={{ width: `${radiusUsage}%` }}
+              />
             </div>
-            <p className="mt-3 text-sm text-[#8B9DB5]">
+            <p className="mt-3 text-sm text-[#A8B5C7]">
               {savedAttendance?.distance
-                ? `Jarak terakhir ${savedAttendance.distance} meter`
+                ? `${radiusUsage}% dari batas maksimum`
                 : "GPS akan divalidasi setelah wajah cocok."}
             </p>
           </div>
@@ -679,33 +798,41 @@ export default function EmployeeAttendancePage() {
       </div>
 
       {isCameraOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/80 p-4 backdrop-blur-xl">
-          <div className="glass-panel w-full max-w-4xl overflow-hidden rounded-3xl">
-            <div className="flex items-center justify-between border-b border-[#24344D] px-6 py-4">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/80 p-3 backdrop-blur-xl sm:p-4">
+          <div
+            className="flex max-h-[calc(100dvh-24px)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border sm:max-h-[calc(100dvh-32px)]"
+            style={cardStyles.main}
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-[#7DB4FF]/18 px-5 py-2.5 sm:px-6">
               <div>
-                <p className="text-sm text-[#8B9DB5]">
+                <p className="text-sm text-[#A8B5C7]">
                   {verificationType === "keluar" ? "Absensi Keluar" : "Absensi Masuk"}
                 </p>
-                <h3 className="text-xl font-bold text-[#d4e4fa]">Capture Absensi</h3>
+                <h3 className="text-lg font-bold text-[#F3F7FF] sm:text-xl">
+                  Capture Absensi
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={closeCamera}
-                className="grid size-11 place-items-center rounded-2xl border border-[#24344D] text-[#c2c6d6] transition hover:bg-[#24344D]"
+                className="grid size-10 place-items-center rounded-2xl border border-red-500 bg-red-500 text-black shadow-lg shadow-red-500/20 transition hover:bg-red-400"
                 aria-label="Tutup kamera"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="min-h-0 overflow-hidden p-3 sm:p-4">
               <canvas ref={canvasRef} className="hidden" />
-              <div className="relative overflow-hidden rounded-3xl border border-[#24344D] bg-[#0B1220]">
+              <div
+                className="relative mx-auto aspect-[3/4] h-[min(52dvh,430px)] max-h-[430px] w-full max-w-[370px] overflow-hidden rounded-3xl border sm:h-[min(54dvh,450px)] sm:max-w-[390px]"
+                style={cardStyles.photoFrame}
+              >
                 <video
                   ref={videoRef}
                   playsInline
                   muted
-                  className="aspect-video w-full bg-[#0B1220] object-cover"
+                  className="size-full bg-[#0A1E30] object-contain"
                 />
                 {!cameraError ? (
                   <div className="absolute inset-0">
@@ -716,9 +843,9 @@ export default function EmployeeAttendancePage() {
                     <span className="corner-br absolute" />
                   </div>
                 ) : null}
-                <div className="absolute bottom-5 left-5 rounded-2xl border border-[#24344D] bg-[#132238]/85 px-4 py-3 text-sm text-[#c2c6d6] backdrop-blur-xl">
-                  <p>{stamp}</p>
-                  <p className="font-semibold text-[#d4e4fa]">Rina Pratiwi</p>
+                <div className="absolute bottom-3 left-3 rounded-2xl border border-[#7DB4FF]/22 bg-[#18395A]/85 p-3 text-sm text-[#A8B5C7] backdrop-blur-xl">
+                  <p>{stamp || "Menyiapkan waktu"}</p>
+                  <p className="font-semibold text-[#F3F7FF]">Rina Pratiwi</p>
                   <p>{OFFICE_LOCATION.label}</p>
                 </div>
               </div>
@@ -728,13 +855,16 @@ export default function EmployeeAttendancePage() {
                   {cameraError}
                 </div>
               ) : (
-                <div className="mt-4 flex flex-col gap-4">
+                <div className="mt-3 flex flex-col gap-3">
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="flex items-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3 text-sm font-semibold text-[#d4e4fa]">
+                    <div
+                      className={`${infoRowClass} flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-[#F3F7FF]`}
+                      style={cardStyles.row}
+                    >
                       {faceDetected ? (
-                        <CheckCircle2 size={20} className="text-emerald-400" />
+                        <CheckCircle2 size={20} className="text-[#34D399]" />
                       ) : (
-                        <Clock3 size={20} className="text-[#3b82f6]" />
+                        <Clock3 size={20} className="text-[#7DB4FF]" />
                       )}
                       {faceDetected
                         ? "Wajah valid"
@@ -742,16 +872,16 @@ export default function EmployeeAttendancePage() {
                           ? "Memuat model"
                           : "Wajah belum ditemukan"}
                     </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9DB5]">
+                    <div className={`${infoRowClass} px-4 py-2.5`} style={cardStyles.row}>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#A8B5C7]">
                         Confidence
                       </p>
                       <p
                         className={[
                           "mt-1 text-sm font-bold",
                           (faceConfidence || 0) >= 80
-                            ? "text-emerald-300"
-                            : "text-[#c2c6d6]",
+                            ? "text-[#34D399]"
+                            : "text-[#A8B5C7]",
                         ].join(" ")}
                       >
                         {faceConfidence
@@ -761,18 +891,18 @@ export default function EmployeeAttendancePage() {
                           : "Menunggu"}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9DB5]">
+                    <div className={`${infoRowClass} px-4 py-2.5`} style={cardStyles.row}>
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#A8B5C7]">
                         GPS
                       </p>
                       <p
                         className={[
                           "mt-1 text-sm font-bold",
                           gpsStatus === "valid"
-                            ? "text-emerald-300"
+                            ? "text-[#34D399]"
                             : gpsStatus === "invalid" || gpsStatus === "error"
                               ? "text-red-300"
-                              : "text-[#c2c6d6]",
+                              : "text-[#A8B5C7]",
                         ].join(" ")}
                       >
                         {gpsStatus === "checking"
@@ -788,7 +918,7 @@ export default function EmployeeAttendancePage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-[#c2c6d6]">
+                    <p className="text-sm font-semibold text-[#A8B5C7]">
                       {lastStatus}
                     </p>
                     <button
@@ -800,7 +930,7 @@ export default function EmployeeAttendancePage() {
                         (faceConfidence || 0) < 80 ||
                         saving
                       }
-                      className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#3b82f6] px-6 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-1 hover:bg-[#60a5fa] disabled:pointer-events-none disabled:opacity-60"
+                      className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-60"
                     >
                       {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
                       {saving ? "Memproses..." : "Validasi GPS & Simpan"}

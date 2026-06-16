@@ -41,7 +41,7 @@ function SidebarContent({ pathname, onNavigate }) {
             <p className="truncate text-xl font-extrabold tracking-tight text-[#3B82F6]">
               Corporate EMS
             </p>
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#C2C6D6]/60">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9AA8BD]/70">
               Management Portal
             </p>
           </div>
@@ -65,7 +65,7 @@ function SidebarContent({ pathname, onNavigate }) {
                 "group flex min-h-12 items-center gap-4 rounded-r-xl border-l-4 px-5 text-sm transition-all duration-300",
                 isActive
                   ? "border-[#3B82F6] bg-[linear-gradient(90deg,rgba(59,130,246,0.1)_0%,rgba(59,130,246,0)_100%)] font-bold text-[#3B82F6]"
-                  : "border-transparent text-[#C2C6D6] hover:bg-white/[0.05] hover:text-[#D4E4FA]",
+                  : "border-transparent text-[#9AA8BD] hover:bg-white/[0.05] hover:text-[#E5EEFF]",
               ].join(" ")}
             >
               <item.icon size={22} />
@@ -75,7 +75,7 @@ function SidebarContent({ pathname, onNavigate }) {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-[#24344D]/50 px-6 pt-6">
+      <div className="mt-auto border-t border-[#2C5B9A]/45 px-6 pt-6">
         <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.05] p-3">
           <Image
             src="/avatar-rina.svg"
@@ -85,10 +85,10 @@ function SidebarContent({ pathname, onNavigate }) {
             className="size-10 rounded-full object-cover ring-2 ring-[#3B82F6]/20"
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-[#D4E4FA]">
+            <p className="truncate text-sm font-bold text-[#E5EEFF]">
               Rina Pratiwi
             </p>
-            <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+            <p className="text-[11px] text-[#9AA8BD]">Finance Officer</p>
           </div>
         </div>
       </div>
@@ -103,7 +103,7 @@ export function EmployeeShell({ children }) {
   const subtitle = pageSubtitles[pathname];
 
   return (
-    <div className="min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
+    <div className="min-h-screen bg-[#0B1120] font-sans text-[#F1F5F9]">
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
@@ -112,12 +112,12 @@ export function EmployeeShell({ children }) {
             className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative flex h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 shadow-2xl">
+          <aside className="relative flex h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 shadow-2xl">
             <button
               type="button"
               aria-label="Tutup menu"
               onClick={() => setMobileOpen(false)}
-              className="absolute right-3 top-3 grid size-10 place-items-center rounded-xl border border-[#24344D] text-[#C2C6D6]"
+              className="absolute right-3 top-3 grid size-10 place-items-center rounded-xl border border-[#2C5B9A]/45 text-[#9AA8BD]"
             >
               <X size={18} />
             </button>
@@ -129,27 +129,27 @@ export function EmployeeShell({ children }) {
         </div>
       ) : null}
 
-      <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 lg:flex">
+      <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 lg:flex">
         <SidebarContent pathname={pathname} />
       </aside>
 
-      <main className="min-h-screen bg-[#0B1220] lg:ml-[280px]">
-        <header className="sticky top-0 z-30 flex h-20 w-full items-center justify-between border-b border-[#24344D] bg-[#0B1220]/80 px-4 backdrop-blur-md sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-[#0B1120] lg:ml-[280px]">
+        <header className="sticky top-0 z-30 flex h-[68px] w-full items-center justify-between border-b border-[#334155] bg-[#0B1120]/90 px-4 backdrop-blur-md sm:px-6">
           <div className="flex min-w-0 items-center gap-4">
             <button
               type="button"
               aria-label="Buka menu"
               onClick={() => setMobileOpen(true)}
-              className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#24344D] text-[#C2C6D6] lg:hidden"
+              className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#2C5B9A]/45 text-[#9AA8BD] lg:hidden"
             >
               <Menu size={21} />
             </button>
             <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold tracking-tight text-[#D4E4FA]">
+              <h1 className="truncate text-xl font-bold tracking-tight text-[#E5EEFF]">
                 {title}
               </h1>
               {subtitle ? (
-                <p className="mt-0.5 hidden truncate text-xs font-medium text-[#C2C6D6] sm:block">
+                <p className="mt-0.5 hidden truncate text-xs font-medium text-[#9AA8BD] sm:block">
                   {subtitle}
                 </p>
               ) : null}
@@ -160,25 +160,25 @@ export function EmployeeShell({ children }) {
             <div className="hidden items-center gap-2 sm:flex">
               <Link
                 href="/employee/notifikasi"
-                className="relative grid size-10 place-items-center rounded-xl text-[#C2C6D6] transition-colors hover:text-[#3B82F6]"
+                className="relative grid size-10 place-items-center rounded-xl text-[#9AA8BD] transition-colors hover:text-[#3B82F6]"
                 aria-label="Buka notifikasi"
               >
                 <Bell size={24} />
-                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#0B1220]" />
+                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#081322]" />
               </Link>
               <button
                 type="button"
-                className="grid size-10 place-items-center rounded-xl text-[#C2C6D6] transition-colors hover:text-[#3B82F6]"
+                className="grid size-10 place-items-center rounded-xl text-[#9AA8BD] transition-colors hover:text-[#3B82F6]"
                 aria-label="Pengaturan"
               >
                 <Settings size={24} />
               </button>
             </div>
-            <div className="hidden h-8 w-px bg-[#24344D] sm:block" />
+            <div className="hidden h-8 w-px bg-[#2C5B9A]/45 sm:block" />
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold text-[#D4E4FA]">Rina Pratiwi</p>
-                <p className="text-[11px] text-[#C2C6D6]">Finance Officer</p>
+                <p className="text-sm font-bold text-[#E5EEFF]">Rina Pratiwi</p>
+                <p className="text-[11px] text-[#9AA8BD]">Finance Officer</p>
               </div>
               <Image
                 src="/avatar-rina.svg"
@@ -187,7 +187,7 @@ export function EmployeeShell({ children }) {
                 height={40}
                 className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"
               />
-              <ChevronDown size={16} className="hidden text-[#C2C6D6] sm:block" />
+              <ChevronDown size={16} className="hidden text-[#9AA8BD] sm:block" />
               <div className="hidden sm:block">
                 <LogoutButton audience="employee" />
               </div>
@@ -195,7 +195,9 @@ export function EmployeeShell({ children }) {
           </div>
         </header>
 
-        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+        <div className={pathname === "/employee/absensi" ? "p-4 sm:p-5" : "p-4 sm:p-6"}>
+          {children}
+        </div>
       </main>
     </div>
   );

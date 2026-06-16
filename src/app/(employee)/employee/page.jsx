@@ -21,6 +21,7 @@ import {
   MapPinned,
   ScanFace,
   ShieldCheck,
+  Square,
   Sun,
   TrendingUp,
   X,
@@ -45,21 +46,21 @@ const summaryCards = [
     value: "2 Hari",
     note: "Menunggu 1 persetujuan",
     icon: CalendarX,
-    tone: "primary",
+    tone: "yellow",
   },
   {
     label: "Telat",
     value: "1 Kali",
     note: "Rata-rata 6 menit",
     icon: Clock3,
-    tone: "warning",
+    tone: "red",
   },
   {
     label: "Cuti",
     value: "4 Hari",
     note: "Periode bulan Juni",
     icon: CalendarDays,
-    tone: "leave",
+    tone: "blue",
   },
 ];
 
@@ -72,8 +73,8 @@ const defaultWeeklySchedule = [
 ];
 
 const notifications = [
-  ["Reminder Absensi", "Jangan lupa absensi keluar sebelum meninggalkan kantor.", "15 menit lalu", AlarmClock, "emerald"],
-  ["Jadwal Kerja", "Briefing finance pukul 09:30 di ruang meeting lantai 3.", "Tadi pagi", BriefcaseBusiness, "primary"],
+  ["Reminder Absensi", "Jangan lupa absensi keluar sebelum meninggalkan kantor.", "15 menit lalu", AlarmClock, "orange"],
+  ["Jadwal Kerja", "Briefing finance pukul 09:30 di ruang meeting lantai 3.", "Tadi pagi", BriefcaseBusiness, "blue"],
   ["Pengajuan Izin", "Cuti tahunan Juni masih menunggu persetujuan HR.", "Kemarin", FilePenLine, "violet"],
 ];
 
@@ -91,54 +92,81 @@ const attendanceDetails = [
 ];
 
 const additionalWidgets = [
-  ["Pengumuman HR", "Update kebijakan absensi tersedia Jumat.", Megaphone],
-  ["Event Kantor", "Town hall Finance pekan depan.", CalendarDays, "3 hari lagi"],
-  ["Birthday Employee", "Ulang tahun tim Finance hari Kamis.", Award, "Besok"],
-  ["Info Cuti Bersama", "Jadwal cuti bersama menunggu edaran HR.", TrendingUp],
+  ["Pengumuman HR", "Update kebijakan absensi tersedia Jumat.", Megaphone, "orange"],
+  ["Event Kantor", "Town hall Finance pekan depan.", CalendarDays, "blue", "3 hari lagi"],
+  ["Birthday Employee", "Ulang tahun tim Finance hari Kamis.", Award, "pink", "Besok"],
+  ["Info Cuti Bersama", "Jadwal cuti bersama menunggu edaran HR.", TrendingUp, "gray"],
 ];
 
 function getSummaryTone(tone) {
   if (tone === "emerald") {
     return {
-      line: "bg-[#10B981]",
-      icon: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 shadow-emerald-500/15",
-      value: "text-emerald-300",
+      line: "border-l-[#34D399]",
+      icon: "border-[#34D399]/25 bg-[#34D399]/10 text-[#34D399] shadow-[#34D399]/15",
+      value: "text-[#34D399]",
+      note: "text-[#34D399]",
     };
   }
 
-  if (tone === "warning") {
+  if (tone === "yellow") {
     return {
-      line: "bg-[#F59E0B]",
-      icon: "border-amber-500/20 bg-amber-500/10 text-amber-300 shadow-amber-500/15",
-      value: "text-amber-300",
+      line: "border-l-[#FBBF24]",
+      icon: "border-[#FBBF24]/25 bg-[#FBBF24]/10 text-[#FBBF24] shadow-[#FBBF24]/15",
+      value: "text-[#FBBF24]",
+      note: "text-[#FBBF24]",
     };
   }
 
-  if (tone === "leave") {
+  if (tone === "red") {
     return {
-      line: "bg-[#06B6D4]",
-      icon: "border-cyan-500/20 bg-cyan-500/10 text-cyan-300 shadow-cyan-500/15",
-      value: "text-cyan-300",
+      line: "border-l-[#F87171]",
+      icon: "border-[#F87171]/25 bg-[#F87171]/10 text-[#F87171] shadow-[#F87171]/15",
+      value: "text-[#F87171]",
+      note: "text-[#F87171]",
     };
   }
 
   return {
-    line: "bg-[#3B82F6]",
-    icon: "border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6] shadow-blue-500/15",
+    line: "border-l-[#60A5FA]",
+    icon: "border-[#60A5FA]/25 bg-[#60A5FA]/10 text-[#60A5FA] shadow-blue-500/15",
     value: "text-[#60A5FA]",
+    note: "text-[#60A5FA]",
   };
 }
 
 function getActivityTone(tone) {
-  if (tone === "emerald") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+  if (tone === "orange") {
+    return {
+      line: "border-l-[#F97316]",
+      icon: "border-[#F97316]/25 bg-[#F97316]/10 text-[#F97316]",
+    };
   }
 
   if (tone === "violet") {
-    return "border-violet-500/20 bg-violet-500/10 text-violet-300";
+    return {
+      line: "border-l-[#8B5CF6]",
+      icon: "border-[#8B5CF6]/25 bg-[#8B5CF6]/10 text-[#8B5CF6]",
+    };
   }
 
-  return "border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]";
+  if (tone === "pink") {
+    return {
+      line: "border-l-[#F472B6]",
+      icon: "border-[#F472B6]/25 bg-[#F472B6]/10 text-[#F472B6]",
+    };
+  }
+
+  if (tone === "gray") {
+    return {
+      line: "border-l-[#6B7280]",
+      icon: "border-[#6B7280]/25 bg-[#6B7280]/10 text-[#6B7280]",
+    };
+  }
+
+  return {
+    line: "border-l-[#3B82F6]",
+    icon: "border-[#3B82F6]/25 bg-[#3B82F6]/10 text-[#3B82F6]",
+  };
 }
 
 function getStamp() {
@@ -533,6 +561,12 @@ export default function EmployeeHomePage() {
   const attendanceCompleted = hasCheckedIn && hasCheckedOut;
   const canCheckIn = !hasCheckedIn;
   const canCheckOut = hasCheckedIn && !hasCheckedOut;
+  const statusBadgeClass =
+    todayAttendance.status === "Terlambat"
+      ? "border border-[#F87171]/30 bg-[#7F1D1D]/30 text-[#FCA5A5]"
+      : !hasCheckedIn
+        ? "border border-[#FBBF24]/30 bg-[#3F3F46] text-[#FBBF24]"
+        : "border border-[#34D399]/25 bg-[#34D399]/10 text-[#34D399]";
   const attendanceStatusLabel = attendanceCompleted
     ? "Absensi Selesai"
     : hasCheckedIn
@@ -559,7 +593,7 @@ export default function EmployeeHomePage() {
       <div className="mx-auto max-w-[1440px] space-y-6">
         <section className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[#3B82F6]">
+            <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[#60A5FA]">
               <span>{currentDate} - {clock} WIB</span>
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-amber-300">
                 <Sun size={15} />
@@ -575,8 +609,12 @@ export default function EmployeeHomePage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300">
-              <span className="mr-2 inline-block size-2 rounded-full bg-emerald-400 align-middle shadow-[0_0_14px_rgb(52_211_153_/_0.75)]" />
+            <div className={["rounded-xl px-4 py-3 text-sm font-bold", statusBadgeClass].join(" ")}>
+              {todayAttendance.status === "Terlambat" ? (
+                <Clock3 size={15} className="mr-2 inline-block align-[-2px]" />
+              ) : (
+                <span className="mr-2 inline-block size-2 rounded-full bg-[#34D399] align-middle shadow-[0_0_14px_rgb(52_211_153_/_0.45)]" />
+              )}
               {attendanceStatusLabel}
             </div>
             <a
@@ -590,47 +628,56 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="glass-panel relative overflow-hidden rounded-2xl p-4 sm:p-5 xl:p-6">
+        <section className="ems-card relative overflow-hidden rounded-2xl border border-[#334155] bg-[#1E293B] p-4 transition-all duration-300 sm:p-5 xl:p-6">
           <div className="absolute right-0 top-0 -mr-24 -mt-28 size-72 rounded-full bg-[#3B82F6]/10 blur-[90px]" />
           <div className="relative z-10 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-300">
-                  <span className="status-pulse size-2 rounded-full bg-emerald-400" />
-                  Status: {todayAttendance.status}
+                <span className="inline-flex items-center gap-2 rounded-full border border-[#34D399]/25 bg-[#34D399]/10 px-3 py-1.5 text-sm font-bold text-[#34D399]">
+                  <span className="status-pulse size-2 rounded-full bg-[#34D399]" />
+                  Status: <span className={todayAttendance.status === "Belum Absen" ? "rounded-md border border-[#FBBF24]/30 bg-[#3F3F46] px-2 py-0.5 text-[#FBBF24]" : ""}>{todayAttendance.status}</span>
                 </span>
-                <span className="rounded-full border border-[#24344D] px-3 py-1.5 text-sm font-semibold text-[#C2C6D6]">
+                <span className="rounded-full border border-[#334155] px-3 py-1.5 text-sm font-semibold text-[#94A3B8]">
                   {todayAttendance.location}
                 </span>
               </div>
 
-              <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-[#D4E4FA] sm:text-3xl">
+              <h3 className="mt-3 text-2xl font-extrabold tracking-tight text-[#F1F5F9] sm:text-3xl">
                 Absensi Hari Ini
               </h3>
-              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#C2C6D6]">
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#94A3B8]">
                 Validasi kehadiran sudah siap. Gunakan tombol absensi masuk atau
                 keluar sesuai kebutuhan hari ini.
               </p>
 
               <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 {[
-                  ["Check In", todayAttendance.clockIn || "Belum Absen", LogIn, "text-[#3B82F6]"],
-                  ["Check Out", todayAttendance.clockOut || "Belum Absen", LogOut, "text-[#D4E4FA]"],
-                  ["GPS", gpsStatus, MapPinned, "text-emerald-400"],
-                  ["Face ID", faceStatus, ScanFace, "text-emerald-400"],
+                  ["Check In", todayAttendance.clockIn || "Belum Absen", LogIn, "text-[#60A5FA]"],
+                  ["Check Out", todayAttendance.clockOut || "Belum Absen", LogOut, "text-[#D4D4D8]"],
+                  ["GPS", gpsStatus, MapPinned, "text-[#34D399]"],
+                  ["Face ID", faceStatus, ScanFace, "text-[#34D399]"],
                 ].map(([label, value, Icon, color]) => (
                   <div
                     key={label}
-                    className="flex items-center gap-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2.5"
                   >
-                    <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10">
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#60A5FA]/20 bg-[#60A5FA]/10">
                       <Icon size={17} className={color} />
                     </div>
                     <div>
-                      <p className="text-xs font-bold uppercase tracking-widest text-[#C2C6D6]/70">
+                      <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8]">
                         {label}
                       </p>
-                      <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
+                      <p
+                        className={[
+                          "mt-1 font-bold",
+                          value === "Belum Absen" || value === "Pending"
+                            ? "inline-flex rounded-md border border-[#FBBF24]/30 bg-[#3F3F46] px-2 py-0.5 text-[#FBBF24]"
+                            : "text-[#F1F5F9]",
+                        ].join(" ")}
+                      >
+                        {value}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -642,13 +689,13 @@ export default function EmployeeHomePage() {
                   onClick={() => openAttendanceCamera("masuk")}
                   disabled={!canCheckIn}
                   className={[
-                    "group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition-all active:scale-[0.98]",
+                    "group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
                     canCheckIn
-                      ? "border-[#24344D] bg-[#132238] text-[#D4E4FA] hover:-translate-y-0.5 hover:border-[#3B82F6]/60 hover:bg-white/[0.05]"
-                      : "cursor-not-allowed border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
+                      ? "bg-[#059669] shadow-lg shadow-[#059669]/20 hover:scale-[1.02] hover:brightness-110"
+                      : "cursor-not-allowed border border-[#334155] bg-[#111827] text-[#71717A]",
                   ].join(" ")}
                 >
-                  <Fingerprint size={18} />
+                  <CheckCircle2 size={18} />
                   Absensi Masuk
                 </button>
                 <button
@@ -656,13 +703,13 @@ export default function EmployeeHomePage() {
                   onClick={() => openAttendanceCamera("keluar")}
                   disabled={!canCheckOut}
                   className={[
-                    "flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all active:scale-[0.98]",
+                    "flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
                     canCheckOut
-                      ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20 hover:-translate-y-0.5 hover:brightness-110"
-                      : "cursor-not-allowed border border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
+                      ? "bg-[#3F3F46] text-[#D4D4D8] shadow-lg shadow-black/10 hover:scale-[1.02] hover:brightness-110"
+                      : "cursor-not-allowed border border-[#334155] bg-[#111827] text-[#71717A]",
                   ].join(" ")}
                 >
-                  <ShieldCheck size={18} />
+                  <Square size={17} />
                   Absensi Keluar
                 </button>
               </div>
@@ -719,21 +766,24 @@ export default function EmployeeHomePage() {
             <span className="text-sm font-medium text-[#C2C6D6]">Juni 2026</span>
           </div>
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            {summaryCards.map((card) => {
+            {summaryCards.map((card, index) => {
               const tone = getSummaryTone(card.tone);
 
               return (
                 <div
                   key={card.label}
-                  className="glass-panel group relative flex min-h-[130px] cursor-default flex-col justify-between overflow-hidden rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]"
+                  className={[
+                    "ems-card group relative flex min-h-[130px] cursor-default flex-col justify-between overflow-hidden rounded-2xl border border-[#334155] border-l-4 bg-[#1E293B] p-5 transition-all duration-300",
+                    tone.line,
+                    `ems-card-delay-${index + 1}`,
+                  ].join(" ")}
                 >
-                  <span className={["absolute inset-x-0 top-0 h-1", tone.line].join(" ")} />
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#C2C6D6]/60">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#94A3B8]">
                         {card.label}
                       </p>
-                      <p className={["mt-1 text-2xl font-bold", tone.value].join(" ")}>
+                      <p className="mt-1 text-2xl font-bold text-[#F1F5F9]">
                         {card.value}
                       </p>
                     </div>
@@ -746,7 +796,7 @@ export default function EmployeeHomePage() {
                       <card.icon size={28} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-[#C2C6D6]">
+                  <div className={["flex items-center gap-3 text-xs font-semibold", tone.note].join(" ")}>
                     {card.tone === "emerald" ? (
                       <span className="status-pulse size-2 rounded-full bg-emerald-500" />
                     ) : null}
@@ -769,16 +819,16 @@ export default function EmployeeHomePage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="min-w-[220px] rounded-xl border border-[#24344D] bg-white/[0.04] px-4 py-3">
+              <div className="min-w-[220px] rounded-xl border border-[#334155] bg-[#111827] px-4 py-3">
                 <div className="mb-2 flex items-center justify-between text-xs font-semibold text-[#C2C6D6]">
                   <span>Minggu Kerja Ke-{weekNumber}</span>
                   <span>
                     {weeklyProgressDone} / {weeklyProgressTotal} Hari
                   </span>
                 </div>
-                <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
+                <div className="h-2 overflow-hidden rounded-full bg-[#27272A]">
                   <div
-                    className="h-full rounded-full bg-[#3B82F6]"
+                    className="h-full rounded-full bg-[#34D399]"
                     style={{ width: weeklyProgress }}
                   />
                 </div>
@@ -799,8 +849,8 @@ export default function EmployeeHomePage() {
                   className={[
                     "min-h-[140px] rounded-xl border p-3 transition-all duration-300 hover:-translate-y-1",
                     schedule.isToday
-                      ? "border-[#3B82F6]/30 bg-[#3B82F6]/10"
-                      : "border-white/5 bg-white/[0.05]",
+                      ? "border-[#60A5FA]/30 bg-[#60A5FA]/10"
+                      : "border-[#334155] bg-[#111827]",
                   ].join(" ")}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -838,35 +888,42 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="glass-panel rounded-2xl p-6">
-          <h3 className="mb-5 text-xl font-bold text-[#D4E4FA]">
+        <section className="ems-card rounded-2xl border border-[#334155] bg-[#1E293B] p-6 transition-all duration-300">
+          <h3 className="mb-5 text-xl font-bold text-[#F1F5F9]">
             Aktivitas Terbaru
           </h3>
           <div className="space-y-3">
-            {notifications.map(([title, desc, time, Icon, tone]) => (
+            {notifications.map(([title, desc, time, Icon, tone]) => {
+              const activityTone = getActivityTone(tone);
+
+              return (
               <div
                 key={title}
-                className="flex gap-4 rounded-xl border border-[#24344D] bg-white/[0.04] p-4 transition hover:border-[#3B82F6]/35"
+                className={[
+                  "ems-card flex gap-4 rounded-xl border border-l-4 border-[#334155] bg-[#111827] p-4 transition-all duration-300",
+                  activityTone.line,
+                ].join(" ")}
               >
                 <div
                   className={[
                     "grid size-10 shrink-0 place-items-center rounded-xl border",
-                    getActivityTone(tone),
+                    activityTone.icon,
                   ].join(" ")}
                 >
                   <Icon size={18} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="font-bold text-[#D4E4FA]">{title}</p>
-                    <span className="shrink-0 text-[11px] text-[#C2C6D6]">
+                    <p className="font-bold text-[#F1F5F9]">{title}</p>
+                    <span className="shrink-0 text-[11px] text-[#94A3B8]">
                       {time}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">{desc}</p>
+                  <p className="mt-1 text-sm leading-6 text-[#94A3B8]">{desc}</p>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -898,8 +955,8 @@ export default function EmployeeHomePage() {
                 <span>Target Bulan: 22 Hari</span>
                 <span>Saat Ini: 21 Hari</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
-                <div className="h-full w-[95%] rounded-full bg-[#3B82F6]" />
+              <div className="h-2 overflow-hidden rounded-full bg-[#27272A]">
+                <div className="h-full w-[95%] rounded-full bg-[#34D399]" />
               </div>
               <p className="mt-2 text-xs font-semibold text-[#60A5FA]">
                 Target Tercapai 95%
@@ -909,7 +966,7 @@ export default function EmployeeHomePage() {
               {attendanceDetails.map(([label, value]) => (
                 <div
                   key={label}
-                  className="rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2"
+                  className="rounded-xl border border-[#334155] bg-[#111827] px-3 py-2"
                 >
                   <p className="text-xs text-[#C2C6D6]">{label}</p>
                   <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
@@ -939,7 +996,7 @@ export default function EmployeeHomePage() {
                     <p className="text-sm font-bold text-emerald-300">{trendValue}</p>
                   </div>
                 </div>
-                <div className="mt-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2">
+                <div className="mt-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#C2C6D6]">{targetLabel}</span>
                     <span className="font-bold text-[#D4E4FA]">{targetValue}</span>
@@ -950,9 +1007,9 @@ export default function EmployeeHomePage() {
                     <span>{progressLabel}</span>
                     <span>{progress}</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
+                  <div className="h-2 overflow-hidden rounded-full bg-[#27272A]">
                     <div
-                      className="h-full rounded-full bg-[#3B82F6]"
+                      className="h-full rounded-full bg-[#34D399]"
                       style={{ width: progress }}
                     />
                   </div>
@@ -967,23 +1024,40 @@ export default function EmployeeHomePage() {
             Informasi Tambahan
           </h3>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {additionalWidgets.map(([title, text, Icon, meta]) => (
-              <div
-                key={title}
-                className="glass-panel rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#3B82F6]/35 hover:shadow-[0_8px_24px_rgb(59_130_246_/_0.15)]"
-              >
-                <div className="mb-4 grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
-                  <Icon size={22} />
+            {additionalWidgets.map(([title, text, Icon, tone, meta], index) => {
+              const widgetTone = getActivityTone(tone);
+
+              return (
+                <div
+                  key={title}
+                  className={[
+                    "ems-card rounded-2xl border border-l-4 border-[#334155] bg-[#1E293B] p-5 transition-all duration-300",
+                    widgetTone.line,
+                    `ems-card-delay-${index + 1}`,
+                  ].join(" ")}
+                >
+                  <div
+                    className={[
+                      "mb-4 grid size-11 place-items-center rounded-xl border",
+                      widgetTone.icon,
+                    ].join(" ")}
+                  >
+                    <Icon size={22} />
+                  </div>
+                  <p className="font-bold text-[#F1F5F9]">
+                    {title}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[#94A3B8]">
+                    {text}
+                  </p>
+                  {meta ? (
+                    <span className="mt-4 inline-flex rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/10 px-3 py-1 text-xs font-bold text-[#3B82F6]">
+                      {meta}
+                    </span>
+                  ) : null}
                 </div>
-                <p className="font-bold text-[#D4E4FA]">{title}</p>
-                <p className="mt-2 text-sm leading-6 text-[#C2C6D6]">{text}</p>
-                {meta ? (
-                  <span className="mt-4 inline-flex rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/10 px-3 py-1 text-xs font-bold text-[#60A5FA]">
-                    {meta}
-                  </span>
-                ) : null}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       </div>

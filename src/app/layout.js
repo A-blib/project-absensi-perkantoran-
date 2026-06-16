@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
       className={`${inter.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <head>
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -30,6 +30,8 @@ export default function RootLayout({ children }) {
               'try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark")}}catch(error){}',
           }}
         />
+      </head>
+      <body className="min-h-full flex flex-col">
         {children}
         <ThemeToggle />
       </body>
