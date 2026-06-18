@@ -5,25 +5,49 @@ import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+const demoAccounts = [
+  {
+    role: "Admin",
+    email: "admin@kantor.test",
+    password: "admin123",
+    target: "Masuk ke dashboard admin",
+  },
+  {
+    role: "Karyawan",
+    email: "pegawai@kantor.test",
+    password: "pegawai123",
+    target: "Masuk ke dashboard karyawan",
+  },
+];
+
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function chooseDemoAccount(account) {
+    setEmail(account.email);
+    setPassword(account.password);
+    setMessage("");
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
     setIsLoading(true);
     setMessage("");
 
-    const formData = new FormData(event.currentTarget);
     const payload = {
-      email: formData.get("email"),
-      password: formData.get("password"),
+      email,
+      password,
     };
 
     const response = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      credentials: "same-origin",
       body: JSON.stringify(payload),
     });
 
@@ -35,11 +59,31 @@ export function LoginForm() {
       return;
     }
 
-    window.location.href = result.redirectTo || "/admin";
+    window.location.replace(result.redirectTo || "/admin");
   }
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 grid gap-5">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {demoAccounts.map((account) => (
+          <button
+            key={account.role}
+            type="button"
+            onClick={() => chooseDemoAccount(account)}
+            className={[
+              "rounded-xl border p-4 text-left transition",
+              email === account.email
+                ? "border-blue-500 bg-blue-50 text-blue-700"
+                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-slate-50",
+            ].join(" ")}
+          >
+            <span className="block text-sm font-bold">{account.role}</span>
+            <span className="mt-1 block text-xs font-medium text-slate-500">
+              {account.target}
+            </span>
+          </button>
+        ))}
+      </div>
       <div className="relative">
         <Mail className="pointer-events-none absolute left-3 top-[38px] size-5 text-slate-400" />
         <Input
@@ -47,6 +91,8 @@ export function LoginForm() {
           name="email"
           type="email"
           placeholder="admin@kantor.test"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
           className="pl-10"
           required
         />
@@ -58,6 +104,8 @@ export function LoginForm() {
           name="password"
           type={showPassword ? "text" : "password"}
           placeholder="Masukkan password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
           className="pl-10 pr-12"
           required
         />
@@ -81,8 +129,9 @@ export function LoginForm() {
         {isLoading ? "Memproses..." : "Login"}
       </Button>
       <div className="rounded-lg bg-slate-50 p-4 text-xs leading-6 text-slate-500">
-        Gunakan akun admin atau pegawai yang sudah terdaftar di menu Pegawai.
-        Role akun akan menentukan dashboard tujuan setelah login.
+        Klik pilihan Admin atau Karyawan untuk memakai akun demo. Sistem tetap
+        membaca role dari database, jadi admin masuk ke `/admin` dan karyawan
+        masuk ke `/employee`.
       </div>
     </form>
   );

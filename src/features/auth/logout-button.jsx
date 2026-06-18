@@ -38,7 +38,7 @@ export function LogoutButton({ audience = "admin", variant = "icon" }) {
         return;
       }
 
-      window.location.href = result.redirectTo || "/";
+      window.location.replace(result.redirectTo || "/login");
     } catch {
       setMessage("Koneksi bermasalah. Coba ulangi sebentar lagi.");
       setIsLoading(false);

@@ -1,6 +1,8 @@
 import { LoginForm } from "@/features/auth/login-form";
 import { Logo } from "@/components/shared/logo";
 
+export const dynamic = "force-dynamic";
+
 export default function LoginPage() {
   return (
     <main className="grid min-h-screen bg-white lg:grid-cols-[0.95fr_1.05fr]">

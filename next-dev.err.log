@@ -1,2 +1,8 @@
-⚠ Slow filesystem detected. The benchmark took 2193ms. If C:\Users\HP\Desktop\project-absensi-perkantoran-\.next/dev is a network drive, consider moving it to a local folder.
-See more: https://nextjs.org/docs/app/guides/local-development
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          20452
+- Dir:          C:\Users\user\project-absensi-perkantoran-
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 20452 /F to stop it.

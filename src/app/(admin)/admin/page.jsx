@@ -3,15 +3,44 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AttendanceCharts } from "@/components/charts/attendance-charts";
 import { AdminShell } from "@/features/dashboard/admin-shell";
+import { getAdminAttendanceDashboard } from "@/server/repositories/attendance-repository";
 
-const cards = [
-  { label: "Total Pegawai", value: "128", icon: Users, tone: "text-blue-600 bg-blue-50" },
-  { label: "Hadir Hari Ini", value: "94", icon: UserCheck, tone: "text-emerald-600 bg-emerald-50" },
-  { label: "Telat", value: "11", icon: Clock3, tone: "text-amber-600 bg-amber-50" },
-  { label: "Tidak Hadir", value: "23", icon: UserX, tone: "text-red-600 bg-red-50" },
-];
+export default async function AdminDashboardPage() {
+  const dashboard = await getAdminAttendanceDashboard();
+  const absentToday = Math.max(
+    dashboard.totalEmployees -
+      dashboard.counts.hadir -
+      dashboard.counts.telat -
+      dashboard.counts.izin,
+    dashboard.counts.alpa,
+  );
+  const cards = [
+    {
+      label: "Total Pegawai",
+      value: dashboard.totalEmployees,
+      icon: Users,
+      tone: "text-blue-600 bg-blue-50",
+    },
+    {
+      label: "Hadir Hari Ini",
+      value: dashboard.counts.hadir,
+      icon: UserCheck,
+      tone: "text-emerald-600 bg-emerald-50",
+    },
+    {
+      label: "Telat",
+      value: dashboard.counts.telat,
+      icon: Clock3,
+      tone: "text-amber-600 bg-amber-50",
+    },
+    {
+      label: "Tidak Hadir",
+      value: absentToday,
+      icon: UserX,
+      tone: "text-red-600 bg-red-50",
+    },
+  ];
 
-export default function AdminDashboardPage() {
   return (
     <AdminShell>
       <div className="mb-6">
@@ -29,7 +58,9 @@ export default function AdminDashboardPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-slate-500">{item.label}</p>
-                <p className="mt-2 text-3xl font-bold text-slate-950">{item.value}</p>
+                <p className="mt-2 text-3xl font-bold text-slate-950">
+                  {item.value}
+                </p>
               </div>
               <div className={`grid size-11 place-items-center rounded-lg ${item.tone}`}>
                 <item.icon size={22} />
@@ -40,7 +71,10 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="mt-6">
-        <AttendanceCharts />
+        <AttendanceCharts
+          statusCounts={dashboard.counts}
+          weeklyData={dashboard.weeklyData}
+        />
       </section>
 
       <section className="mt-6">
@@ -48,17 +82,32 @@ export default function AdminDashboardPage() {
           <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <h2 className="text-lg font-bold">Aktivitas Terbaru</h2>
-              <p className="text-sm text-slate-500">Data contoh untuk kerangka awal.</p>
+              <p className="text-sm text-slate-500">
+                Diambil dari absensi karyawan hari ini.
+              </p>
             </div>
             <Badge status="hadir">Realtime</Badge>
           </div>
           <div className="mt-5 divide-y divide-slate-100">
-            {["Rina masuk 08:01", "Budi telat 12 menit", "Sari izin cuti tahunan"].map(
-              (item) => (
-                <div key={item} className="py-3 text-sm font-medium text-slate-700">
-                  {item}
+            {dashboard.recentActivities.length ? (
+              dashboard.recentActivities.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span className="font-medium text-slate-700">
+                    {item.name} {item.checkIn !== "-" ? `masuk ${item.checkIn}` : "belum check in"}
+                  </span>
+                  <span className="text-xs font-semibold uppercase text-slate-400">
+                    {item.status}
+                    {item.lateMinutes ? ` - telat ${item.lateMinutes} menit` : ""}
+                  </span>
                 </div>
-              ),
+              ))
+            ) : (
+              <div className="py-3 text-sm font-medium text-slate-500">
+                Belum ada absensi karyawan yang tercatat hari ini.
+              </div>
             )}
           </div>
         </Card>

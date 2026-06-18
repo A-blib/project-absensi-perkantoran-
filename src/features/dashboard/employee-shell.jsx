@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { LogoutButton } from "@/features/auth/logout-button";
+import { EmployeeSessionGuard } from "@/features/dashboard/employee-session-guard";
 import { employeeNav } from "@/lib/constants/navigation";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 
@@ -117,6 +118,7 @@ export function EmployeeShell({ children, initialUser = null }) {
 
   return (
     <div className="employee-theme min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
+      <EmployeeSessionGuard />
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button

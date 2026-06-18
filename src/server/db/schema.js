@@ -56,6 +56,7 @@ export const attendances = pgTable("attendances", {
   photoUrl: text("photo_url"),
   latitude: text("latitude"),
   longitude: text("longitude"),
+  currentLocationLabel: text("current_location_label"),
   locationLabel: text("location_label"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });

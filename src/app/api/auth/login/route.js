@@ -49,6 +49,7 @@ export async function POST(request) {
     response.cookies.set(
       createAuthCookie({
         id: user.id,
+        role: user.role,
       }),
     );
     return response;

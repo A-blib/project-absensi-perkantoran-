@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/server/auth/constants";
 
 export async function POST() {
-  const response = NextResponse.json({ redirectTo: "/" });
+  const response = NextResponse.json({ redirectTo: "/login" });
 
   response.cookies.set({
     name: SESSION_COOKIE,

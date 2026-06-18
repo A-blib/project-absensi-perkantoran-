@@ -113,10 +113,13 @@ create table if not exists public.attendances (
   photo_url text,
   latitude text,
   longitude text,
+  current_location_label text,
   location_label text,
   created_at timestamptz default now(),
   unique (user_id, attendance_date)
 );
+
+alter table public.attendances add column if not exists current_location_label text;
 
 create table if not exists public.leave_requests (
   id uuid primary key default gen_random_uuid(),
@@ -302,6 +305,50 @@ values
     '081200000002',
     'active',
     false
+  ),
+  (
+    'Budi Santoso',
+    'budi@kantor.test',
+    '$2b$12$IsnP5j46MbFvKo/0MwUdk.wNs/WN5/R0iFyar9FQCpElVrij9DXVa',
+    'employee',
+    'Operasional',
+    'Supervisor Operasional',
+    '081200000003',
+    'active',
+    false
+  ),
+  (
+    'Sari Ningsih',
+    'sari@kantor.test',
+    '$2b$12$IsnP5j46MbFvKo/0MwUdk.wNs/WN5/R0iFyar9FQCpElVrij9DXVa',
+    'employee',
+    'HR',
+    'Staff HR',
+    '081200000004',
+    'active',
+    false
+  ),
+  (
+    'Andi Wijaya',
+    'andi@kantor.test',
+    '$2b$12$IsnP5j46MbFvKo/0MwUdk.wNs/WN5/R0iFyar9FQCpElVrij9DXVa',
+    'employee',
+    'IT',
+    'Backend Developer',
+    '081200000005',
+    'active',
+    false
+  ),
+  (
+    'Dewi Kusuma',
+    'dewi@kantor.test',
+    '$2b$12$IsnP5j46MbFvKo/0MwUdk.wNs/WN5/R0iFyar9FQCpElVrij9DXVa',
+    'employee',
+    'Sales',
+    'Sales Executive',
+    '081200000006',
+    'active',
+    false
   )
 on conflict (email) do update set
   name = excluded.name,
@@ -334,6 +381,23 @@ where email = 'pegawai@kantor.test'
       and other_users.email <> 'pegawai@kantor.test'
   );
 
+update public.users
+set employee_code = seed.employee_code, updated_at = now()
+from (
+  values
+    ('budi@kantor.test', 'EMP-002'),
+    ('sari@kantor.test', 'EMP-003'),
+    ('andi@kantor.test', 'EMP-004'),
+    ('dewi@kantor.test', 'EMP-005')
+) as seed(email, employee_code)
+where users.email = seed.email
+  and not exists (
+    select 1
+    from public.users other_users
+    where other_users.employee_code = seed.employee_code
+      and other_users.email <> seed.email
+  );
+
 insert into public.attendances (
   user_id,
   attendance_date,
@@ -353,6 +417,42 @@ select
   'Kantor Pusat'
 from public.users
 where users.email = 'pegawai@kantor.test'
+on conflict (user_id, attendance_date) do update set
+  check_in_at = excluded.check_in_at,
+  check_out_at = excluded.check_out_at,
+  status = excluded.status,
+  late_minutes = excluded.late_minutes,
+  location_label = excluded.location_label;
+
+insert into public.attendances (
+  user_id,
+  attendance_date,
+  check_in_at,
+  check_out_at,
+  status,
+  late_minutes,
+  location_label
+)
+select
+  users.id,
+  current_date,
+  now()::date + seed.check_in,
+  case
+    when seed.check_out is null then null
+    else now()::date + seed.check_out
+  end,
+  seed.status::attendance_status,
+  seed.late_minutes,
+  seed.location_label
+from public.users
+join (
+  values
+    ('budi@kantor.test', time '08:18', time '17:10', 'telat', 18, 'Kantor Pusat'),
+    ('sari@kantor.test', null, null, 'izin', 0, '-'),
+    ('andi@kantor.test', time '07:58', time '17:03', 'hadir', 0, 'Kantor Pusat'),
+    ('dewi@kantor.test', null, null, 'alpa', 0, '-')
+) as seed(email, check_in, check_out, status, late_minutes, location_label)
+  on users.email = seed.email
 on conflict (user_id, attendance_date) do update set
   check_in_at = excluded.check_in_at,
   check_out_at = excluded.check_out_at,

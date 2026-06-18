@@ -115,9 +115,11 @@ export function AdminSettingsPanel({ initialSettings = defaultSystemSettings }) 
       setSavedSettings(result.settings);
       setMessageType("success");
       setMessage(successMessage);
+      return true;
     } catch (error) {
       setMessageType("error");
       setMessage(error.message || "Pengaturan gagal disimpan.");
+      return false;
     } finally {
       setSaving(false);
     }
@@ -132,6 +134,19 @@ export function AdminSettingsPanel({ initialSettings = defaultSystemSettings }) 
       defaultSystemSettings,
       "Pengaturan dikembalikan ke nilai awal dan tersimpan.",
     );
+  }
+
+  function applyLocationPatch(patch, successMessage) {
+    const nextSettings = {
+      ...settings,
+      location: {
+        ...settings.location,
+        ...patch,
+      },
+    };
+
+    setSettings(nextSettings);
+    return persistSettings(nextSettings, successMessage);
   }
 
   return (
@@ -232,6 +247,7 @@ export function AdminSettingsPanel({ initialSettings = defaultSystemSettings }) 
               <LocationSettings
                 values={settings.location}
                 onChange={(field, value) => updateSection("location", field, value)}
+                onApplyLocation={applyLocationPatch}
               />
             ) : null}
 
@@ -364,7 +380,7 @@ function WorkHoursSettings({ values, onChange, onToggleDay }) {
   );
 }
 
-function LocationSettings({ values, onChange }) {
+function LocationSettings({ values, onChange, onApplyLocation }) {
   const [mapsMessage, setMapsMessage] = useState("");
   const [mapsMessageType, setMapsMessageType] = useState("success");
   const [resolvingMapsLink, setResolvingMapsLink] = useState(false);
@@ -377,13 +393,19 @@ function LocationSettings({ values, onChange }) {
   const radiusSize = Math.max(96, Math.min(240, Number(values.radiusMeters) * 1.4));
   const parsedMapsLink = parseGoogleMapsLink(values.googleMapsLink);
 
-  function applyParsedLocation(location) {
-    if (location.name) {
-      onChange("name", location.name);
-    }
+  async function applyParsedLocation(location, message) {
+    const patch = {
+      googleMapsLink: values.googleMapsLink,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      name: location.name || values.name,
+    };
 
-    onChange("latitude", location.latitude);
-    onChange("longitude", location.longitude);
+    onChange("name", patch.name);
+    onChange("latitude", patch.latitude);
+    onChange("longitude", patch.longitude);
+
+    return onApplyLocation(patch, message);
   }
 
   async function applyGoogleMapsLink() {
@@ -393,9 +415,16 @@ function LocationSettings({ values, onChange }) {
     setMapsMessage("");
 
     if (parsedMapsLink) {
-      applyParsedLocation(parsedMapsLink);
-      setMapsMessageType("success");
-      setMapsMessage("Koordinat berhasil diterapkan dari link Google Maps.");
+      const saved = await applyParsedLocation(
+        parsedMapsLink,
+        "Lokasi kantor berhasil diterapkan dan tersimpan untuk absensi karyawan.",
+      );
+      setMapsMessageType(saved ? "success" : "error");
+      setMapsMessage(
+        saved
+          ? "Koordinat berhasil diterapkan, tersimpan, dan terhubung ke karyawan."
+          : "Koordinat terbaca, tetapi lokasi gagal disimpan.",
+      );
       setResolvingMapsLink(false);
       return;
     }
@@ -412,9 +441,16 @@ function LocationSettings({ values, onChange }) {
         throw new Error(result.message || "Link Google Maps tidak bisa dibaca.");
       }
 
-      applyParsedLocation(result.location);
-      setMapsMessageType("success");
-      setMapsMessage("Koordinat berhasil diterapkan dari link Google Maps.");
+      const saved = await applyParsedLocation(
+        result.location,
+        "Lokasi kantor berhasil diterapkan dan tersimpan untuk absensi karyawan.",
+      );
+      setMapsMessageType(saved ? "success" : "error");
+      setMapsMessage(
+        saved
+          ? "Koordinat berhasil diterapkan, tersimpan, dan terhubung ke karyawan."
+          : "Koordinat terbaca, tetapi lokasi gagal disimpan.",
+      );
     } catch (error) {
       setMapsMessageType("error");
       setMapsMessage(error.message || "Link Google Maps tidak bisa dibaca.");
@@ -453,7 +489,7 @@ function LocationSettings({ values, onChange }) {
               ) : (
                 <MapPin size={17} />
               )}
-              {resolvingMapsLink ? "Membaca Link..." : "Terapkan Lokasi"}
+              {resolvingMapsLink ? "Membaca Link..." : "Terapkan & Simpan"}
             </Button>
           </div>
         </label>
@@ -504,11 +540,33 @@ function LocationSettings({ values, onChange }) {
               type="button"
               variant="outline"
               onClick={() => {
-                if (!navigator.geolocation) return;
+                if (!navigator.geolocation) {
+                  setMapsMessageType("error");
+                  setMapsMessage("GPS browser tidak tersedia.");
+                  return;
+                }
 
                 navigator.geolocation.getCurrentPosition((position) => {
-                  onChange("latitude", String(position.coords.latitude));
-                  onChange("longitude", String(position.coords.longitude));
+                  const latitude = String(position.coords.latitude);
+                  const longitude = String(position.coords.longitude);
+
+                  onChange("latitude", latitude);
+                  onChange("longitude", longitude);
+                  onApplyLocation(
+                    {
+                      latitude,
+                      longitude,
+                      name: values.name,
+                    },
+                    "Lokasi dari GPS admin berhasil tersimpan untuk absensi karyawan.",
+                  ).then((saved) => {
+                    setMapsMessageType(saved ? "success" : "error");
+                    setMapsMessage(
+                      saved
+                        ? "Lokasi saat ini berhasil tersimpan dan terhubung ke karyawan."
+                        : "Lokasi saat ini gagal disimpan.",
+                    );
+                  });
                 });
               }}
             >

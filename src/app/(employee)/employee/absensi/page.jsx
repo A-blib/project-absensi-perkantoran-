@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Camera,
@@ -15,7 +15,6 @@ import {
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
-  clearEmployeeAttendanceByDate,
   readEmployeeAttendanceRecords,
   saveEmployeeAttendanceRecord,
   saveEmployeeAttendanceByType,
@@ -70,16 +69,30 @@ function getClockOnly() {
   });
 }
 
+function getDateKey() {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
+}
+
 function getMinutesFromTime(value) {
   const [hour, minute] = value.split(":").map(Number);
   return hour * 60 + minute;
 }
 
+function getLateMinutes(clockIn, schedule) {
+  return Math.max(
+    0,
+    getMinutesFromTime(clockIn) -
+      (getMinutesFromTime(schedule.startTime) + schedule.lateTolerance),
+  );
+}
+
 function getAttendanceStatus(clockIn, schedule) {
-  const clockInMinutes = getMinutesFromTime(clockIn);
-  const targetMinutes =
-    getMinutesFromTime(schedule.startTime) + schedule.lateTolerance;
-  return clockInMinutes <= targetMinutes ? "Hadir" : "Terlambat";
+  return getLateMinutes(clockIn, schedule) > 0 ? "Terlambat" : "Hadir";
 }
 
 function getEmployeeTitle(user) {
@@ -100,6 +113,12 @@ function getDistanceMeters(from, to) {
 
 function formatMeters(value) {
   return new Intl.NumberFormat("id-ID").format(Math.round(Number(value) || 0));
+}
+
+function formatCoordinateLabel(location) {
+  if (!location?.latitude || !location?.longitude) return "-";
+
+  return `${Number(location.latitude).toFixed(6)}, ${Number(location.longitude).toFixed(6)}`;
 }
 
 function getOutsideRadiusMessage(distance, radius, accuracy) {
@@ -163,6 +182,9 @@ export default function EmployeeAttendancePage() {
   const [gpsStatus, setGpsStatus] = useState("idle");
   const [gpsDistance, setGpsDistance] = useState(null);
   const [gpsAccuracy, setGpsAccuracy] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentLocationAddress, setCurrentLocationAddress] = useState("");
+  const [currentLocationStatus, setCurrentLocationStatus] = useState("idle");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [warning, setWarning] = useState("");
@@ -177,6 +199,33 @@ export default function EmployeeAttendancePage() {
     () => toOfficeLocation(attendanceConfig),
     [attendanceConfig],
   );
+
+  async function resolveCurrentLocationAddress(latitude, longitude) {
+    setCurrentLocationAddress("Mencari nama jalan...");
+
+    try {
+      const params = new URLSearchParams({
+        lat: String(latitude),
+        lng: String(longitude),
+      });
+      const response = await fetch(`/api/employee/reverse-geocode?${params}`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        setCurrentLocationAddress("");
+        return "";
+      }
+
+      const payload = await response.json();
+      const address = payload.address || "";
+      setCurrentLocationAddress(address);
+      return address;
+    } catch {
+      setCurrentLocationAddress("");
+      return "";
+    }
+  }
 
   function stopFaceScan() {
     if (faceScanTimerRef.current) {
@@ -324,15 +373,22 @@ export default function EmployeeAttendancePage() {
     setGpsAccuracy(null);
   }
 
-  function validateGps() {
-    setGpsStatus("checking");
-    setLastStatus("Memvalidasi GPS...");
+  const detectCurrentLocation = useCallback(({ forAttendance = false } = {}) => {
+    if (forAttendance) {
+      setGpsStatus("checking");
+      setLastStatus("Memvalidasi GPS...");
+    }
+
+    setCurrentLocationStatus("checking");
 
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        setGpsStatus("error");
-        setWarning("Lokasi tidak dapat dideteksi.");
-        setLastStatus("GPS unavailable");
+        if (forAttendance) {
+          setGpsStatus("error");
+          setWarning("Lokasi tidak dapat dideteksi.");
+          setLastStatus("GPS unavailable");
+        }
+        setCurrentLocationStatus("error");
         resolve(null);
         return;
       }
@@ -353,34 +409,57 @@ export default function EmployeeAttendancePage() {
             insideRadius ||
             officeLocation.allowOutsideRadius;
 
+          setCurrentLocation({
+            ...currentLocation,
+            distance,
+            accuracy,
+          });
+          resolveCurrentLocationAddress(
+            currentLocation.latitude,
+            currentLocation.longitude,
+          );
+          setCurrentLocationStatus(valid ? "valid" : "invalid");
           setGpsDistance(distance);
           setGpsAccuracy(accuracy);
-          setGpsStatus(valid ? "valid" : "invalid");
+          if (forAttendance) {
+            setGpsStatus(valid ? "valid" : "invalid");
+          }
           if (!valid) {
-            setWarning(
-              getOutsideRadiusMessage(distance, officeLocation.radius, accuracy),
-            );
-            setLastStatus("GPS di luar radius kantor");
+            if (forAttendance) {
+              setWarning(
+                getOutsideRadiusMessage(distance, officeLocation.radius, accuracy),
+              );
+              setLastStatus("GPS di luar radius kantor");
+            }
             resolve(null);
             return;
           }
 
-          setLastStatus("GPS valid. Menyimpan absensi...");
+          if (forAttendance) {
+            setLastStatus("GPS valid. Menyimpan absensi...");
+          }
           resolve({ ...currentLocation, distance, accuracy });
         },
         (error) => {
-          setGpsStatus("error");
-          setWarning(
-            error.code === error.PERMISSION_DENIED
-              ? "Aktifkan GPS terlebih dahulu."
-              : "Lokasi tidak dapat dideteksi.",
-          );
-          setLastStatus("GPS validation failed");
+          if (forAttendance) {
+            setGpsStatus("error");
+            setWarning(
+              error.code === error.PERMISSION_DENIED
+                ? "Aktifkan GPS terlebih dahulu."
+                : "Lokasi tidak dapat dideteksi.",
+            );
+            setLastStatus("GPS validation failed");
+          }
+          setCurrentLocationStatus("error");
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
     });
+  }, [officeLocation]);
+
+  function validateGps() {
+    return detectCurrentLocation({ forAttendance: true });
   }
 
   function captureFrame() {
@@ -442,10 +521,15 @@ export default function EmployeeAttendancePage() {
 
     const capturedPhoto = captureFrame();
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const savedAt = getStamp();
       const time = getClockOnly();
       const date = savedAt.split(",")[0];
+      const capturedAt = new Date().toISOString();
+      const lateMinutes =
+        verificationType === "masuk"
+          ? getLateMinutes(time, attendanceConfig.workHours)
+          : savedAttendance?.lateMinutes || 0;
       const baseRecord = {
         id: savedAttendance?.id || `attendance-${Date.now()}`,
         userId: ownerKey,
@@ -459,6 +543,7 @@ export default function EmployeeAttendancePage() {
           verificationType === "masuk"
             ? getAttendanceStatus(time, attendanceConfig.workHours)
             : savedAttendance?.status || "Hadir",
+        lateMinutes,
         location: officeLocation.label,
         latitude: String(gps.latitude),
         longitude: String(gps.longitude),
@@ -494,6 +579,37 @@ export default function EmployeeAttendancePage() {
         }, ownerKey);
       }
 
+      try {
+        const response = await fetch("/api/employee/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: verificationType,
+            capturedAt,
+            dateKey: getDateKey(),
+            status: baseRecord.status,
+            lateMinutes,
+            photo: verificationType === "masuk" ? capturedPhoto : null,
+            location: officeLocation.label,
+            latitude: String(gps.latitude),
+            longitude: String(gps.longitude),
+            currentLocationLabel:
+              currentLocationAddress === "Mencari nama jalan..."
+                ? ""
+                : currentLocationAddress,
+          }),
+        });
+
+        if (response.ok) {
+          const payload = await response.json();
+          if (payload.record) {
+            baseRecord.id = payload.record.id;
+          }
+        }
+      } catch {
+        // Local fallback is already saved above, so the user can retry later.
+      }
+
       playSuccessSound();
       setSavedAttendance((previous) => ({
         ...(previous || {}),
@@ -518,14 +634,6 @@ export default function EmployeeAttendancePage() {
     }, 800);
   }
 
-  function resetAttendanceForTest() {
-    clearEmployeeAttendanceByDate(getTodayDate(), ownerKey);
-    setSavedAttendance(null);
-    setNotice("Mode tes direset. Silakan mulai verifikasi ulang.");
-    setWarning("");
-    setLastStatus("Ready for verification");
-  }
-
   useEffect(() => {
     let active = true;
 
@@ -547,27 +655,62 @@ export default function EmployeeAttendancePage() {
     }
 
     loadAttendanceConfig();
+    const refreshTimer = setInterval(loadAttendanceConfig, 15000);
+    window.addEventListener("focus", loadAttendanceConfig);
 
     return () => {
       active = false;
+      clearInterval(refreshTimer);
+      window.removeEventListener("focus", loadAttendanceConfig);
     };
   }, []);
 
   useEffect(() => {
-    const loadTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
+      detectCurrentLocation();
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [detectCurrentLocation]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadTodayAttendance() {
+      try {
+        const response = await fetch("/api/employee/attendance", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const payload = await response.json();
+          if (active && payload.today) {
+            setSavedAttendance(payload.today);
+            setLastStatus(`Saved at ${payload.today.savedAt}`);
+            return;
+          }
+        }
+      } catch {
+        // Fall back to local records below.
+      }
+
       const todayRecord = readEmployeeAttendanceRecords(ownerKey).find(
         (record) => record.date === getTodayDate(),
       );
+
+      if (!active) return;
       if (todayRecord) {
         setSavedAttendance(todayRecord);
         setLastStatus(`Saved at ${todayRecord.savedAt}`);
       } else {
         setSavedAttendance(null);
       }
-    }, 0);
+    }
+
+    loadTodayAttendance();
 
     return () => {
-      clearTimeout(loadTimer);
+      active = false;
       if (faceScanTimerRef.current) {
         clearInterval(faceScanTimerRef.current);
         faceScanTimerRef.current = null;
@@ -658,15 +801,6 @@ export default function EmployeeAttendancePage() {
               ? "Sudah Absen Keluar"
               : "Absensi Keluar"}
           </button>
-          {savedAttendance ? (
-            <button
-              type="button"
-              onClick={resetAttendanceForTest}
-              className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl border border-[#24344D] px-4 text-xs font-bold text-[#c2c6d6] transition hover:border-[#3b82f6]/60 hover:text-[#d4e4fa]"
-            >
-              Reset Tes Absensi
-            </button>
-          ) : null}
         </section>
 
         <aside className="space-y-6">
@@ -679,6 +813,81 @@ export default function EmployeeAttendancePage() {
               <div>
                 <p className="font-semibold text-[#d4e4fa]">{lastStatus}</p>
                 <p className="text-sm text-[#8B9DB5]">Realtime biometric check</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-panel rounded-3xl p-6">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-[#d4e4fa]">Lokasi Saat Ini</h3>
+                <p className="mt-1 text-sm text-[#8B9DB5]">
+                  Terdeteksi otomatis dari GPS perangkat.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => detectCurrentLocation()}
+                className="grid size-10 shrink-0 place-items-center rounded-xl border border-[#24344D] text-[#c2c6d6] transition hover:border-[#3b82f6]/60 hover:text-[#d4e4fa]"
+                aria-label="Deteksi ulang lokasi saat ini"
+              >
+                <MapPin size={18} />
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 text-sm">
+              <div className="rounded-2xl bg-[#0B1220] px-4 py-3">
+                <p className="text-[#8B9DB5]">Nama Jalan / Tempat</p>
+                <p className="mt-1 font-semibold leading-6 text-[#d4e4fa]">
+                  {currentLocationAddress || "-"}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[#0B1220] px-4 py-3">
+                <p className="text-[#8B9DB5]">Koordinat</p>
+                <p className="mt-1 break-all font-mono font-semibold text-[#d4e4fa]">
+                  {currentLocationStatus === "checking"
+                    ? "Mendeteksi..."
+                    : formatCoordinateLabel(currentLocation)}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-[#0B1220] px-4 py-3">
+                  <p className="text-[#8B9DB5]">Jarak Tujuan</p>
+                  <p className="mt-1 font-semibold text-[#d4e4fa]">
+                    {currentLocation?.distance !== undefined
+                      ? `${formatMeters(currentLocation.distance)} m`
+                      : "-"}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-[#0B1220] px-4 py-3">
+                  <p className="text-[#8B9DB5]">Akurasi</p>
+                  <p className="mt-1 font-semibold text-[#d4e4fa]">
+                    {currentLocation?.accuracy !== undefined
+                      ? `${formatMeters(currentLocation.accuracy)} m`
+                      : "-"}
+                  </p>
+                </div>
+              </div>
+              <div
+                className={[
+                  "rounded-2xl border px-4 py-3 text-sm font-semibold",
+                  currentLocationStatus === "valid"
+                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                    : currentLocationStatus === "invalid" ||
+                        currentLocationStatus === "error"
+                      ? "border-red-500/25 bg-red-500/10 text-red-300"
+                      : "border-[#24344D] bg-[#0B1220] text-[#c2c6d6]",
+                ].join(" ")}
+              >
+                {currentLocationStatus === "valid"
+                  ? "Lokasi saat ini berada dalam radius absensi."
+                  : currentLocationStatus === "invalid"
+                    ? "Lokasi saat ini terdeteksi, tetapi tidak valid untuk absensi karena berada di luar radius."
+                    : currentLocationStatus === "error"
+                      ? "Lokasi saat ini belum bisa dideteksi."
+                      : currentLocationStatus === "checking"
+                        ? "Mengecek lokasi saat ini..."
+                        : "Izinkan akses lokasi untuk deteksi otomatis."}
               </div>
             </div>
           </div>
@@ -814,7 +1023,7 @@ export default function EmployeeAttendancePage() {
                 </div>
               ) : (
                 <div className="mt-4 flex flex-col gap-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="flex items-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3 text-sm font-semibold text-[#d4e4fa]">
                       {faceDetected ? (
                         <CheckCircle2 size={20} className="text-emerald-400" />
@@ -867,7 +1076,7 @@ export default function EmployeeAttendancePage() {
                                 gpsAccuracy ? `, akurasi ${formatMeters(gpsAccuracy)} m` : ""
                               }`
                             : gpsStatus === "invalid"
-                              ? `Di luar radius ${formatMeters(gpsDistance)} m${
+                              ? `Tidak valid, ${formatMeters(gpsDistance)} m${
                                   gpsAccuracy
                                     ? `, akurasi ${formatMeters(gpsAccuracy)} m`
                                     : ""
@@ -875,6 +1084,19 @@ export default function EmployeeAttendancePage() {
                               : gpsStatus === "error"
                                 ? "GPS gagal"
                                 : "Menunggu validasi"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#8B9DB5]">
+                        Lokasi Saat Ini
+                      </p>
+                      <p className="mt-1 text-xs font-bold leading-5 text-[#d4e4fa]">
+                        {currentLocationAddress || "-"}
+                      </p>
+                      <p className="mt-1 break-all font-mono text-xs font-bold text-[#d4e4fa]">
+                        {currentLocationStatus === "checking"
+                          ? "Mendeteksi..."
+                          : formatCoordinateLabel(currentLocation)}
                       </p>
                     </div>
                   </div>

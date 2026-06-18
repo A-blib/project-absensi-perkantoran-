@@ -28,7 +28,6 @@ import {
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
-  clearEmployeeAttendanceByDate,
   readEmployeeAttendanceRecords,
   saveEmployeeAttendanceByType,
 } from "@/lib/browser/employee-attendance-store";
@@ -179,6 +178,15 @@ function getTodayDate() {
     year: "numeric",
     timeZone: "Asia/Jakarta",
   });
+}
+
+function getDateKey() {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date());
 }
 
 function getJakartaDate() {
@@ -388,9 +396,13 @@ export default function EmployeeHomePage() {
     }
 
     loadAttendanceConfig();
+    const refreshTimer = setInterval(loadAttendanceConfig, 15000);
+    window.addEventListener("focus", loadAttendanceConfig);
 
     return () => {
       active = false;
+      clearInterval(refreshTimer);
+      window.removeEventListener("focus", loadAttendanceConfig);
     };
   }, []);
 
@@ -536,7 +548,7 @@ export default function EmployeeHomePage() {
     setSaving(false);
   }
 
-  function saveAttendance(type, gpsResult) {
+  async function saveAttendance(type, gpsResult) {
     const savedAt = getStamp();
     const time = savedAt.split(", ")[1] || "--:--:--";
     const clockLabel = getClockLabel(time);
@@ -567,12 +579,35 @@ export default function EmployeeHomePage() {
         clockOut: type === "keluar" ? time : "--:--:--",
         status: "Hadir",
         location: officeLocation.label,
+        latitude: gpsResult?.latitude ? String(gpsResult.latitude) : null,
+        longitude: gpsResult?.longitude ? String(gpsResult.longitude) : null,
         radius: officeLocation.radius,
         distance: gpsResult?.distance ?? gpsDistance,
         accuracy: gpsResult?.accuracy ?? gpsAccuracy,
       },
       ownerKey,
     );
+
+    try {
+      await fetch("/api/employee/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          capturedAt: new Date().toISOString(),
+          dateKey: getDateKey(),
+          status: nextAttendance.status,
+          lateMinutes: 0,
+          photo: null,
+          location: officeLocation.label,
+          latitude: gpsResult?.latitude ? String(gpsResult.latitude) : null,
+          longitude: gpsResult?.longitude ? String(gpsResult.longitude) : null,
+        }),
+      });
+    } catch {
+      // Local fallback is already saved above.
+    }
+
     setTodayAttendance(nextAttendance);
     setLastStatus(
       type === "masuk"
@@ -637,7 +672,12 @@ export default function EmployeeHomePage() {
           if (forAttendance) {
             setLastStatus("GPS valid. Menyimpan absensi...");
           }
-          resolve({ distance, accuracy });
+          resolve({
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            distance,
+            accuracy,
+          });
         },
         (error) => {
           updateGpsStatus(false);
@@ -679,17 +719,11 @@ export default function EmployeeHomePage() {
       }
 
       setTimeout(() => {
-        saveAttendance(pendingType, gpsResult);
-        closeAttendanceCamera();
+        saveAttendance(pendingType, gpsResult).finally(() => {
+          closeAttendanceCamera();
+        });
       }, 500);
     });
-  }
-
-  function resetTodayAttendanceForTest() {
-    const fallback = getFallbackTodayAttendance(officeLocation.label);
-    clearEmployeeAttendanceByDate(fallback.date, ownerKey);
-    setTodayAttendance(fallback);
-    setLastStatus("Mode tes direset. Silakan mulai absensi masuk.");
   }
 
   useEffect(() => {
@@ -700,14 +734,50 @@ export default function EmployeeHomePage() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const storedAttendance = getStoredTodayAttendance(ownerKey, officeLocation.label);
-      setTodayAttendance(
-        storedAttendance || getFallbackTodayAttendance(officeLocation.label),
-      );
-    }, 0);
+    let active = true;
 
-    return () => clearTimeout(timer);
+    async function loadTodayAttendance() {
+      try {
+        const response = await fetch("/api/employee/attendance", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const payload = await response.json();
+          if (active && payload.today) {
+            setTodayAttendance({
+              date: payload.today.date,
+              clockIn: getClockLabel(payload.today.clockIn),
+              clockOut:
+                payload.today.clockOut === "--:--:--"
+                  ? null
+                  : getClockLabel(payload.today.clockOut),
+              status: payload.today.status,
+              location: payload.today.location || officeLocation.label,
+              gpsValid: true,
+              faceVerified: payload.today.faceVerified,
+              faceConfidence: payload.today.faceConfidence,
+            });
+            return;
+          }
+        }
+      } catch {
+        // Use local fallback below when the server is unavailable.
+      }
+
+      const storedAttendance = getStoredTodayAttendance(ownerKey, officeLocation.label);
+      if (active) {
+        setTodayAttendance(
+          storedAttendance || getFallbackTodayAttendance(officeLocation.label),
+        );
+      }
+    }
+
+    loadTodayAttendance();
+
+    return () => {
+      active = false;
+    };
   }, [ownerKey, officeLocation.label]);
 
   const currentDate = new Date().toLocaleDateString("id-ID", {
@@ -859,15 +929,6 @@ export default function EmployeeHomePage() {
                   Absensi Keluar
                 </button>
               </div>
-              {(hasCheckedIn || hasCheckedOut) ? (
-                <button
-                  type="button"
-                  onClick={resetTodayAttendanceForTest}
-                  className="mt-3 inline-flex min-h-9 items-center justify-center rounded-xl border border-[#24344D] px-4 text-xs font-bold text-[#C2C6D6] transition hover:border-[#3B82F6]/60 hover:text-[#D4E4FA]"
-                >
-                  Reset Tes Absensi
-                </button>
-              ) : null}
             </div>
 
             <div className="relative grid min-h-[170px] place-items-center overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220] sm:min-h-[200px] xl:min-h-[220px]">

@@ -14,12 +14,6 @@ import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import { readEmployeeAttendanceRecords } from "@/lib/browser/employee-attendance-store";
 
-const fallbackRows = [
-  ["Senin, 10 Jun 2026", "08:00 WIB", "17:05 WIB", "Hadir", "Regular Shift"],
-  ["Jumat, 07 Jun 2026", "08:14 WIB", "17:02 WIB", "Terlambat", "Regular Shift"],
-  ["Kamis, 06 Jun 2026", "08:00 WIB", "16:30 WIB", "Hadir", "Short Shift"],
-];
-
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 const fullMonthNames = [
   "Januari",
@@ -118,11 +112,35 @@ export default function EmployeeHistoryPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const timer = setTimeout(
-      () => setStoredRows(readEmployeeAttendanceRecords(ownerKey)),
-      0,
-    );
-    return () => clearTimeout(timer);
+    let active = true;
+
+    async function loadRows() {
+      try {
+        const response = await fetch("/api/employee/attendance", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const payload = await response.json();
+          if (active) {
+            setStoredRows(payload.records || []);
+            return;
+          }
+        }
+      } catch {
+        // Use local fallback below when the server is unavailable.
+      }
+
+      if (active) {
+        setStoredRows(readEmployeeAttendanceRecords(ownerKey));
+      }
+    }
+
+    loadRows();
+
+    return () => {
+      active = false;
+    };
   }, [ownerKey]);
 
   const rows = useMemo(() => {
@@ -137,18 +155,7 @@ export default function EmployeeHistoryPage() {
       outPhoto: record.outPhoto,
     }));
 
-    return saved.length
-      ? saved
-      : fallbackRows.map(([date, clockIn, clockOut, status, shift]) => ({
-          id: date,
-          date,
-          clockIn,
-          clockOut,
-          status,
-          shift,
-          photo: null,
-          outPhoto: null,
-        }));
+    return saved;
   }, [storedRows]);
 
   const filteredRows = useMemo(() => {
