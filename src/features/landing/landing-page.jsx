@@ -30,7 +30,7 @@ const features = [
   },
   {
     title: "Dashboard Analitik",
-    text: "Grafik mingguan dan status absensi siap dikembangkan dengan Chart.js.",
+    text: "Ringkasan kehadiran membantu admin melihat kondisi kantor lebih cepat.",
     icon: BarChart3,
   },
   {
@@ -39,17 +39,17 @@ const features = [
     icon: CheckCircle2,
   },
   {
-    title: "Security First",
-    text: "JWT cookie, bcryptjs, Zod, DOMPurify, dan guard upload disiapkan.",
+    title: "Akses Sesuai Role",
+    text: "Admin dan karyawan masuk melalui alur login yang berbeda sesuai peran akun.",
     icon: ShieldCheck,
   },
 ];
 
 const stats = [
-  ["5000+", "Attendance tercatat"],
-  ["120+", "Pegawai aktif"],
-  ["98%", "Data tervalidasi"],
-  ["24/7", "Akses dashboard"],
+  ["GPS", "Validasi lokasi"],
+  ["Role", "Admin & karyawan"],
+  ["Rekap", "Data kehadiran"],
+  ["Mobile", "Absensi dari HP"],
 ];
 
 export function LandingPage() {
@@ -83,15 +83,16 @@ export function LandingPage() {
               System Absen Perkantoran
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              Aplikasi absensi modern untuk pegawai mobile dan admin operasional:
-              cepat, jelas, dan siap memakai GPS validation serta dashboard analitik.
+              Aplikasi absensi untuk karyawan dan admin kantor: mencatat
+              kehadiran dari HP, memvalidasi lokasi, dan menampilkan rekap
+              dalam dashboard yang mudah dibaca.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Button asChild href="/login" size="lg">
                 Login
               </Button>
-              <Button asChild href="/admin" variant="outline" size="lg">
-                Demo System
+              <Button asChild href="#fitur" variant="outline" size="lg">
+                Lihat Fitur
               </Button>
             </div>
             <div className="mt-8 flex flex-wrap gap-3 text-sm font-medium text-slate-600">
@@ -102,7 +103,7 @@ export function LandingPage() {
                 Dashboard analitik
               </span>
               <span className="rounded-full border border-slate-200 bg-white px-3 py-2">
-                JWT cookie auth
+                Akses sesuai role
               </span>
             </div>
           </div>
@@ -117,7 +118,7 @@ export function LandingPage() {
             Features
           </p>
           <h2 className="mt-3 text-3xl font-bold text-slate-950">
-            Dibuat untuk speed, clarity, dan mobile usability.
+            Dibuat untuk alur absensi harian yang sederhana.
           </h2>
         </div>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -143,7 +144,7 @@ export function LandingPage() {
       <section id="statistik" className="mx-auto max-w-7xl px-5 py-20">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {stats.map(([value, label]) => (
-            <div key={label} className="rounded-lg border border-slate-200 p-6">
+            <div key={label} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-3xl font-bold text-slate-950">{value}</p>
               <p className="mt-2 text-sm font-medium text-slate-500">{label}</p>
             </div>
@@ -163,8 +164,8 @@ export function LandingPage() {
             <Button asChild href="/login" size="lg">
               Mulai Sekarang
             </Button>
-            <Button asChild href="/admin" variant="outline" size="lg" className="border-white/30 bg-white text-slate-900 hover:bg-blue-50">
-              Masuk Dashboard
+            <Button asChild href="#preview" variant="outline" size="lg" className="border-white/30 bg-white text-slate-900 hover:bg-blue-50">
+              Lihat Preview
             </Button>
           </div>
         </div>

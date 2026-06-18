@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const SESSION_CHECK_INTERVAL_MS = 15000;
+const SESSION_CHECK_INTERVAL_MS = 60000;
 
 export function EmployeeSessionGuard() {
   useEffect(() => {

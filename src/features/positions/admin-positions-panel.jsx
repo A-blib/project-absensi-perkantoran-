@@ -175,18 +175,18 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_auto] lg:items-center">
+    <div className="grid gap-4 sm:gap-6">
+      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-blue-600">
             Master Data
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">Jabatan</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">Jabatan</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Kelola jabatan per divisi agar form pegawai tetap konsisten.
           </p>
         </div>
-        <Button onClick={openCreate} disabled={divisions.length === 0}>
+        <Button onClick={openCreate} disabled={divisions.length === 0} className="w-full sm:w-fit">
           <Plus size={18} />
           Tambah Jabatan
         </Button>
@@ -199,21 +199,21 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
       ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="grid gap-3 border-b border-slate-200 p-3 sm:p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={18} className="text-slate-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Cari jabatan, kode, divisi..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400 sm:w-72"
+              className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+          <div className="grid gap-3 sm:flex sm:items-center sm:justify-end">
             <select
               value={divisionFilter}
               onChange={(event) => setDivisionFilter(event.target.value)}
-              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm sm:h-10 sm:w-auto"
               aria-label="Filter jabatan berdasarkan divisi"
             >
               <option value="all">Semua Divisi</option>
@@ -223,13 +223,37 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
                 </option>
               ))}
             </select>
-            <p className="text-sm font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500 sm:text-right">
               {visiblePositions.length} jabatan ditemukan
             </p>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 sm:p-4 lg:hidden">
+          {visiblePositions.length ? (
+            visiblePositions.map((position) => (
+              <PositionMobileCard
+                key={position.id}
+                position={position}
+                isLoading={isLoading}
+                onEdit={() => openEdit(position)}
+                onToggleStatus={() =>
+                  patchPosition(position, {
+                    status: position.status === "active" ? "inactive" : "active",
+                  })
+                }
+                onDelete={() => {
+                  setMessage("");
+                  setModal({ type: "delete", position });
+                }}
+              />
+            ))
+          ) : (
+            <EmptyPositionsState />
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -303,6 +327,7 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
               ))}
             </tbody>
           </table>
+          {visiblePositions.length === 0 ? <EmptyPositionsState /> : null}
         </div>
       </div>
 
@@ -328,6 +353,108 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
           onDelete={deleteSelectedPosition}
         />
       ) : null}
+    </div>
+  );
+}
+
+function PositionMobileCard({
+  position,
+  isLoading,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+}) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <BriefcaseBusiness size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-bold text-slate-950">
+                {position.name}
+              </h2>
+              <p className="mt-1 truncate text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {position.divisionName || "Tanpa divisi"}
+              </p>
+            </div>
+            <Badge status={position.status === "active" ? "hadir" : "alpa"}>
+              {statusLabel(position.status)}
+            </Badge>
+          </div>
+
+          <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Kode
+              </dt>
+              <dd className="mt-1 truncate font-bold text-slate-700">
+                {position.code || "-"}
+              </dd>
+            </div>
+            <div className="rounded-lg bg-slate-50 px-3 py-2">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Divisi
+              </dt>
+              <dd className="mt-1 truncate font-bold text-slate-700">
+                {position.divisionName || "-"}
+              </dd>
+            </div>
+          </dl>
+
+          <p className="mt-3 max-h-[4.5rem] overflow-hidden text-sm leading-6 text-slate-500">
+            {position.description || "Belum ada deskripsi jabatan."}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onEdit}
+          className="w-full"
+        >
+          <Pencil size={16} />
+          Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isLoading}
+          onClick={onToggleStatus}
+          className="w-full"
+        >
+          {position.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onDelete}
+          className="col-span-2 w-full border-red-200 text-red-600 hover:bg-red-50"
+        >
+          <Trash2 size={16} />
+          Hapus
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+function EmptyPositionsState() {
+  return (
+    <div className="grid place-items-center px-4 py-10 text-center">
+      <div className="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-400">
+        <Search size={22} />
+      </div>
+      <p className="mt-3 text-sm font-bold text-slate-700">
+        Data jabatan tidak ditemukan
+      </p>
+      <p className="mt-1 max-w-sm text-sm leading-6 text-slate-500">
+        Coba ubah kata kunci, filter divisi, atau tambahkan jabatan baru.
+      </p>
     </div>
   );
 }

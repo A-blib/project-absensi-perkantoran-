@@ -253,18 +253,18 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_auto] lg:items-center">
+    <div className="grid gap-4 sm:gap-6">
+      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-blue-600">
             User Management
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">Pegawai</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">Pegawai</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Kelola akun, role, status aktif, dan reset password pegawai.
           </p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="w-full sm:w-fit">
           <Plus size={18} />
           Tambah Pegawai
         </Button>
@@ -277,18 +277,18 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
       ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="grid gap-3 border-b border-slate-200 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="grid gap-3 border-b border-slate-200 p-3 sm:p-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={18} className="text-slate-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Cari nama, email, divisi..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400 sm:w-72"
+              className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400"
             />
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-            <div className="flex items-center gap-2">
+          <div className="grid gap-3 sm:flex sm:items-center sm:justify-end">
+            <div className="flex min-w-0 items-center gap-2">
               <SortDropdown
                 value={sortBy}
                 isOpen={isSortOpen}
@@ -303,7 +303,7 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
                 onClick={() =>
                   setSortDirection((current) => (current === "asc" ? "desc" : "asc"))
                 }
-                className="grid size-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+                className="grid size-10 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-950 sm:size-8 sm:border-0"
                 aria-label={
                   sortDirection === "asc"
                     ? "Ubah sortir menjadi menurun"
@@ -317,13 +317,60 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
                 )}
               </button>
             </div>
-            <p className="text-sm font-medium text-slate-500">
+            <p className="text-sm font-medium text-slate-500 sm:text-right">
               {visibleUsers.length} akun ditemukan
             </p>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 sm:p-4 lg:hidden">
+          {visibleUsers.length ? (
+            visibleUsers.map((user) => (
+              <UserMobileCard
+                key={user.id}
+                user={user}
+                isOpen={openMenuId === user.id}
+                isLoading={isLoading}
+                menuPosition={menuPosition}
+                onToggle={(position) => {
+                  setMenuPosition(position);
+                  setOpenMenuId((current) => (current === user.id ? null : user.id));
+                }}
+                onDetail={() => {
+                  setMenuPosition(null);
+                  setOpenMenuId(null);
+                  setModal({ type: "detail", user });
+                }}
+                onEdit={() => openEdit(user)}
+                onToggleRole={() => {
+                  setMenuPosition(null);
+                  setOpenMenuId(null);
+                  patchUser(user, {
+                    role: user.role === "admin" ? "employee" : "admin",
+                  });
+                }}
+                onToggleStatus={() => {
+                  setMenuPosition(null);
+                  setOpenMenuId(null);
+                  patchUser(user, {
+                    status: user.status === "active" ? "inactive" : "active",
+                  });
+                }}
+                onReset={() => openReset(user)}
+                onDelete={() => {
+                  setMenuPosition(null);
+                  setOpenMenuId(null);
+                  setMessage("");
+                  setModal({ type: "delete", user });
+                }}
+              />
+            ))
+          ) : (
+            <EmptyUsersState />
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[980px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -410,6 +457,7 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
               ))}
             </tbody>
           </table>
+          {visibleUsers.length === 0 ? <EmptyUsersState /> : null}
         </div>
       </div>
 
@@ -457,6 +505,120 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
   );
 }
 
+function UserMobileCard({
+  user,
+  isOpen,
+  isLoading,
+  menuPosition,
+  onToggle,
+  onDetail,
+  onEdit,
+  onToggleRole,
+  onToggleStatus,
+  onReset,
+  onDelete,
+}) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <UserRound size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-bold text-slate-950">
+                {user.name}
+              </h2>
+              <p className="mt-1 truncate text-xs font-medium text-slate-500">
+                {user.email}
+              </p>
+            </div>
+            <UserActionMenu
+              user={user}
+              isOpen={isOpen}
+              isLoading={isLoading}
+              menuPosition={menuPosition}
+              onToggle={onToggle}
+              onDetail={onDetail}
+              onEdit={onEdit}
+              onToggleRole={onToggleRole}
+              onToggleStatus={onToggleStatus}
+              onReset={onReset}
+              onDelete={onDelete}
+              compact
+            />
+          </div>
+        </div>
+      </div>
+
+      <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Kode
+          </dt>
+          <dd className="mt-1 truncate font-bold text-slate-700">
+            {user.employeeCode || "-"}
+          </dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Divisi
+          </dt>
+          <dd className="mt-1 truncate font-bold text-slate-700">
+            {user.division || "-"}
+          </dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Jabatan
+          </dt>
+          <dd className="mt-1 truncate font-bold text-slate-700">
+            {user.position || "-"}
+          </dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Password
+          </dt>
+          <dd className="mt-1">
+            {user.mustChangePassword ? (
+              <Badge status="telat">Wajib ganti</Badge>
+            ) : (
+              <Badge status="default">Normal</Badge>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Badge status={user.role === "admin" ? "hadir" : "default"}>
+          {roleLabel(user.role)}
+        </Badge>
+        <Badge status={user.status === "active" ? "hadir" : "alpa"}>
+          {statusLabel(user.status)}
+        </Badge>
+      </div>
+    </article>
+  );
+}
+
+function EmptyUsersState() {
+  return (
+    <div className="grid place-items-center px-4 py-10 text-center">
+      <div className="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-400">
+        <Search size={22} />
+      </div>
+      <p className="mt-3 text-sm font-bold text-slate-700">
+        Data pegawai tidak ditemukan
+      </p>
+      <p className="mt-1 max-w-sm text-sm leading-6 text-slate-500">
+        Coba ubah kata kunci pencarian atau sortir data.
+      </p>
+    </div>
+  );
+}
+
 function SortDropdown({ value, isOpen, onToggle, onChange }) {
   const activeOption =
     sortOptions.find((option) => option.value === value) || sortOptions[0];
@@ -466,7 +628,7 @@ function SortDropdown({ value, isOpen, onToggle, onChange }) {
       <button
         type="button"
         onClick={onToggle}
-        className="flex h-10 min-w-36 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left shadow-sm hover:border-blue-200 hover:bg-blue-50"
+        className="flex h-10 min-w-0 flex-1 items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 text-left shadow-sm hover:border-blue-200 hover:bg-blue-50 sm:min-w-36 sm:flex-none"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
@@ -527,6 +689,7 @@ function UserActionMenu({
   isOpen,
   isLoading,
   menuPosition,
+  compact = false,
   onToggle,
   onDetail,
   onEdit,
@@ -577,9 +740,11 @@ function UserActionMenu({
         onClick={handleToggle}
         aria-expanded={isOpen}
         aria-haspopup="menu"
+        className={compact ? "size-9 shrink-0 px-0" : ""}
+        aria-label={compact ? "Buka aksi pegawai" : undefined}
       >
         <MoreHorizontal size={16} />
-        Aksi
+        {compact ? null : "Aksi"}
       </Button>
 
       {isOpen && menuPosition

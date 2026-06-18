@@ -60,3 +60,18 @@ export const attendances = pgTable("attendances", {
   locationLabel: text("location_label"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
+export const employeeActivities = pgTable("employee_activities", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  sourceType: varchar("source_type", { length: 40 }).notNull(),
+  sourceId: uuid("source_id").notNull(),
+  action: varchar("action", { length: 40 }).notNull(),
+  title: varchar("title", { length: 160 }).notNull(),
+  message: text("message").notNull(),
+  tone: varchar("tone", { length: 30 }).notNull().default("primary"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});

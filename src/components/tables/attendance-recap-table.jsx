@@ -3,7 +3,6 @@
 /* eslint-disable react-hooks/incompatible-library */
 
 import {
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
@@ -12,9 +11,6 @@ import {
 } from "@tanstack/react-table";
 import { useCallback, useMemo, useState } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -94,14 +90,6 @@ function stringToColor(str = "") {
 
 // ─── sub-components ──────────────────────────────────────────────────────────
 
-function SortIcon({ column }) {
-  const s = column.getIsSorted();
-  if (!s) return <ArrowUpDown size={12} className="text-slate-400" />;
-  return s === "asc"
-    ? <ArrowUp   size={12} className="text-blue-500" />
-    : <ArrowDown size={12} className="text-blue-500" />;
-}
-
 function ProgressBar({ value, max, colorClass }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
@@ -140,6 +128,79 @@ function ActiveFilterChip({ label, onRemove }) {
         <X size={11} />
       </button>
     </span>
+  );
+}
+
+function RecapMobileCard({ row, onClick }) {
+  const record = row.original;
+  const duration = calcDuration(record.checkIn, record.checkOut);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-bold text-slate-950">
+            {record.name}
+          </p>
+          <p className="mt-1 truncate text-xs font-semibold uppercase tracking-wide text-slate-400">
+            {record.division}
+          </p>
+        </div>
+        <Badge status={record.status}>
+          {attendanceStatuses[record.status]?.label ?? record.status}
+        </Badge>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Tanggal
+          </p>
+          <p className="mt-1 font-bold text-slate-700">{record.date}</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Durasi
+          </p>
+          <p className="mt-1 font-bold text-slate-700">{duration || "-"}</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Masuk
+          </p>
+          <p className="mt-1 font-mono font-bold text-slate-700">
+            {record.checkIn || "-"}
+          </p>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Pulang
+          </p>
+          <p className="mt-1 font-mono font-bold text-slate-700">
+            {record.checkOut || "-"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-lg border border-slate-200 px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Lokasi
+        </p>
+        <p className="mt-1 max-h-10 overflow-hidden break-words text-xs leading-5 text-slate-600">
+          {record.location || "-"}
+        </p>
+      </div>
+
+      {record.lateMinutes ? (
+        <p className="mt-3 text-xs font-bold text-amber-700">
+          Telat {record.lateMinutes} menit
+        </p>
+      ) : null}
+    </button>
   );
 }
 
@@ -386,7 +447,7 @@ export function AttendanceRecapTable({ data }) {
             <select
               value={divisionFilter}
               onChange={(e) => { setDivisionFilter(e.target.value); setPageIndex(0); }}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200 sm:w-auto"
             >
               {divisions.map((d) => (
                 <option key={d} value={d}>{d === "all" ? "Semua Divisi" : d}</option>
@@ -397,13 +458,13 @@ export function AttendanceRecapTable({ data }) {
             <select
               value={pageSize}
               onChange={(e) => { setPageSize(Number(e.target.value)); setPageIndex(0); }}
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 shadow-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-200 sm:w-auto"
             >
               {PAGE_SIZES.map((s) => <option key={s} value={s}>{s} baris</option>)}
             </select>
 
             {/* print */}
-            <Button variant="outline" size="sm" onClick={() => window.print()} className="shrink-0 gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => window.print()} className="w-full shrink-0 gap-1.5 sm:w-auto">
               <Printer size={14} />
               <span className="hidden sm:inline">Cetak</span>
             </Button>
@@ -412,7 +473,7 @@ export function AttendanceRecapTable({ data }) {
             <Button
               variant="outline" size="sm"
               onClick={() => exportToCsv(table.getFilteredRowModel().rows)}
-              className="shrink-0 gap-1.5"
+              className="w-full shrink-0 gap-1.5 sm:w-auto"
             >
               <Download size={14} />
               <span className="hidden sm:inline">Export CSV</span>
@@ -448,35 +509,45 @@ export function AttendanceRecapTable({ data }) {
           )}
         </div>
 
-        {/* ── Table ────────────────────────────────────────────── */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+        {/* ── Data list / table ────────────────────────────────── */}
+        <div className="grid gap-3 p-3 sm:p-4 lg:hidden">
+          {visibleRows.length === 0 ? (
+            <div className="px-5 py-12 text-center">
+              <p className="text-base font-semibold text-slate-600">Tidak ada data ditemukan</p>
+              <p className="mt-1 text-sm text-slate-400">Coba ubah filter atau kata kunci.</p>
+              {hasActiveFilter && (
+                <button onClick={resetFilters} className="mt-3 text-sm font-semibold text-blue-600 hover:underline">
+                  Reset semua filter
+                </button>
+              )}
+            </div>
+          ) : (
+            visibleRows.map((row) => (
+              <RecapMobileCard
+                key={row.id}
+                row={row}
+                onClick={() => setSelectedRow(row.original)}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="hidden lg:block">
+          <table className="w-full table-fixed text-left text-sm">
             <thead className="bg-slate-50/80 text-xs uppercase tracking-wide text-slate-500">
-              {table.getHeaderGroups().map((hg) => (
-                <tr key={hg.id} className="border-b border-slate-200">
-                  {hg.headers.map((header) => {
-                    const canSort = header.column.getCanSort();
-                    return (
-                      <th
-                        key={header.id}
-                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                        className={`px-4 py-3 font-bold first:pl-5 last:pr-5 ${canSort ? "cursor-pointer select-none hover:bg-slate-100 hover:text-blue-700" : ""}`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && <SortIcon column={header.column} />}
-                        </div>
-                      </th>
-                    );
-                  })}
-                </tr>
-              ))}
+              <tr className="border-b border-slate-200">
+                <th className="w-[24%] px-4 py-3 font-bold">Pegawai</th>
+                <th className="w-[14%] px-4 py-3 font-bold">Tanggal</th>
+                <th className="w-[18%] px-4 py-3 font-bold">Jam</th>
+                <th className="w-[14%] px-4 py-3 font-bold">Status</th>
+                <th className="w-[30%] px-4 py-3 font-bold">Lokasi</th>
+              </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100">
               {visibleRows.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-5 py-16 text-center">
+                  <td colSpan={5} className="px-5 py-16 text-center">
                     <p className="text-base font-semibold text-slate-600">Tidak ada data ditemukan</p>
                     <p className="mt-1 text-sm text-slate-400">Coba ubah filter atau kata kunci.</p>
                     {hasActiveFilter && (
@@ -487,19 +558,65 @@ export function AttendanceRecapTable({ data }) {
                   </td>
                 </tr>
               ) : (
-                visibleRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => setSelectedRow(row.original)}
-                    className={`cursor-pointer transition-colors ${ROW_CLASS[row.original.status] ?? "hover:bg-slate-50"}`}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className="px-4 py-3.5 first:pl-5 last:pr-5">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                visibleRows.map((row) => {
+                  const record = row.original;
+                  const duration = calcDuration(record.checkIn, record.checkOut);
+
+                  return (
+                    <tr
+                      key={row.id}
+                      onClick={() => setSelectedRow(record)}
+                      className={`cursor-pointer transition-colors ${ROW_CLASS[record.status] ?? "hover:bg-slate-50"}`}
+                    >
+                      <td className="px-4 py-3.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <div
+                            className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
+                            style={{ background: stringToColor(record.name) }}
+                            aria-hidden="true"
+                          >
+                            {record.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{record.name}</p>
+                            <p className="truncate text-[11px] text-slate-400">{record.division}</p>
+                          </div>
+                        </div>
                       </td>
-                    ))}
-                  </tr>
-                ))
+                      <td className="px-4 py-3.5">
+                        <span className="text-sm font-medium text-slate-600">{record.date}</span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="grid gap-1 text-xs">
+                          <span className="font-mono font-semibold text-slate-700">
+                            Masuk {record.checkIn || "-"}
+                          </span>
+                          <span className="font-mono font-semibold text-slate-700">
+                            Pulang {record.checkOut || "-"}
+                          </span>
+                          <span className="text-slate-500">
+                            Durasi {duration || "-"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <div className="grid gap-2">
+                          <Badge status={record.status}>
+                            {attendanceStatuses[record.status]?.label ?? record.status}
+                          </Badge>
+                          <span className="text-xs text-slate-500">
+                            Telat {record.lateMinutes ? `${record.lateMinutes}m` : "-"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <p className="max-h-10 overflow-hidden break-words text-xs leading-5 text-slate-600">
+                          {record.location || "-"}
+                        </p>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -144,6 +144,28 @@ create table if not exists public.leave_requests (
 alter table public.leave_requests add column if not exists attachment_type varchar(80);
 alter table public.leave_requests add column if not exists attachment_data text;
 
+create table if not exists public.employee_activities (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  source_type varchar(40) not null,
+  source_id uuid not null,
+  action varchar(40) not null,
+  title varchar(160) not null,
+  message text not null,
+  tone varchar(30) not null default 'primary',
+  occurred_at timestamptz not null,
+  deleted_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create unique index if not exists employee_activities_source_unique
+on public.employee_activities (user_id, source_type, source_id, action);
+
+create index if not exists employee_activities_user_occurred_idx
+on public.employee_activities (user_id, occurred_at desc)
+where deleted_at is null;
+
 create table if not exists public.app_settings (
   key varchar(120) primary key,
   value jsonb not null default '{}'::jsonb,
@@ -157,6 +179,7 @@ alter table public.divisions enable row level security;
 alter table public.positions enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.leave_requests enable row level security;
+alter table public.employee_activities enable row level security;
 
 drop policy if exists "service role can manage users" on public.users;
 create policy "service role can manage users"
@@ -196,6 +219,13 @@ with check (auth.role() = 'service_role');
 drop policy if exists "service role can manage leave requests" on public.leave_requests;
 create policy "service role can manage leave requests"
 on public.leave_requests
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage employee activities" on public.employee_activities;
+create policy "service role can manage employee activities"
+on public.employee_activities
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');

@@ -8,13 +8,14 @@ import { verifyPassword } from "@/server/services/password-service";
 export async function POST(request) {
   const body = await request.json();
   const parsed = loginSchema.safeParse({
+    role: body.role,
     email: sanitizeText(body.email),
     password: body.password,
   });
 
   if (!parsed.success) {
     return NextResponse.json(
-      { message: "Email atau password tidak valid." },
+      { message: "Pilih jenis akun, lalu isi email dan password dengan benar." },
       { status: 422 },
     );
   }
@@ -35,6 +36,18 @@ export async function POST(request) {
     if (user.status !== "active") {
       return NextResponse.json(
         { message: "Akun ini nonaktif. Hubungi admin HR." },
+        { status: 403 },
+      );
+    }
+
+    if (user.role !== parsed.data.role) {
+      return NextResponse.json(
+        {
+          message:
+            parsed.data.role === "admin"
+              ? "Akun ini bukan admin. Pilih Karyawan atau gunakan akun admin."
+              : "Akun ini bukan karyawan. Pilih Admin atau gunakan akun karyawan.",
+        },
         { status: 403 },
       );
     }

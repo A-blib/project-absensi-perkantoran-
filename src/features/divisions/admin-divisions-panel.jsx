@@ -160,18 +160,18 @@ export function AdminDivisionsPanel({ initialDivisions }) {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_auto] lg:items-center">
+    <div className="grid gap-4 sm:gap-6">
+      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-blue-600">
             Master Data
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">Divisi</h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <h1 className="mt-2 text-2xl font-bold text-slate-950 sm:text-3xl">Divisi</h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Kelola daftar divisi resmi agar data pegawai dan laporan tetap rapi.
           </p>
         </div>
-        <Button onClick={openCreate}>
+        <Button onClick={openCreate} className="w-full sm:w-fit">
           <Plus size={18} />
           Tambah Divisi
         </Button>
@@ -184,14 +184,14 @@ export function AdminDivisionsPanel({ initialDivisions }) {
       ) : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="flex flex-col gap-3 border-b border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+          <div className="flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <Search size={18} className="text-slate-400" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Cari nama, kode, deskripsi..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400 sm:w-72"
+              className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-slate-400 sm:w-72"
             />
           </div>
           <p className="text-sm font-medium text-slate-500">
@@ -199,7 +199,31 @@ export function AdminDivisionsPanel({ initialDivisions }) {
           </p>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 sm:p-4 lg:hidden">
+          {visibleDivisions.length ? (
+            visibleDivisions.map((division) => (
+              <DivisionMobileCard
+                key={division.id}
+                division={division}
+                isLoading={isLoading}
+                onEdit={() => openEdit(division)}
+                onToggleStatus={() =>
+                  patchDivision(division, {
+                    status: division.status === "active" ? "inactive" : "active",
+                  })
+                }
+                onDelete={() => {
+                  setMessage("");
+                  setModal({ type: "delete", division });
+                }}
+              />
+            ))
+          ) : (
+            <EmptyDivisionsState />
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
@@ -273,6 +297,7 @@ export function AdminDivisionsPanel({ initialDivisions }) {
               ))}
             </tbody>
           </table>
+          {visibleDivisions.length === 0 ? <EmptyDivisionsState /> : null}
         </div>
       </div>
 
@@ -297,6 +322,88 @@ export function AdminDivisionsPanel({ initialDivisions }) {
           onDelete={deleteSelectedDivision}
         />
       ) : null}
+    </div>
+  );
+}
+
+function DivisionMobileCard({
+  division,
+  isLoading,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+}) {
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
+          <Building2 size={21} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="truncate text-base font-bold text-slate-950">
+                {division.name}
+              </h2>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                {division.code || "Tanpa kode"}
+              </p>
+            </div>
+            <Badge status={division.status === "active" ? "hadir" : "alpa"}>
+              {statusLabel(division.status)}
+            </Badge>
+          </div>
+          <p className="mt-3 max-h-[4.5rem] overflow-hidden text-sm leading-6 text-slate-500">
+            {division.description || "Belum ada deskripsi divisi."}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onEdit}
+          className="w-full"
+        >
+          <Pencil size={16} />
+          Edit
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={isLoading}
+          onClick={onToggleStatus}
+          className="w-full"
+        >
+          {division.status === "active" ? "Nonaktifkan" : "Aktifkan"}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onDelete}
+          className="col-span-2 w-full border-red-200 text-red-600 hover:bg-red-50"
+        >
+          <Trash2 size={16} />
+          Hapus
+        </Button>
+      </div>
+    </article>
+  );
+}
+
+function EmptyDivisionsState() {
+  return (
+    <div className="grid place-items-center px-4 py-10 text-center">
+      <div className="grid size-12 place-items-center rounded-xl bg-slate-100 text-slate-400">
+        <Search size={22} />
+      </div>
+      <p className="mt-3 text-sm font-bold text-slate-700">
+        Data divisi tidak ditemukan
+      </p>
+      <p className="mt-1 max-w-sm text-sm leading-6 text-slate-500">
+        Coba gunakan kata kunci lain atau tambahkan divisi baru.
+      </p>
     </div>
   );
 }

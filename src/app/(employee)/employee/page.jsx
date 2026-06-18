@@ -1,67 +1,52 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  AlarmClock,
-  AlertTriangle,
-  Award,
-  BarChart3,
   Bell,
-  BriefcaseBusiness,
   CalendarDays,
   CalendarX,
-  Camera,
   CheckCircle2,
   Clock3,
   FilePenLine,
   Fingerprint,
   LogIn,
   LogOut,
-  Megaphone,
   MapPinned,
   ScanFace,
   ShieldCheck,
   Sun,
-  TrendingUp,
-  X,
+  Trash2,
+  XCircle,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
   readEmployeeAttendanceRecords,
-  saveEmployeeAttendanceByType,
 } from "@/lib/browser/employee-attendance-store";
 
-const summaryCards = [
-  {
+const summaryCardMeta = {
+  attendance: {
     label: "Kehadiran",
-    value: "21 Hari",
-    note: "+2 dari bulan lalu",
     icon: CheckCircle2,
     tone: "emerald",
   },
-  {
+  permission: {
     label: "Izin",
-    value: "2 Hari",
-    note: "Menunggu 1 persetujuan",
     icon: CalendarX,
     tone: "primary",
   },
-  {
+  late: {
     label: "Telat",
-    value: "1 Kali",
-    note: "Rata-rata 6 menit",
     icon: Clock3,
     tone: "warning",
   },
-  {
+  leave: {
     label: "Cuti",
-    value: "4 Hari",
-    note: "Periode bulan Juni",
     icon: CalendarDays,
     tone: "leave",
   },
-];
+};
 
 const defaultWeeklySchedule = [
   { dayIndex: 1, day: "SEN", start: "08:00", end: "17:00", shift: "REGULAR" },
@@ -69,32 +54,6 @@ const defaultWeeklySchedule = [
   { dayIndex: 3, day: "RAB", start: "08:00", end: "17:00", shift: "WFH" },
   { dayIndex: 4, day: "KAM", start: "08:00", end: "17:00", shift: "REGULAR" },
   { dayIndex: 5, day: "JUM", start: "08:00", end: "16:30", shift: "SHORT" },
-];
-
-const notifications = [
-  ["Reminder Absensi", "Jangan lupa absensi keluar sebelum meninggalkan kantor.", "15 menit lalu", AlarmClock, "emerald"],
-  ["Jadwal Kerja", "Briefing finance pukul 09:30 di ruang meeting lantai 3.", "Tadi pagi", BriefcaseBusiness, "primary"],
-  ["Pengajuan Izin", "Cuti tahunan Juni masih menunggu persetujuan HR.", "Kemarin", FilePenLine, "violet"],
-];
-
-const attendanceStats = [
-  ["Tepat Waktu", "95%", "Naik 3% dari bulan lalu", "Target", "90%", "Indikator", "95%", "Trend", "+3%"],
-  ["Rata-rata Check In", "07:56", "Lebih awal 4 menit", "Target", "08:00", "Indikator", "88%", "Selisih", "-4 menit"],
-  ["Rata-rata Check Out", "17:03", "Sesuai jadwal kerja", "Target", "17:00", "Indikator", "92%", "Selisih", "+3 menit"],
-];
-
-const attendanceDetails = [
-  ["Hadir", "21 hari"],
-  ["Izin", "2 hari"],
-  ["Telat", "1 kali"],
-  ["Cuti", "4 hari"],
-];
-
-const additionalWidgets = [
-  ["Pengumuman HR", "Update kebijakan absensi tersedia Jumat.", Megaphone],
-  ["Event Kantor", "Town hall Finance pekan depan.", CalendarDays, "3 hari lagi"],
-  ["Birthday Employee", "Ulang tahun tim Finance hari Kamis.", Award, "Besok"],
-  ["Info Cuti Bersama", "Jadwal cuti bersama menunggu edaran HR.", TrendingUp],
 ];
 
 const DEFAULT_ATTENDANCE_CONFIG = {
@@ -152,23 +111,19 @@ function getActivityTone(tone) {
     return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
   }
 
+  if (tone === "warning") {
+    return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+  }
+
+  if (tone === "danger") {
+    return "border-red-500/20 bg-red-500/10 text-red-300";
+  }
+
   if (tone === "violet") {
     return "border-violet-500/20 bg-violet-500/10 text-violet-300";
   }
 
   return "border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]";
-}
-
-function getStamp() {
-  return new Date().toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    timeZone: "Asia/Jakarta",
-  });
 }
 
 function getTodayDate() {
@@ -178,15 +133,6 @@ function getTodayDate() {
     year: "numeric",
     timeZone: "Asia/Jakarta",
   });
-}
-
-function getDateKey() {
-  return new Intl.DateTimeFormat("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "Asia/Jakarta",
-  }).format(new Date());
 }
 
 function getJakartaDate() {
@@ -207,18 +153,6 @@ function getDistanceMeters(from, to) {
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function formatMeters(value) {
-  return new Intl.NumberFormat("id-ID").format(Math.round(Number(value) || 0));
-}
-
-function getOutsideRadiusMessage(distance, radius, accuracy) {
-  const accuracyText = Number.isFinite(accuracy)
-    ? ` Akurasi GPS sekitar ${formatMeters(accuracy)} meter.`
-    : "";
-
-  return `Anda berada ${formatMeters(distance)} meter dari kantor. Radius valid hanya ${formatMeters(radius)} meter.${accuracyText}`;
-}
-
 function toOfficeLocation(config) {
   return {
     latitude: Number(config.location.latitude),
@@ -235,6 +169,115 @@ function formatScheduleDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function parseDisplayDate(value) {
+  if (!value || typeof value !== "string") return null;
+
+  const [day, month, year] = value.split("/");
+  if (!day || !month || !year) return null;
+
+  return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+}
+
+function getRecordDateKey(record) {
+  return record?.dateKey || parseDisplayDate(record?.date);
+}
+
+function normalizeEmployeeAttendanceStatus(record) {
+  const status = record?.statusKey || record?.status || "";
+  const lowered = String(status).toLowerCase();
+
+  if (lowered.includes("terlambat") || lowered === "telat") return "telat";
+  if (lowered.includes("izin")) return "izin";
+  if (lowered.includes("alpa")) return "alpa";
+  return "hadir";
+}
+
+function getCurrentMonthRange() {
+  const today = getJakartaDate();
+  const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+  return {
+    startKey: formatScheduleDate(startDate),
+    endKey: formatScheduleDate(endDate),
+    label: today.toLocaleDateString("id-ID", {
+      month: "long",
+      year: "numeric",
+      timeZone: "Asia/Jakarta",
+    }),
+  };
+}
+
+function isDateKeyInRange(dateKey, startKey, endKey) {
+  return Boolean(dateKey && dateKey >= startKey && dateKey <= endKey);
+}
+
+function addDateRangeToSet(targetSet, startKey, endKey, monthStartKey, monthEndKey) {
+  if (!startKey) return;
+
+  const firstKey = startKey < monthStartKey ? monthStartKey : startKey;
+  const lastKey = (endKey || startKey) > monthEndKey ? monthEndKey : endKey || startKey;
+
+  if (firstKey > lastKey) return;
+
+  const current = new Date(`${firstKey}T00:00:00+07:00`);
+  const last = new Date(`${lastKey}T00:00:00+07:00`);
+
+  while (current <= last) {
+    targetSet.add(formatScheduleDate(current));
+    current.setDate(current.getDate() + 1);
+  }
+}
+
+function isApprovedLeave(request) {
+  return request?.status === "Disetujui";
+}
+
+function isAnnualLeave(request) {
+  return String(request?.type || "").toLowerCase() === "cuti";
+}
+
+function formatActivityDate(value) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(new Date(value));
+}
+
+function getRelativeActivityTime(value) {
+  if (!value) return "";
+
+  const diff = Date.now() - new Date(value).getTime();
+  const minutes = Math.max(0, Math.floor(diff / 60000));
+
+  if (minutes < 1) return "Baru saja";
+  if (minutes < 60) return `${minutes} menit lalu`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Kemarin";
+  if (days < 7) return `${days} hari lalu`;
+
+  return formatActivityDate(value);
+}
+
+function getActivityIcon(activity) {
+  if (activity.action === "check_in") {
+    return activity.tone === "warning" ? Clock3 : CheckCircle2;
+  }
+
+  if (activity.action === "check_out") return LogOut;
+  if (activity.action === "submitted") return FilePenLine;
+  if (activity.tone === "danger") return XCircle;
+  return CheckCircle2;
 }
 
 function getWeekStart(date) {
@@ -319,30 +362,19 @@ export default function EmployeeHomePage() {
   const ownerKey = user?.id;
   const employeeName = user?.name || "Pegawai";
   const employeeTitle = getEmployeeTitle(user);
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
-  const detectorRef = useRef(null);
-  const faceScanTimerRef = useRef(null);
-  const scanningRef = useRef(false);
   const [clock, setClock] = useState("--:--:--");
-  const [lastStatus, setLastStatus] = useState("Face verification ready");
-  const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [pendingType, setPendingType] = useState(null);
-  const [faceDetected, setFaceDetected] = useState(false);
-  const [faceConfidence, setFaceConfidence] = useState(null);
-  const [faceModelLoading, setFaceModelLoading] = useState(false);
-  const [gpsValidated, setGpsValidated] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [attendanceConfig, setAttendanceConfig] = useState(
     DEFAULT_ATTENDANCE_CONFIG,
   );
-  const [gpsDistance, setGpsDistance] = useState(null);
-  const [gpsAccuracy, setGpsAccuracy] = useState(null);
   const [todayAttendance, setTodayAttendance] = useState(
     getFallbackTodayAttendance,
   );
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [deletingActivityId, setDeletingActivityId] = useState(null);
   const [weeklySchedule, setWeeklySchedule] = useState(buildWeeklySchedule);
+  const [currentMonth, setCurrentMonth] = useState(() => getCurrentMonthRange());
   const officeLocation = useMemo(
     () => toOfficeLocation(attendanceConfig),
     [attendanceConfig],
@@ -366,6 +398,7 @@ export default function EmployeeHomePage() {
   useEffect(() => {
     const timer = setInterval(() => {
       setWeeklySchedule(buildWeeklySchedule());
+      setCurrentMonth(getCurrentMonthRange());
     }, 60000);
 
     return () => clearInterval(timer);
@@ -396,7 +429,7 @@ export default function EmployeeHomePage() {
     }
 
     loadAttendanceConfig();
-    const refreshTimer = setInterval(loadAttendanceConfig, 15000);
+    const refreshTimer = setInterval(loadAttendanceConfig, 60000);
     window.addEventListener("focus", loadAttendanceConfig);
 
     return () => {
@@ -406,237 +439,48 @@ export default function EmployeeHomePage() {
     };
   }, []);
 
-  function stopCamera() {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-  }
+  useEffect(() => {
+    let active = true;
 
-  function stopFaceScan() {
-    if (faceScanTimerRef.current) {
-      clearInterval(faceScanTimerRef.current);
-      faceScanTimerRef.current = null;
-    }
-    scanningRef.current = false;
-  }
-
-  async function loadFaceDetector() {
-    if (detectorRef.current) return detectorRef.current;
-
-    setFaceModelLoading(true);
-    const [blazeface, tf] = await Promise.all([
-      import("@tensorflow-models/blazeface"),
-      import("@tensorflow/tfjs-core"),
-      import("@tensorflow/tfjs-backend-webgl"),
-      import("@tensorflow/tfjs-converter"),
-    ]).then(([blazefaceModule, tfCoreModule]) => [blazefaceModule, tfCoreModule]);
-
-    await tf.setBackend("webgl");
-    await tf.ready();
-
-    detectorRef.current = await blazeface.load();
-    setFaceModelLoading(false);
-    return detectorRef.current;
-  }
-
-  function startFaceScan(detector) {
-    stopFaceScan();
-    faceScanTimerRef.current = setInterval(async () => {
-      if (!videoRef.current || scanningRef.current) return;
-      if (videoRef.current.readyState < 2) return;
-
-      scanningRef.current = true;
+    async function loadActivities() {
       try {
-        const faces = await detector.estimateFaces(videoRef.current, false);
-        const bestFace = faces[0];
+        const response = await fetch("/api/employee/activities", {
+          cache: "no-store",
+        });
 
-        if (!bestFace) {
-          setFaceDetected(false);
-          setFaceConfidence(null);
-          setLastStatus("Wajah tidak ditemukan. Arahkan wajah ke kamera.");
-          return;
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (active) {
+          setActivities(Array.isArray(payload.activities) ? payload.activities : []);
         }
-
-        const rawScore =
-          bestFace.probability?.[0] ||
-          bestFace.probability ||
-          (bestFace.landmarks?.length >= 6 ? 0.9 : 0);
-        const confidence = Math.round(rawScore * 100);
-
-        if (confidence < 80) {
-          setFaceDetected(false);
-          setFaceConfidence(confidence);
-          setLastStatus("Identitas tidak cocok. Confidence di bawah 80%.");
-          return;
-        }
-
-        setFaceDetected(true);
-        setFaceConfidence(confidence);
-        setLastStatus("Wajah valid. Menunggu validasi GPS.");
       } catch {
-        setFaceDetected(false);
-        setFaceConfidence(null);
-        setLastStatus("Deteksi wajah gagal. Pastikan wajah terlihat jelas.");
-      } finally {
-        scanningRef.current = false;
+        if (active) setActivities([]);
       }
-    }, 700);
-  }
-
-  async function openAttendanceCamera(type) {
-    if (type === "masuk" && !canCheckIn) {
-      setLastStatus("Absensi masuk hari ini sudah tercatat");
-      return;
     }
 
-    if (type === "keluar" && !canCheckOut) {
-      setLastStatus(
-        attendanceCompleted
-          ? "Absensi hari ini sudah selesai"
-          : "Lakukan absensi masuk terlebih dahulu",
-      );
-      return;
-    }
+    loadActivities();
+    const refreshTimer = setInterval(loadActivities, 60000);
+    window.addEventListener("focus", loadActivities);
 
-    setPendingType(type);
-    setCameraError("");
-    setFaceDetected(false);
-    setFaceConfidence(null);
-    setGpsValidated(false);
-    setCameraOpen(true);
-    setLastStatus(
-      type === "masuk"
-        ? "Membuka kamera untuk absensi masuk"
-        : "Membuka kamera untuk absensi keluar",
-    );
-
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
-
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      setLastStatus("Memuat model Face Detection...");
-      const detector = await loadFaceDetector();
-      setLastStatus("Memindai wajah...");
-      startFaceScan(detector);
-    } catch (error) {
-      setCameraError(
-        error?.name === "NotAllowedError"
-          ? "Kamera tidak bisa dibuka. Izinkan akses kamera browser."
-          : "Face Detection tidak bisa dimuat. Periksa koneksi dan coba lagi.",
-      );
-      setLastStatus("Face detection unavailable");
-      setFaceModelLoading(false);
-    }
-  }
-
-  function closeAttendanceCamera() {
-    stopFaceScan();
-    stopCamera();
-    setCameraOpen(false);
-    setPendingType(null);
-    setFaceDetected(false);
-    setFaceConfidence(null);
-    setFaceModelLoading(false);
-    setGpsValidated(false);
-    setSaving(false);
-  }
-
-  async function saveAttendance(type, gpsResult) {
-    const savedAt = getStamp();
-    const time = savedAt.split(", ")[1] || "--:--:--";
-    const clockLabel = getClockLabel(time);
-    const nextAttendance = {
-      date: savedAt.split(",")[0],
-      clockIn:
-        type === "masuk"
-          ? clockLabel
-          : todayAttendance.clockIn || getClockLabel("08:00:22"),
-      clockOut: type === "keluar" ? clockLabel : todayAttendance.clockOut,
-      status: "Hadir",
-      location: officeLocation.label,
-      gpsValid: true,
-      faceVerified: true,
-      faceConfidence: faceConfidence || 98,
+    return () => {
+      active = false;
+      clearInterval(refreshTimer);
+      window.removeEventListener("focus", loadActivities);
     };
+  }, []);
 
-    saveEmployeeAttendanceByType(
-      type,
-      {
-        id: `attendance-${Date.now()}`,
-        userId: ownerKey,
-        employeeName,
-        photo: null,
-        savedAt,
-        date: nextAttendance.date,
-        clockIn: type === "masuk" ? time : "08:00:22",
-        clockOut: type === "keluar" ? time : "--:--:--",
-        status: "Hadir",
-        location: officeLocation.label,
-        latitude: gpsResult?.latitude ? String(gpsResult.latitude) : null,
-        longitude: gpsResult?.longitude ? String(gpsResult.longitude) : null,
-        radius: officeLocation.radius,
-        distance: gpsResult?.distance ?? gpsDistance,
-        accuracy: gpsResult?.accuracy ?? gpsAccuracy,
-      },
-      ownerKey,
-    );
-
-    try {
-      await fetch("/api/employee/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type,
-          capturedAt: new Date().toISOString(),
-          dateKey: getDateKey(),
-          status: nextAttendance.status,
-          lateMinutes: 0,
-          photo: null,
-          location: officeLocation.label,
-          latitude: gpsResult?.latitude ? String(gpsResult.latitude) : null,
-          longitude: gpsResult?.longitude ? String(gpsResult.longitude) : null,
-        }),
-      });
-    } catch {
-      // Local fallback is already saved above.
-    }
-
-    setTodayAttendance(nextAttendance);
-    setLastStatus(
-      type === "masuk"
-        ? `Absensi masuk tercatat pukul ${clockLabel}`
-        : `Absensi keluar tercatat pukul ${clockLabel}`,
-    );
-  }
-
-  const updateGpsStatus = useCallback((valid, distance = null, accuracy = null) => {
-    setGpsDistance(distance);
-    setGpsAccuracy(accuracy);
-    setGpsValidated(valid);
+  const updateGpsStatus = useCallback((valid) => {
     setTodayAttendance((current) => ({
       ...current,
       gpsValid: valid,
     }));
   }, []);
 
-  const checkGpsReachability = useCallback(({ forAttendance = false } = {}) => {
-    if (forAttendance) {
-      setLastStatus("Memvalidasi GPS...");
-    }
-
+  const checkGpsReachability = useCallback(() => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         updateGpsStatus(false);
-        if (forAttendance) {
-          setLastStatus("GPS tidak tersedia di perangkat ini.");
-        }
         resolve(null);
         return;
       }
@@ -657,37 +501,11 @@ export default function EmployeeHomePage() {
             insideRadius ||
             officeLocation.allowOutsideRadius;
 
-          updateGpsStatus(valid, distance, accuracy);
-
-          if (!valid) {
-            if (forAttendance) {
-              setLastStatus(
-                getOutsideRadiusMessage(distance, officeLocation.radius, accuracy),
-              );
-            }
-            resolve(null);
-            return;
-          }
-
-          if (forAttendance) {
-            setLastStatus("GPS valid. Menyimpan absensi...");
-          }
-          resolve({
-            latitude: currentLocation.latitude,
-            longitude: currentLocation.longitude,
-            distance,
-            accuracy,
-          });
+          updateGpsStatus(valid);
+          resolve(valid);
         },
-        (error) => {
+        () => {
           updateGpsStatus(false);
-          if (forAttendance) {
-            setLastStatus(
-              error.code === error.PERMISSION_DENIED
-                ? "Aktifkan izin lokasi agar bisa absen."
-                : "Lokasi tidak dapat dideteksi.",
-            );
-          }
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
@@ -703,36 +521,6 @@ export default function EmployeeHomePage() {
     return () => clearTimeout(timer);
   }, [checkGpsReachability]);
 
-  function confirmAttendance() {
-    if (!pendingType || !faceDetected) return;
-
-    if ((faceConfidence || 0) < 80) {
-      setLastStatus("Identitas tidak cocok. Absensi ditolak.");
-      return;
-    }
-
-    setSaving(true);
-    checkGpsReachability({ forAttendance: true }).then((gpsResult) => {
-      if (!gpsResult) {
-        setSaving(false);
-        return;
-      }
-
-      setTimeout(() => {
-        saveAttendance(pendingType, gpsResult).finally(() => {
-          closeAttendanceCamera();
-        });
-      }, 500);
-    });
-  }
-
-  useEffect(() => {
-    return () => {
-      stopFaceScan();
-      stopCamera();
-    };
-  }, []);
-
   useEffect(() => {
     let active = true;
 
@@ -744,6 +532,12 @@ export default function EmployeeHomePage() {
 
         if (response.ok) {
           const payload = await response.json();
+          if (active) {
+            setAttendanceRecords(
+              Array.isArray(payload.records) ? payload.records : [],
+            );
+          }
+
           if (active && payload.today) {
             setTodayAttendance({
               date: payload.today.date,
@@ -767,6 +561,7 @@ export default function EmployeeHomePage() {
 
       const storedAttendance = getStoredTodayAttendance(ownerKey, officeLocation.label);
       if (active) {
+        setAttendanceRecords(readEmployeeAttendanceRecords(ownerKey));
         setTodayAttendance(
           storedAttendance || getFallbackTodayAttendance(officeLocation.label),
         );
@@ -780,6 +575,119 @@ export default function EmployeeHomePage() {
     };
   }, [ownerKey, officeLocation.label]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadLeaveRequests() {
+      try {
+        const response = await fetch("/api/employee/leave-requests", {
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (active) {
+          setLeaveRequests(Array.isArray(payload.requests) ? payload.requests : []);
+        }
+      } catch {
+        if (active) setLeaveRequests([]);
+      }
+    }
+
+    loadLeaveRequests();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const monthlySummaryCards = useMemo(() => {
+    const presentDates = new Set();
+    const lateDates = new Set();
+    const permissionDates = new Set();
+    const leaveDates = new Set();
+    let totalLateMinutes = 0;
+
+    attendanceRecords.forEach((record) => {
+      const dateKey = getRecordDateKey(record);
+      if (!isDateKeyInRange(dateKey, currentMonth.startKey, currentMonth.endKey)) {
+        return;
+      }
+
+      const status = normalizeEmployeeAttendanceStatus(record);
+
+      if (status === "hadir" || status === "telat") {
+        presentDates.add(dateKey);
+      }
+
+      if (status === "telat") {
+        lateDates.add(dateKey);
+        totalLateMinutes += Number(record.lateMinutes || 0);
+      }
+
+      if (status === "izin") {
+        permissionDates.add(dateKey);
+      }
+    });
+
+    leaveRequests.filter(isApprovedLeave).forEach((request) => {
+      const targetSet = isAnnualLeave(request) ? leaveDates : permissionDates;
+      addDateRangeToSet(
+        targetSet,
+        request.startDate,
+        request.endDate,
+        currentMonth.startKey,
+        currentMonth.endKey,
+      );
+    });
+
+    const averageLateMinutes = lateDates.size
+      ? Math.round(totalLateMinutes / lateDates.size)
+      : 0;
+
+    return [
+      {
+        ...summaryCardMeta.attendance,
+        value: `${presentDates.size} Hari`,
+        note: `Periode ${currentMonth.label}`,
+      },
+      {
+        ...summaryCardMeta.permission,
+        value: `${permissionDates.size} Hari`,
+        note: "Izin disetujui bulan ini",
+      },
+      {
+        ...summaryCardMeta.late,
+        value: `${lateDates.size} Kali`,
+        note: averageLateMinutes
+          ? `Rata-rata ${averageLateMinutes} menit`
+          : "Tidak ada telat bulan ini",
+      },
+      {
+        ...summaryCardMeta.leave,
+        value: `${leaveDates.size} Hari`,
+        note: "Cuti disetujui bulan ini",
+      },
+    ];
+  }, [attendanceRecords, currentMonth, leaveRequests]);
+
+  async function handleDeleteActivity(id) {
+    setDeletingActivityId(id);
+
+    try {
+      const response = await fetch(`/api/employee/activities/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) return;
+
+      setActivities((current) => current.filter((activity) => activity.id !== id));
+    } finally {
+      setDeletingActivityId(null);
+    }
+  }
+
   const currentDate = new Date().toLocaleDateString("id-ID", {
     weekday: "long",
     day: "2-digit",
@@ -791,19 +699,22 @@ export default function EmployeeHomePage() {
   const hasCheckedIn = Boolean(todayAttendance.clockIn);
   const hasCheckedOut = Boolean(todayAttendance.clockOut);
   const attendanceCompleted = hasCheckedIn && hasCheckedOut;
-  const canCheckIn = !hasCheckedIn;
-  const canCheckOut = hasCheckedIn && !hasCheckedOut;
   const attendanceStatusLabel = attendanceCompleted
     ? "Absensi Selesai"
     : hasCheckedIn
       ? "Hadir Hari Ini"
       : "Belum Absen";
-  const gpsStatus = todayAttendance.gpsValid ? "Valid" : "Invalid";
+  const gpsStatus = todayAttendance.gpsValid ? "Dalam radius" : "Di luar radius";
   const gpsStatusColor = todayAttendance.gpsValid
     ? "text-emerald-400"
     : "text-red-400";
-  const faceStatus = todayAttendance.faceVerified ? "Verified" : "Pending";
-  const dashboardFaceConfidence = todayAttendance.faceConfidence || 0;
+  const identityStatus = todayAttendance.faceVerified
+    ? "Terverifikasi"
+    : "Dicek saat absen";
+  const identityStatusColor = todayAttendance.faceVerified
+    ? "text-emerald-400"
+    : "text-[#60A5FA]";
+  const cameraStatus = "Siap di panel absensi";
   const jakartaToday = getJakartaDate();
   const weeklyProgressTotal = weeklySchedule.length;
   const weeklyProgressDone = weeklySchedule.filter(
@@ -855,7 +766,7 @@ export default function EmployeeHomePage() {
 
         <section className="glass-panel relative overflow-hidden rounded-2xl p-4 sm:p-5 xl:p-6">
           <div className="absolute right-0 top-0 -mr-24 -mt-28 size-72 rounded-full bg-[#3B82F6]/10 blur-[90px]" />
-          <div className="relative z-10 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="relative z-10 grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             <div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-bold text-emerald-300">
@@ -871,16 +782,16 @@ export default function EmployeeHomePage() {
                 Absensi Hari Ini
               </h3>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-[#C2C6D6]">
-                Validasi kehadiran sudah siap. Gunakan tombol absensi masuk atau
-                keluar sesuai kebutuhan hari ini.
+                Ringkasan cepat untuk melihat status masuk, keluar, lokasi, dan
+                validasi sebelum membuka panel absensi.
               </p>
 
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-4">
                 {[
                   ["Check In", todayAttendance.clockIn || "Belum Absen", LogIn, "text-[#3B82F6]"],
                   ["Check Out", todayAttendance.clockOut || "Belum Absen", LogOut, "text-[#D4E4FA]"],
-                  ["GPS", gpsStatus, MapPinned, gpsStatusColor],
-                  ["Face ID", faceStatus, ScanFace, "text-emerald-400"],
+                  ["Lokasi", gpsStatus, MapPinned, gpsStatusColor],
+                  ["Validasi Wajah", identityStatus, ScanFace, identityStatusColor],
                 ].map(([label, value, Icon, color]) => (
                   <div
                     key={label}
@@ -899,69 +810,63 @@ export default function EmployeeHomePage() {
                 ))}
               </div>
 
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => openAttendanceCamera("masuk")}
-                  disabled={!canCheckIn}
-                  className={[
-                    "group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-bold transition-all active:scale-[0.98]",
-                    canCheckIn
-                      ? "border-[#24344D] bg-[#132238] text-[#D4E4FA] hover:-translate-y-0.5 hover:border-[#3B82F6]/60 hover:bg-white/[0.05]"
-                      : "cursor-not-allowed border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
-                  ].join(" ")}
+              <div className="mt-4 grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)]">
+                <Link
+                  href="/employee/absensi"
+                  className="group flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl bg-[#3B82F6] px-4 text-sm font-bold text-white shadow-lg shadow-[#3B82F6]/20 transition-all hover:-translate-y-0.5 hover:brightness-110 active:scale-[0.98]"
                 >
                   <Fingerprint size={18} />
-                  Absensi Masuk
-                </button>
-                <button
-                  type="button"
-                  onClick={() => openAttendanceCamera("keluar")}
-                  disabled={!canCheckOut}
-                  className={[
-                    "flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-all active:scale-[0.98]",
-                    canCheckOut
-                      ? "bg-[#3B82F6] text-white shadow-lg shadow-[#3B82F6]/20 hover:-translate-y-0.5 hover:brightness-110"
-                      : "cursor-not-allowed border border-[#24344D] bg-white/[0.03] text-[#C2C6D6]/45",
-                  ].join(" ")}
+                  Buka Panel Absensi
+                </Link>
+                <Link
+                  href="/employee/riwayat"
+                  className="flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl border border-[#24344D] bg-white/[0.04] px-4 text-sm font-bold text-[#D4E4FA] transition-all hover:-translate-y-0.5 hover:border-[#3B82F6]/60 hover:bg-white/[0.06] active:scale-[0.98]"
                 >
                   <ShieldCheck size={18} />
-                  Absensi Keluar
-                </button>
+                  Riwayat
+                </Link>
               </div>
             </div>
 
-            <div className="relative grid min-h-[170px] place-items-center overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220] sm:min-h-[200px] xl:min-h-[220px]">
-              <div className="absolute inset-x-0 top-3 z-10 flex justify-center">
-                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
-                  Face ID {faceStatus}
-                </span>
-              </div>
-              <div className="scanning-line absolute left-0 right-0" />
-              <div className="relative grid size-20 place-items-center rounded-full border border-[#3B82F6]/30 bg-[#3B82F6]/10 text-[#3B82F6] sm:size-24">
-                <ScanFace size={44} />
-                <span className="corner-tl absolute" />
-                <span className="corner-tr absolute" />
-                <span className="corner-bl absolute" />
-                <span className="corner-br absolute" />
-              </div>
-              <div className="absolute inset-x-4 bottom-3 grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-[#24344D] bg-[#132238]/80 px-3 py-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
-                    Verifikasi
+            <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#8B9DB5]">
+                    Kesiapan Absensi Hari Ini
                   </p>
-                  <p className="mt-1 text-sm font-bold text-[#D4E4FA]">
-                    {todayAttendance.clockIn || "--:-- WIB"}
+                  <p className="mt-1 text-lg font-bold text-[#D4E4FA]">
+                    {attendanceStatusLabel}
                   </p>
                 </div>
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/70">
-                    Confidence
-                  </p>
-                  <p className="mt-1 text-sm font-bold text-emerald-300">
-                    {dashboardFaceConfidence ? `${dashboardFaceConfidence}%` : "--"}
-                  </p>
+                <div className="grid size-12 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
+                  <Fingerprint size={24} />
                 </div>
+              </div>
+
+              <div className="mt-4 grid gap-2.5">
+                {[
+                  ["Status hari ini", attendanceStatusLabel, CheckCircle2, hasCheckedIn ? "text-emerald-400" : "text-[#60A5FA]"],
+                  ["Lokasi saat ini", gpsStatus, MapPinned, gpsStatusColor],
+                  ["Kamera", cameraStatus, Fingerprint, "text-[#60A5FA]"],
+                  ["Validasi wajah", identityStatus, ScanFace, identityStatusColor],
+                ].map(([label, value, Icon, color]) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2.5"
+                  >
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/[0.05]">
+                      <Icon size={17} className={color} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#8B9DB5]">
+                        {label}
+                      </p>
+                      <p className="mt-1 truncate text-sm font-bold text-[#D4E4FA]">
+                        {value}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -970,10 +875,12 @@ export default function EmployeeHomePage() {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#D4E4FA]">Ringkasan Cepat</h3>
-            <span className="text-sm font-medium text-[#C2C6D6]">Juni 2026</span>
+            <span className="text-sm font-medium text-[#C2C6D6]">
+              {currentMonth.label}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-            {summaryCards.map((card) => {
+            {monthlySummaryCards.map((card) => {
               const tone = getSummaryTone(card.tone);
 
               return (
@@ -1093,274 +1000,71 @@ export default function EmployeeHomePage() {
         </section>
 
         <section className="glass-panel rounded-2xl p-6">
-          <h3 className="mb-5 text-xl font-bold text-[#D4E4FA]">
-            Aktivitas Terbaru
-          </h3>
-          <div className="space-y-3">
-            {notifications.map(([title, desc, time, Icon, tone]) => (
-              <div
-                key={title}
-                className="flex gap-4 rounded-xl border border-[#24344D] bg-white/[0.04] p-4 transition hover:border-[#3B82F6]/35"
-              >
-                <div
-                  className={[
-                    "grid size-10 shrink-0 place-items-center rounded-xl border",
-                    getActivityTone(tone),
-                  ].join(" ")}
-                >
-                  <Icon size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                    <p className="font-bold text-[#D4E4FA]">{title}</p>
-                    <span className="shrink-0 text-[11px] text-[#C2C6D6]">
-                      {time}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="glass-panel rounded-2xl p-6">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
-                <BarChart3 size={22} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-[#D4E4FA]">
-                  Statistik Kehadiran
-                </h3>
-                <p className="text-sm text-[#C2C6D6]">Performa bulan ini</p>
-              </div>
-            </div>
-            <div className="grid place-items-center py-3">
-              <div className="grid size-36 place-items-center rounded-full border-[10px] border-[#3B82F6]/20 border-t-[#3B82F6]">
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-[#D4E4FA]">95%</p>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#C2C6D6]">
-                    Kehadiran
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-2">
-              <div className="mb-2 flex items-center justify-between text-xs text-[#C2C6D6]">
-                <span>Target Bulan: 22 Hari</span>
-                <span>Saat Ini: 21 Hari</span>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
-                <div className="h-full w-[95%] rounded-full bg-[#3B82F6]" />
-              </div>
-              <p className="mt-2 text-xs font-semibold text-[#60A5FA]">
-                Target Tercapai 95%
+          <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-[#D4E4FA]">
+                Aktivitas Terbaru
+              </h3>
+              <p className="mt-1 text-sm text-[#C2C6D6]">
+                Riwayat aktivitas akun ini tersimpan di database.
               </p>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-3">
-              {attendanceDetails.map(([label, value]) => (
+            <span className="text-xs font-semibold text-[#8B9DB5]">
+              {activities.length} aktivitas
+            </span>
+          </div>
+          <div className="space-y-3">
+            {activities.map((activity) => {
+              const Icon = getActivityIcon(activity);
+
+              return (
                 <div
-                  key={label}
-                  className="rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2"
+                  key={activity.id}
+                  className="flex gap-3 rounded-xl border border-[#24344D] bg-white/[0.04] p-4 transition hover:border-[#3B82F6]/35 sm:gap-4"
                 >
-                  <p className="text-xs text-[#C2C6D6]">{label}</p>
-                  <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-3">
-            {attendanceStats.map(([label, value, note, targetLabel, targetValue, progressLabel, progress, trendLabel, trendValue]) => (
-              <div
-                key={label}
-                className="glass-panel min-h-[190px] rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
-              >
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/70">
-                  {label}
-                </p>
-                <div className="mt-3 flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-2xl font-bold text-[#D4E4FA]">{value}</p>
-                    <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">{note}</p>
+                  <div
+                    className={[
+                      "grid size-10 shrink-0 place-items-center rounded-xl border",
+                      getActivityTone(activity.tone),
+                    ].join(" ")}
+                  >
+                    <Icon size={18} />
                   </div>
-                  <div className="shrink-0 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1.5 text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-200/70">
-                      {trendLabel}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                      <p className="font-bold text-[#D4E4FA]">{activity.title}</p>
+                      <span className="shrink-0 text-[11px] text-[#C2C6D6]">
+                        {getRelativeActivityTime(activity.occurredAt)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm leading-6 text-[#C2C6D6]">
+                      {activity.message}
                     </p>
-                    <p className="text-sm font-bold text-emerald-300">{trendValue}</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteActivity(activity.id)}
+                    disabled={deletingActivityId === activity.id}
+                    className="grid size-9 shrink-0 place-items-center rounded-xl border border-red-500/20 bg-red-500/10 text-red-300 transition hover:bg-red-500/15 disabled:cursor-wait disabled:opacity-55"
+                    aria-label={`Hapus aktivitas ${activity.title}`}
+                    title="Hapus aktivitas"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
-                <div className="mt-3 rounded-xl border border-[#24344D] bg-white/[0.04] px-3 py-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#C2C6D6]">{targetLabel}</span>
-                    <span className="font-bold text-[#D4E4FA]">{targetValue}</span>
-                  </div>
-                </div>
-                <div className="mt-3">
-                  <div className="mb-2 flex items-center justify-between text-xs text-[#C2C6D6]">
-                    <span>{progressLabel}</span>
-                    <span>{progress}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-[#24344D]">
-                    <div
-                      className="h-full rounded-full bg-[#3B82F6]"
-                      style={{ width: progress }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+              );
+            })}
 
-        <section>
-          <h3 className="mb-4 text-xl font-bold text-[#D4E4FA]">
-            Informasi Tambahan
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {additionalWidgets.map(([title, text, Icon, meta]) => (
-              <div
-                key={title}
-                className="glass-panel rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#3B82F6]/35 hover:shadow-[0_8px_24px_rgb(59_130_246_/_0.15)]"
-              >
-                <div className="mb-4 grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
-                  <Icon size={22} />
-                </div>
-                <p className="font-bold text-[#D4E4FA]">{title}</p>
-                <p className="mt-2 text-sm leading-6 text-[#C2C6D6]">{text}</p>
-                {meta ? (
-                  <span className="mt-4 inline-flex rounded-full border border-[#3B82F6]/20 bg-[#3B82F6]/10 px-3 py-1 text-xs font-bold text-[#60A5FA]">
-                    {meta}
-                  </span>
-                ) : null}
+            {!activities.length ? (
+              <div className="rounded-xl border border-dashed border-[#24344D] bg-white/[0.03] p-5 text-sm leading-6 text-[#C2C6D6]">
+                Belum ada aktivitas absensi atau pengajuan yang tercatat untuk
+                akun ini.
               </div>
-            ))}
+            ) : null}
           </div>
         </section>
       </div>
 
-      {cameraOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/80 p-4 backdrop-blur-xl">
-          <div className="glass-panel w-full max-w-3xl overflow-hidden rounded-3xl">
-            <div className="flex items-center justify-between border-b border-[#24344D] px-6 py-4">
-              <div>
-                <p className="text-sm text-[#8B9DB5]">
-                  {pendingType === "masuk" ? "Absensi Masuk" : "Absensi Keluar"}
-                </p>
-                <h3 className="text-xl font-bold text-[#D4E4FA]">
-                  Verifikasi Kamera
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={closeAttendanceCamera}
-                className="grid size-11 place-items-center rounded-2xl border border-[#24344D] text-[#C2C6D6] transition hover:bg-[#24344D]"
-                aria-label="Tutup kamera"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="p-6">
-              <div className="relative overflow-hidden rounded-3xl border border-[#24344D] bg-[#0B1220]">
-                <video
-                  ref={videoRef}
-                  playsInline
-                  muted
-                  className="aspect-video w-full bg-[#0B1220] object-cover"
-                />
-                {!cameraError ? (
-                  <div className="absolute inset-0">
-                    <div className="scanning-line absolute left-0 right-0" />
-                    <span className="corner-tl absolute" />
-                    <span className="corner-tr absolute" />
-                    <span className="corner-bl absolute" />
-                    <span className="corner-br absolute" />
-                  </div>
-                ) : null}
-              </div>
-
-              {cameraError ? (
-                <div className="mt-4 flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200">
-                  <AlertTriangle size={18} />
-                  {cameraError}
-                </div>
-              ) : (
-                <div className="mt-4 flex flex-col gap-4">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="flex items-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3 text-sm font-semibold text-[#D4E4FA]">
-                      {faceDetected ? (
-                        <CheckCircle2 size={20} className="text-emerald-400" />
-                      ) : (
-                        <Clock3 size={20} className="text-[#3B82F6]" />
-                      )}
-                      {faceDetected
-                        ? "Wajah terdeteksi"
-                        : faceModelLoading
-                          ? "Memuat model..."
-                          : "Wajah belum ditemukan"}
-                    </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
-                        Confidence
-                      </p>
-                      <p
-                        className={[
-                          "mt-1 text-sm font-bold",
-                          (faceConfidence || 0) >= 80
-                            ? "text-emerald-300"
-                            : "text-[#C2C6D6]",
-                        ].join(" ")}
-                      >
-                        {faceConfidence
-                          ? faceConfidence >= 80
-                            ? `${faceConfidence}% valid`
-                            : `${faceConfidence}% tidak cocok`
-                          : "Menunggu"}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
-                        GPS
-                      </p>
-                      <p
-                        className={[
-                          "mt-1 text-sm font-bold",
-                          gpsValidated ? "text-emerald-300" : "text-[#C2C6D6]",
-                        ].join(" ")}
-                      >
-                        {gpsValidated ? "Lokasi valid" : "Menunggu validasi"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-[#C2C6D6]">
-                      {lastStatus}
-                    </p>
-                  <button
-                    type="button"
-                    onClick={confirmAttendance}
-                    disabled={
-                      faceModelLoading ||
-                      !faceDetected ||
-                      (faceConfidence || 0) < 80 ||
-                      saving
-                    }
-                    className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#3B82F6] px-6 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-1 hover:bg-[#60A5FA] disabled:pointer-events-none disabled:opacity-50"
-                  >
-                    {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
-                    {saving ? "Memproses..." : "Validasi GPS & Simpan"}
-                  </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </EmployeeShell>
   );
 }

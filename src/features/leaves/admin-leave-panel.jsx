@@ -106,7 +106,7 @@ export function AdminLeavePanel({ initialRequests }) {
       }
     }
 
-    const interval = window.setInterval(refreshRequests, 15000);
+    const interval = window.setInterval(refreshRequests, 60000);
 
     function refreshWhenVisible() {
       if (document.visibilityState === "visible") refreshRequests();

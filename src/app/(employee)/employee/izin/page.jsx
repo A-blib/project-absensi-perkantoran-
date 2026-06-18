@@ -132,7 +132,7 @@ export default function EmployeeLeavePage() {
     }
 
     loadRequests({ showError: true });
-    const interval = window.setInterval(loadRequests, 15000);
+    const interval = window.setInterval(loadRequests, 60000);
 
     function refreshWhenVisible() {
       if (document.visibilityState === "visible") loadRequests();
