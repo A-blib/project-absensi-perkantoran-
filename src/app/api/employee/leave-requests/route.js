@@ -3,7 +3,7 @@ import { getCurrentSession } from "@/server/auth/guards";
 import { createSupabaseServerClient } from "@/server/db/client";
 import { findUserByEmail } from "@/server/repositories/user-repository";
 
-const ALLOWED_TYPES = ["Izin", "Sakit", "Cuti", "Keperluan pribadi"];
+const ALLOWED_TYPES = ["Izin", "Sakit", "Cuti", "Dispensasi", "Keperluan pribadi"];
 const ALLOWED_FILE_TYPES = ["application/pdf", "image/jpeg", "image/png"];
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
@@ -26,10 +26,15 @@ function normalizeStatus(value) {
   return value || "Menunggu";
 }
 
+function normalizeType(value) {
+  if (value === "Keperluan pribadi") return "Dispensasi";
+  return value || "Izin";
+}
+
 function mapRow(row) {
   return {
     id: row.id,
-    type: row.request_type || row.type,
+    type: normalizeType(row.request_type || row.type),
     startDate: row.start_date,
     endDate: row.end_date,
     reason: row.reason,
@@ -37,6 +42,8 @@ function mapRow(row) {
     attachmentUrl: row.attachment_url,
     status: normalizeStatus(row.status),
     createdAt: row.created_at || row.start_date,
+    updatedAt: row.updated_at || null,
+    adminNote: row.admin_note || row.note || row.rejection_reason || "",
   };
 }
 
@@ -46,10 +53,41 @@ function buildSummary(rows) {
       summary.total += 1;
       if (row.status === "Disetujui") summary.approved += 1;
       if (row.status === "Menunggu") summary.pending += 1;
+      if (row.status === "Ditolak") summary.rejected += 1;
       return summary;
     },
-    { total: 0, approved: 0, pending: 0 },
+    { total: 0, approved: 0, pending: 0, rejected: 0 },
   );
+}
+
+function parsePositiveInt(value, fallback, max = 100) {
+  const number = Number.parseInt(value || "", 10);
+  if (!Number.isFinite(number) || number < 1) return fallback;
+  return Math.min(number, max);
+}
+
+function filterRequests(rows, filters) {
+  const search = filters.search.trim().toLowerCase();
+
+  return rows.filter((row) => {
+    const matchesStatus = filters.status === "Semua" || row.status === filters.status;
+    const matchesType = filters.type === "Semua" || row.type === filters.type;
+    const matchesStart = !filters.startDate || row.startDate >= filters.startDate;
+    const matchesEnd = !filters.endDate || row.endDate <= filters.endDate;
+    const haystack = [
+      row.type,
+      row.status,
+      row.reason,
+      row.attachmentName,
+      row.startDate,
+      row.endDate,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    return matchesStatus && matchesType && matchesStart && matchesEnd && (!search || haystack.includes(search));
+  });
 }
 
 async function uploadAttachment(supabase, file, sessionId) {
@@ -232,8 +270,18 @@ async function insertLeaveRequest(supabase, payload) {
     .single();
 }
 
-export async function GET() {
+export async function GET(request) {
   const session = await getCurrentSession();
+  const { searchParams } = new URL(request.url);
+  const page = parsePositiveInt(searchParams.get("page"), 1, 10000);
+  const pageSize = parsePositiveInt(searchParams.get("pageSize"), 10, 50);
+  const filters = {
+    status: searchParams.get("status") || "Semua",
+    type: searchParams.get("type") || "Semua",
+    startDate: searchParams.get("startDate") || "",
+    endDate: searchParams.get("endDate") || "",
+    search: searchParams.get("search") || "",
+  };
 
   if (!session || session.role !== "employee") {
     return noStoreJson({ message: "Unauthorized" }, { status: 401 });
@@ -242,7 +290,10 @@ export async function GET() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return noStoreJson({
       requests: [],
-      summary: { total: 0, approved: 0, pending: 0 },
+      summary: { total: 0, approved: 0, pending: 0, rejected: 0 },
+      total: 0,
+      page,
+      pageSize,
     });
   }
 
@@ -256,7 +307,10 @@ export async function GET() {
     console.log("query error:", null);
     return noStoreJson({
       requests: [],
-      summary: { total: 0, approved: 0, pending: 0 },
+      summary: { total: 0, approved: 0, pending: 0, rejected: 0 },
+      total: 0,
+      page,
+      pageSize,
     });
   }
 
@@ -271,8 +325,19 @@ export async function GET() {
     );
   }
 
-  const requests = (data || []).map(mapRow);
-  return noStoreJson({ requests, summary: buildSummary(requests) });
+  const allRequests = (data || []).map(mapRow);
+  const filteredRequests = filterRequests(allRequests, filters);
+  const from = (page - 1) * pageSize;
+  const requests = filteredRequests.slice(from, from + pageSize);
+
+  return noStoreJson({
+    requests,
+    summary: buildSummary(allRequests),
+    filteredSummary: buildSummary(filteredRequests),
+    total: filteredRequests.length,
+    page,
+    pageSize,
+  });
 }
 
 export async function POST(request) {
@@ -323,9 +388,10 @@ export async function POST(request) {
 
   const supabase = createSupabaseServerClient();
   const uploaded = await uploadAttachment(supabase, attachment, session.id);
+  const storedRequestType = requestType === "Dispensasi" ? "Keperluan pribadi" : requestType;
   const { data, error } = await insertLeaveRequest(supabase, {
     userId: session.id,
-    requestType,
+    requestType: storedRequestType,
     startDate,
     endDate,
     reason,

@@ -5,10 +5,13 @@ import {
   Camera,
   Clock3,
   FilePenLine,
+  Files,
+  FolderArchive,
   Home,
   LayoutDashboard,
   Bell,
   CalendarDays,
+  CalendarClock,
   Settings,
   Table2,
   User,
@@ -23,6 +26,21 @@ export const employeeNav = [
   { label: "Jadwal Kerja", href: "/employee/jadwal", icon: CalendarDays },
   { label: "Profil Saya", href: "/employee/profile", icon: User },
   { label: "Notifikasi", href: "/employee/notifikasi", icon: Bell },
+];
+
+export const employeeLeaveSubNav = [
+  { label: "Pengajuan Baru", href: "/employee/izin", icon: FilePenLine },
+  { label: "Riwayat Pengajuan", href: "/employee/riwayat-izin", icon: Files },
+];
+
+export const employeeScheduleSubNav = [
+  { label: "Kalender Kerja", href: "/employee/jadwal", icon: CalendarDays },
+  { label: "Upcoming Activities", href: "/employee/upcoming-activities", icon: CalendarClock },
+];
+
+export const employeeProfileSubNav = [
+  { label: "Ringkasan Profil", href: "/employee/profile", icon: User },
+  { label: "Dokumen", href: "/employee/dokumen", icon: FolderArchive },
 ];
 
 export const adminNav = [

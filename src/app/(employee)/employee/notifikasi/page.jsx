@@ -185,67 +185,85 @@ export default function EmployeeNotificationsPage() {
 
   return (
     <EmployeeShell>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm text-[#8B9DB5]">Notification center</p>
-          <h2 className="mt-1 text-2xl font-bold text-[#d4e4fa]">
-            Pusat Notifikasi
-          </h2>
-        </div>
-        <button
-          type="button"
-          onClick={handleMarkAllRead}
-          className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#3b82f6] px-5 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-1 hover:bg-[#60a5fa]"
-        >
-          <BellRing size={18} />
-          Tandai Semua Dibaca
-        </button>
-      </div>
+      <div className="mx-auto max-w-[1320px] space-y-4 pb-10">
+        <section className="relative overflow-hidden rounded-[20px] border border-[#2F5B86]/80 bg-[linear-gradient(145deg,#102036_0%,#142846_58%,#0B1424_100%)] p-4 shadow-[0_18px_46px_rgba(0,0,0,.34),inset_0_1px_0_rgba(255,255,255,.09)]">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38BDF8,#A78BFA,#22C55E)]" />
+          <div className="absolute left-0 top-0 size-56 rounded-full bg-[#38BDF8]/10 blur-3xl" />
+          <div className="relative grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
+            <div>
+              <p className="text-sm font-semibold text-[#A7B3C6]">
+                Notification center
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-[#F8FAFC] sm:text-3xl">
+                Pusat Notifikasi
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#A7B3C6]">
+                Pantau absensi, pengajuan izin, dan informasi perusahaan dalam tampilan ringkas.
+              </p>
+            </div>
 
-      <section className="mb-6 grid gap-3 md:grid-cols-3">
-        {[
-          ["Total Notifikasi", summary.total],
-          ["Belum Dibaca", summary.unread],
-          ["Sudah Dibaca", summary.read],
-        ].map(([label, value]) => (
-          <div key={label} className="glass-panel rounded-2xl p-5">
-            <p className="text-sm text-[#8B9DB5]">{label}</p>
-            <p className="mt-2 text-3xl font-bold text-[#d4e4fa]">{value}</p>
-          </div>
-        ))}
-      </section>
+            <div className="grid gap-3 sm:grid-cols-[1fr_auto] xl:min-w-[520px]">
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ["Total", summary.total],
+                  ["Belum Dibaca", summary.unread],
+                  ["Dibaca", summary.read],
+                ].map(([label, value]) => (
+                  <div
+                    key={label}
+                    className="rounded-xl border border-[#315173]/80 bg-[#08111F]/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05)]"
+                  >
+                    <p className="truncate text-[11px] font-semibold text-[#8B9DB5]">
+                      {label}
+                    </p>
+                    <p className="mt-0.5 text-xl font-bold text-[#E5EEFF]">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
 
-      <section className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="glass-panel rounded-3xl p-5">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#c2c6d6]">
-            <Filter size={18} className="text-[#60a5fa]" />
-            Filter Kategori
-          </div>
-          <div className="space-y-2">
-            {categories.map((category) => (
               <button
-                key={category.value}
                 type="button"
-                onClick={() => setActiveCategory(category.value)}
-                className={[
-                  "flex min-h-11 w-full items-center justify-between rounded-2xl px-4 text-left text-sm font-semibold transition",
-                  activeCategory === category.value
-                    ? "bg-[#3b82f6] text-white"
-                    : "text-[#c2c6d6] hover:bg-[#0B1220]",
-                ].join(" ")}
+                onClick={handleMarkAllRead}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#60A5FA]/45 bg-[#1D4ED8] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(37,99,235,.22)] transition hover:-translate-y-0.5 hover:bg-[#2563EB]"
               >
-                {category.label}
-                <span className="rounded-full bg-black/20 px-2 py-0.5 text-xs">
-                  {getCategoryCount(notificationsData, category.value)}
-                </span>
+                <BellRing size={17} />
+                Tandai Dibaca
               </button>
-            ))}
+            </div>
           </div>
-        </aside>
+        </section>
 
-        <div className="glass-panel rounded-3xl p-5">
-          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="relative w-full md:max-w-sm">
+        <section className="relative overflow-hidden rounded-[20px] border border-[#315173]/80 bg-[linear-gradient(145deg,#12233A,#0D1829)] p-4 shadow-[0_16px_38px_rgba(0,0,0,.30),inset_0_1px_0_rgba(255,255,255,.08)]">
+          <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#38BDF8,#2563EB)]" />
+          <div className="relative mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_340px_auto] xl:items-center">
+            <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
+              <span className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#C2C6D6]">
+                <Filter size={17} className="text-[#7DD3FC]" />
+                Filter
+              </span>
+              {categories.map((category) => (
+                <button
+                  key={category.value}
+                  type="button"
+                  onClick={() => setActiveCategory(category.value)}
+                  className={[
+                    "inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition",
+                    activeCategory === category.value
+                      ? "border-[#60A5FA]/60 bg-[#1D4ED8] text-white shadow-[0_10px_22px_rgba(37,99,235,.22)]"
+                      : "border-[#2C4564] bg-[#08111F]/70 text-[#C2C6D6] hover:border-[#38BDF8]/60 hover:text-[#BAE6FD]",
+                  ].join(" ")}
+                >
+                  {category.label}
+                  <span className="rounded-full bg-black/25 px-2 py-0.5 text-xs">
+                    {getCategoryCount(notificationsData, category.value)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
               <Search
                 size={18}
                 className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8B9DB5]"
@@ -254,15 +272,16 @@ export default function EmployeeNotificationsPage() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Cari notifikasi"
-                className="min-h-12 w-full rounded-2xl border border-[#24344D] bg-[#0B1220] pl-11 pr-4 text-sm text-[#d4e4fa] outline-none transition placeholder:text-[#64748b] focus:border-[#3b82f6]"
+                className="min-h-11 w-full rounded-xl border border-[#2C4564] bg-[#08111F]/80 pl-11 pr-4 text-sm text-[#E5EEFF] outline-none shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition placeholder:text-[#64748b] focus:border-[#38BDF8]"
               />
             </div>
-            <p className="text-sm text-[#8B9DB5]">
-              {notifications.length} notifikasi ditemukan
+
+            <p className="text-sm font-semibold text-[#8B9DB5] xl:text-right">
+              {notifications.length} ditemukan
             </p>
           </div>
 
-          <div className="space-y-3">
+          <div className="relative grid max-h-[calc(100vh-360px)] min-h-[260px] gap-3 overflow-y-auto pr-1 xl:grid-cols-2">
             {notifications.map((notification) => {
               const Icon = typeIcons[notification.type] || Info;
 
@@ -271,33 +290,39 @@ export default function EmployeeNotificationsPage() {
                   key={notification.id}
                   type="button"
                   onClick={() => handleOpenNotification(notification.id)}
-                  className="w-full rounded-3xl border border-[#24344D] bg-[#0B1220] p-4 text-left transition hover:-translate-y-1 hover:border-[#3b82f6]/60"
+                  className={[
+                    "group relative overflow-hidden rounded-[18px] border bg-[#08111F]/86 p-3.5 text-left shadow-[0_12px_26px_rgba(0,0,0,.24),inset_0_1px_0_rgba(255,255,255,.05)] transition hover:-translate-y-0.5 hover:bg-[#10233A]",
+                    notification.isRead
+                      ? "border-[#2C4564]"
+                      : "border-[#2563EB]/75",
+                  ].join(" ")}
                 >
-                  <div className="flex gap-4">
+                  <div className="absolute inset-y-0 left-0 w-1 bg-[#38BDF8]/70 opacity-0 transition group-hover:opacity-100" />
+                  <div className="flex gap-3">
                     <div
                       className={[
-                        "grid size-12 shrink-0 place-items-center rounded-2xl border",
+                        "grid size-10 shrink-0 place-items-center rounded-xl border",
                         toneClasses[notification.type] || toneClasses.info,
                       ].join(" ")}
                     >
-                      <Icon size={21} />
+                      <Icon size={19} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-bold text-[#d4e4fa]">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <h3 className="truncate font-bold text-[#E5EEFF]">
                           {notification.title}
                         </h3>
                         {!notification.isRead ? (
                           <span className="size-2 rounded-full bg-[#3b82f6] shadow-[0_0_12px_rgba(59,130,246,.85)]" />
                         ) : null}
-                        <span className="rounded-full bg-[#132238] px-3 py-1 text-xs font-semibold text-[#8B9DB5]">
+                        <span className="rounded-full bg-[#132238] px-2.5 py-1 text-xs font-semibold text-[#8B9DB5]">
                           {categoryLabels[notification.category] || "Info"}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-[#c2c6d6]">
+                      <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-[#C2C6D6]">
                         {notification.message}
                       </p>
-                      <p className="mt-3 text-xs text-[#8B9DB5]">
+                      <p className="mt-2 text-xs text-[#8B9DB5]">
                         {getRelativeTime(notification.createdAt)}
                       </p>
                     </div>
@@ -306,7 +331,7 @@ export default function EmployeeNotificationsPage() {
               );
             })}
             {!notifications.length ? (
-              <div className="rounded-3xl border border-[#24344D] bg-[#0B1220] p-8 text-center">
+              <div className="rounded-2xl border border-dashed border-[#2D4568] bg-[#0D1728] p-8 text-center xl:col-span-2">
                 <p className="font-semibold text-[#d4e4fa]">
                   Tidak ada notifikasi
                 </p>
@@ -316,8 +341,8 @@ export default function EmployeeNotificationsPage() {
               </div>
             ) : null}
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </EmployeeShell>
   );
 }

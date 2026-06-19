@@ -888,7 +888,7 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="ems-card rounded-2xl border border-[#334155] bg-[#1E293B] p-6 transition-all duration-300">
+        <section className="rounded-2xl border border-[#334155] bg-[linear-gradient(145deg,#22314A,#1E293B)] p-6 shadow-[0_18px_42px_rgba(0,0,0,.28),inset_0_1px_0_rgba(255,255,255,.06)] transition-all duration-300">
           <h3 className="mb-5 text-xl font-bold text-[#F1F5F9]">
             Aktivitas Terbaru
           </h3>
@@ -900,7 +900,7 @@ export default function EmployeeHomePage() {
               <div
                 key={title}
                 className={[
-                  "ems-card flex gap-4 rounded-xl border border-l-4 border-[#334155] bg-[#111827] p-4 transition-all duration-300",
+                  "flex gap-4 rounded-xl border border-l-4 border-[#334155] bg-[#111827] p-4 shadow-[0_10px_24px_rgba(0,0,0,.20)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#132238]",
                   activityTone.line,
                 ].join(" ")}
               >

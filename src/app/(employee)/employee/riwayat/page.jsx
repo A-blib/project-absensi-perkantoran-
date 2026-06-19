@@ -417,14 +417,25 @@ export default function EmployeeHistoryPage() {
               Review riwayat absensi pribadi dan bukti foto kehadiran.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleExportPdf}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#64748B] bg-[linear-gradient(135deg,#1E293B,#334155)] px-5 text-sm font-bold text-[#F8FAFC] shadow-[0_10px_24px_rgba(0,0,0,.18)] transition hover:bg-[#475569]"
-          >
-            <Download size={17} />
-            Export PDF
-          </button>
+          <div className="grid gap-2 sm:w-40">
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#64748B] bg-[linear-gradient(135deg,#1E293B,#334155)] px-5 text-sm font-bold text-[#F8FAFC] shadow-[0_10px_24px_rgba(0,0,0,.18)] transition hover:bg-[#475569]"
+            >
+              <Download size={17} />
+              Export PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isRefreshing || isLoading}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#60A5FA] bg-[linear-gradient(135deg,#2563EB,#1D4ED8)] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(37,99,235,0.25)] transition hover:bg-[linear-gradient(135deg,#1D4ED8,#2563EB)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw size={17} className={isRefreshing ? "animate-spin" : ""} />
+              {isRefreshing ? "Memuat..." : "Refresh"}
+            </button>
+          </div>
         </div>
 
         {errorMessage ? (
@@ -447,7 +458,7 @@ export default function EmployeeHistoryPage() {
 
         <section className="rounded-2xl border border-[#2D4568] bg-[#111C2E] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.28)] sm:p-5">
           <div className="rounded-[18px] border border-[rgba(96,165,250,0.22)] bg-[linear-gradient(145deg,#142136,#111C2E)] p-4 shadow-[0_12px_28px_rgba(0,0,0,0.24)]">
-            <div className="grid gap-3 xl:grid-cols-[150px_120px_150px_140px_minmax(240px,1fr)_auto] xl:items-end">
+            <div className="grid gap-3 xl:grid-cols-[150px_120px_150px_140px_minmax(240px,1fr)] xl:items-end">
             <SelectFilter
               label="Bulan"
               value={filters.month}
@@ -507,21 +518,12 @@ export default function EmployeeHistoryPage() {
                 />
               </span>
             </label>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoading}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#60A5FA] bg-[linear-gradient(135deg,#2563EB,#1D4ED8)] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(37,99,235,0.25)] transition hover:bg-[linear-gradient(135deg,#1D4ED8,#2563EB)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw size={17} className={isRefreshing ? "animate-spin" : ""} />
-              {isRefreshing ? "Memuat..." : "Refresh"}
-            </button>
             </div>
           </div>
 
           <div className="mt-5 max-h-[560px] overflow-auto rounded-2xl border border-[rgba(96,165,250,0.22)] bg-[#111C2E]">
             <table className="w-full min-w-[760px] text-left">
-              <thead className="sticky top-0 z-10 border-b border-[#2D4568] bg-[#1C2B43] text-xs uppercase tracking-wider text-[#CBD5E1] shadow-[0_1px_0_#2D4568]">
+              <thead className="border-b border-[#2D4568] bg-[#1C2B43] text-xs uppercase tracking-wider text-[#CBD5E1] shadow-[0_1px_0_#2D4568]">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Tanggal</th>
                   <th className="px-4 py-3 font-semibold">Jam Masuk</th>
