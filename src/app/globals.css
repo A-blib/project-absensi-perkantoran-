@@ -490,6 +490,89 @@ textarea:focus-visible {
   box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4);
 }
 
+.employee-shell-sidebar,
+.dark .employee-shell-sidebar {
+  background:
+    radial-gradient(circle at 18% 8%, rgb(56 189 248 / 0.16), transparent 13rem),
+    radial-gradient(circle at 86% 82%, rgb(37 99 235 / 0.16), transparent 15rem),
+    linear-gradient(180deg, #091122 0%, #101b31 52%, #0b1220 100%) !important;
+  border-right: 1px solid rgb(56 189 248 / 0.16) !important;
+  box-shadow:
+    inset -1px 0 0 rgb(96 165 250 / 0.14),
+    18px 0 46px rgb(0 0 0 / 0.18) !important;
+}
+
+.employee-shell-sidebar .grid.size-10 {
+  background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
+  box-shadow:
+    0 8px 22px rgb(37 99 235 / 0.35),
+    inset 0 1px 0 rgb(255 255 255 / 0.24);
+}
+
+.employee-shell-sidebar p.text-xl {
+  color: #60a5fa !important;
+}
+
+.employee-shell-sidebar p.text-\[11px\] {
+  color: #94a3b8 !important;
+}
+
+.employee-shell-sidebar nav a {
+  border-radius: 12px !important;
+  color: #b7c3d6 !important;
+  border-left-color: transparent;
+}
+
+.employee-shell-sidebar nav a svg {
+  color: #94a3b8;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.employee-shell-sidebar nav a:hover {
+  background: rgb(56 189 248 / 0.08) !important;
+  color: #eaf6ff !important;
+  border-left-color: rgb(56 189 248 / 0.24) !important;
+}
+
+.employee-shell-sidebar nav a:hover svg {
+  color: #38bdf8;
+  transform: translateX(1px);
+}
+
+.employee-shell-sidebar nav a[aria-current="page"] {
+  background:
+    radial-gradient(circle at 88% 50%, rgb(56 189 248 / 0.14), transparent 8rem),
+    linear-gradient(90deg, rgb(37 99 235 / 0.26), rgb(56 189 248 / 0.08)) !important;
+  border-left-color: #3b82f6 !important;
+  color: #60a5fa !important;
+  box-shadow:
+    inset 0 0 18px rgb(59 130 246 / 0.14),
+    0 10px 24px rgb(0 0 0 / 0.12);
+}
+
+.employee-shell-sidebar nav a[aria-current="page"] svg {
+  color: #38bdf8;
+}
+
+.employee-shell-sidebar .mt-auto > div {
+  background:
+    radial-gradient(circle at 18% 12%, rgb(56 189 248 / 0.12), transparent 8rem),
+    rgb(30 41 59 / 0.72) !important;
+  border: 1px solid rgb(148 163 184 / 0.2) !important;
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 0.2),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.employee-shell-sidebar .mt-auto p:first-child {
+  color: #f8fafc !important;
+}
+
+.employee-shell-sidebar .mt-auto p:last-child {
+  color: #93c5fd !important;
+}
+
 .dark .employee-brand-card,
 .dark .employee-office-radius-card,
 .dark .employee-header-action,
@@ -517,6 +600,20 @@ textarea:focus-visible {
   border-radius: 20px;
   box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4) !important;
   backdrop-filter: blur(18px);
+}
+
+.dark .employee-command-header-attendance {
+  background:
+    radial-gradient(circle at 24% 0%, rgb(45 212 191 / 0.13), transparent 24rem),
+    radial-gradient(circle at 82% 0%, rgb(59 130 246 / 0.08), transparent 18rem),
+    linear-gradient(180deg, rgb(17 27 43 / 0.98), rgb(11 17 32 / 0.92)) !important;
+  border-width: 0 0 1px !important;
+  border-color: rgb(45 212 191 / 0.18) !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 18px 42px rgb(0 0 0 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    inset 0 -1px 0 rgb(94 234 212 / 0.1) !important;
 }
 
 .dark .employee-brand-card {
@@ -796,8 +893,26 @@ textarea:focus-visible {
   box-shadow: 0 12px 18px -6px rgb(0 0 0 / 0.1);
 }
 
+.employee-today-attendance-card {
+  background:
+    radial-gradient(circle at 92% 8%, rgb(59 130 246 / 0.18), transparent 18rem),
+    linear-gradient(145deg, #22314a 0%, #1d2a40 54%, #182438 100%) !important;
+  border-color: #334a68 !important;
+  box-shadow:
+    0 18px 42px rgb(0 0 0 / 0.28),
+    inset 0 1px 0 rgb(255 255 255 / 0.06) !important;
+}
+
 .dark .ems-card:hover {
   background-color: #27272a;
+}
+
+.dark .employee-today-attendance-card,
+.dark .employee-today-attendance-card:hover {
+  background:
+    radial-gradient(circle at 92% 8%, rgb(59 130 246 / 0.18), transparent 18rem),
+    linear-gradient(145deg, #22314a 0%, #1d2a40 54%, #182438 100%) !important;
+  border-color: #334a68 !important;
 }
 
 .ems-card-delay-1 {

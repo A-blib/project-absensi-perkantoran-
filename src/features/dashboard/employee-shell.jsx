@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { LogoutButton } from "@/features/auth/logout-button";
+import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { employeeNav } from "@/lib/constants/navigation";
 
 const pageTitles = {
@@ -27,9 +28,10 @@ const pageTitles = {
 
 const pageSubtitles = {
   "/employee": "Employee Attendance & Activity Center",
+  "/employee/absensi": "Validasi wajah, GPS, dan aktivitas hari ini",
 };
 
-function SidebarContent({ pathname, onNavigate }) {
+function SidebarContent({ pathname, onNavigate, employee }) {
   return (
     <>
       <div className="px-6 pb-10">
@@ -79,16 +81,16 @@ function SidebarContent({ pathname, onNavigate }) {
         <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.05] p-3">
           <Image
             src="/avatar-rina.svg"
-            alt="Foto profil Rina Pratiwi"
+            alt={`Foto profil ${employee.name}`}
             width={40}
             height={40}
             className="size-10 rounded-full object-cover ring-2 ring-[#3B82F6]/20"
           />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold text-[#E5EEFF]">
-              Rina Pratiwi
+              {employee.name}
             </p>
-            <p className="text-[11px] text-[#9AA8BD]">Finance Officer</p>
+            <p className="text-[11px] text-[#9AA8BD]">{employee.position}</p>
           </div>
         </div>
       </div>
@@ -99,8 +101,39 @@ function SidebarContent({ pathname, onNavigate }) {
 export function EmployeeShell({ children }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [employee, setEmployee] = useState({
+    name: "Karyawan",
+    email: "",
+    position: "Employee",
+  });
   const title = pageTitles[pathname] || "Corporate EMS";
   const subtitle = pageSubtitles[pathname];
+  const currentNav = employeeNav.find((item) =>
+    item.href === "/employee" ? pathname === item.href : pathname.startsWith(item.href),
+  );
+  const CurrentIcon = currentNav?.icon || Building2;
+  const isAttendancePage = pathname === "/employee/absensi";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEmployeeProfile() {
+      try {
+        const response = await fetch("/api/employee/profile", { cache: "no-store" });
+        const payload = await response.json();
+        if (isMounted && response.ok && payload.employee) {
+          setEmployee(payload.employee);
+        }
+      } catch {
+        // Keep the fallback profile if the session endpoint is not reachable.
+      }
+    }
+
+    loadEmployeeProfile();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0B1120] font-sans text-[#F1F5F9]">
@@ -112,7 +145,7 @@ export function EmployeeShell({ children }) {
             className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative flex h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 shadow-2xl">
+          <aside className="employee-shell-sidebar relative flex h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 shadow-2xl">
             <button
               type="button"
               aria-label="Tutup menu"
@@ -124,17 +157,25 @@ export function EmployeeShell({ children }) {
             <SidebarContent
               pathname={pathname}
               onNavigate={() => setMobileOpen(false)}
+              employee={employee}
             />
           </aside>
         </div>
       ) : null}
 
-      <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 lg:flex">
-        <SidebarContent pathname={pathname} />
+      <aside className="employee-shell-sidebar fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#334155] bg-[#14141E] py-8 lg:flex">
+        <SidebarContent pathname={pathname} employee={employee} />
       </aside>
 
       <main className="min-h-screen bg-[#0B1120] lg:ml-[280px]">
-        <header className="sticky top-0 z-30 flex h-[68px] w-full items-center justify-between border-b border-[#334155] bg-[#0B1120]/90 px-4 backdrop-blur-md sm:px-6">
+        <header
+          className={[
+            "employee-command-header sticky top-0 z-30 flex min-h-[76px] w-full items-center justify-between border-b px-4 backdrop-blur-xl sm:px-6",
+            isAttendancePage
+              ? "employee-command-header-attendance border-[#2DD4BF]/18 bg-[radial-gradient(circle_at_26%_0%,rgba(45,212,191,.12),transparent_24rem),linear-gradient(180deg,rgba(17,27,43,.96),rgba(11,17,32,.9))] shadow-[0_18px_42px_rgba(0,0,0,.3)]"
+              : "border-[#334155] bg-[#0B1120]/90",
+          ].join(" ")}
+        >
           <div className="flex min-w-0 items-center gap-4">
             <button
               type="button"
@@ -144,15 +185,34 @@ export function EmployeeShell({ children }) {
             >
               <Menu size={21} />
             </button>
-            <div className="min-w-0">
-              <h1 className="truncate text-xl font-bold tracking-tight text-[#E5EEFF]">
-                {title}
-              </h1>
-              {subtitle ? (
-                <p className="mt-0.5 hidden truncate text-xs font-medium text-[#9AA8BD] sm:block">
-                  {subtitle}
-                </p>
-              ) : null}
+            <div className="flex min-w-0 items-center gap-3">
+              <div
+                className={[
+                  "hidden size-11 shrink-0 place-items-center rounded-2xl border sm:grid",
+                  isAttendancePage
+                    ? "border-[#2DD4BF]/26 bg-[#2DD4BF]/10 text-[#5EEAD4] shadow-[0_10px_24px_rgba(45,212,191,.12)]"
+                    : "border-[#334155] bg-[#132238] text-[#9AA8BD]",
+                ].join(" ")}
+              >
+                <CurrentIcon size={22} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-3">
+                  <h1 className="truncate text-xl font-extrabold tracking-tight text-[#E5EEFF]">
+                    {title}
+                  </h1>
+                  {isAttendancePage ? (
+                    <span className="hidden shrink-0 rounded-full border border-[#34D399]/24 bg-[#34D399]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#86EFAC] md:inline-flex">
+                      Online
+                    </span>
+                  ) : null}
+                </div>
+                {subtitle ? (
+                  <p className="mt-0.5 hidden truncate text-xs font-medium text-[#9AA8BD] sm:block">
+                    {subtitle}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -173,16 +233,17 @@ export function EmployeeShell({ children }) {
               >
                 <Settings size={24} />
               </button>
+              <ThemeToggle placement="inline" />
             </div>
             <div className="hidden h-8 w-px bg-[#2C5B9A]/45 sm:block" />
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold text-[#E5EEFF]">Rina Pratiwi</p>
-                <p className="text-[11px] text-[#9AA8BD]">Finance Officer</p>
+                <p className="text-sm font-bold text-[#E5EEFF]">{employee.name}</p>
+                <p className="text-[11px] text-[#9AA8BD]">{employee.position}</p>
               </div>
               <Image
                 src="/avatar-rina.svg"
-                alt="Foto profil Rina Pratiwi"
+                alt={`Foto profil ${employee.name}`}
                 width={40}
                 height={40}
                 className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"

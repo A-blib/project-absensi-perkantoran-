@@ -628,7 +628,7 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="ems-card relative overflow-hidden rounded-2xl border border-[#334155] bg-[#1E293B] p-4 transition-all duration-300 sm:p-5 xl:p-6">
+        <section className="employee-today-attendance-card ems-card relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 sm:p-5 xl:p-6">
           <div className="absolute right-0 top-0 -mr-24 -mt-28 size-72 rounded-full bg-[#3B82F6]/10 blur-[90px]" />
           <div className="relative z-10 grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
             <div>

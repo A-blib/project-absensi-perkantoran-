@@ -56,6 +56,22 @@ function getTodayDate() {
   });
 }
 
+function getTodayIsoDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  })
+    .formatToParts(new Date())
+    .reduce((values, part) => {
+      values[part.type] = part.value;
+      return values;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function getClockOnly() {
   return new Date().toLocaleTimeString("id-ID", {
     hour: "2-digit",
@@ -112,6 +128,40 @@ function playSuccessSound() {
   setTimeout(() => audioContext.close(), 700);
 }
 
+function getSignatureDistance(left, right) {
+  if (!left || !right || left.length !== right.length) return null;
+  let distance = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) distance += 1;
+  }
+  return distance / left.length;
+}
+
+function createImageSignature(dataUrl) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      const size = 8;
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(image, 0, 0, size, size);
+      const pixels = context.getImageData(0, 0, size, size).data;
+      const values = [];
+
+      for (let index = 0; index < pixels.length; index += 4) {
+        values.push((pixels[index] + pixels[index + 1] + pixels[index + 2]) / 3);
+      }
+
+      const average = values.reduce((total, value) => total + value, 0) / values.length;
+      resolve(values.map((value) => (value >= average ? "1" : "0")).join(""));
+    };
+    image.onerror = () => resolve("");
+    image.src = dataUrl;
+  });
+}
+
 export default function EmployeeAttendancePage() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -142,36 +192,47 @@ export default function EmployeeAttendancePage() {
   const infoRowClass = "rounded-2xl px-4 py-3";
   const cardStyles = {
     main: {
-      background: "linear-gradient(145deg, #275C87 0%, #1B4163 100%)",
-      borderColor: "rgba(147, 197, 253, 0.46)",
-      boxShadow: "0 24px 52px rgba(0,0,0,.38)",
+      background:
+        "radial-gradient(circle at 86% 8%, rgba(45,212,191,.2), transparent 18rem), linear-gradient(145deg, #1B2638 0%, #151F30 56%, #101928 100%)",
+      borderColor: "rgba(94, 234, 212, 0.28)",
+      boxShadow:
+        "0 26px 64px rgba(0,0,0,.56), 0 0 0 1px rgba(148,163,184,.08), inset 0 1px 0 rgba(255,255,255,.1), inset 0 -1px 0 rgba(15,23,42,.72)",
     },
     verification: {
-      background: "linear-gradient(145deg, #172F47 0%, #102235 100%)",
-      borderColor: "rgba(147, 197, 253, 0.2)",
-      boxShadow: "0 14px 34px rgba(0,0,0,.28), 0 0 22px rgba(52,211,153,.08)",
+      background:
+        "radial-gradient(circle at 88% 16%, rgba(52,211,153,.2), transparent 10rem), linear-gradient(145deg, #193036 0%, #122431 100%)",
+      borderColor: "rgba(52, 211, 153, 0.32)",
+      boxShadow:
+        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(52,211,153,.08), inset 0 1px 0 rgba(255,255,255,.09)",
     },
     activity: {
-      background: "linear-gradient(145deg, #315F8E 0%, #254A72 100%)",
-      borderColor: "rgba(147, 197, 253, 0.34)",
-      boxShadow: "0 16px 36px rgba(0,0,0,.3)",
+      background:
+        "radial-gradient(circle at 12% 10%, rgba(245,158,11,.18), transparent 11rem), linear-gradient(145deg, #272735 0%, #171F2E 100%)",
+      borderColor: "rgba(245, 158, 11, 0.3)",
+      boxShadow:
+        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(245,158,11,.07), inset 0 1px 0 rgba(255,255,255,.09)",
     },
     radius: {
-      background: "linear-gradient(145deg, #164A50 0%, #10333A 100%)",
-      borderColor: "rgba(45, 212, 191, 0.28)",
-      boxShadow: "0 16px 36px rgba(0,0,0,.3)",
+      background:
+        "radial-gradient(circle at 88% 12%, rgba(103,232,249,.18), transparent 11rem), linear-gradient(145deg, #1A3039 0%, #122331 100%)",
+      borderColor: "rgba(103, 232, 249, 0.32)",
+      boxShadow:
+        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(103,232,249,.07), inset 0 1px 0 rgba(255,255,255,.09)",
     },
     row: {
-      background: "linear-gradient(180deg, #234F75 0%, #183B5D 100%)",
-      border: "1px solid rgba(255,255,255,.09)",
-      boxShadow: "inset 0 1px 0 rgba(255,255,255,.08)",
+      background:
+        "linear-gradient(180deg, rgba(255,255,255,.095) 0%, rgba(255,255,255,.045) 100%)",
+      border: "1px solid rgba(203,213,225,.22)",
+      boxShadow:
+        "0 8px 18px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08)",
     },
     photoFrame: {
       background:
-        "#0C2338 linear-gradient(90deg, rgba(147,197,253,.05) 1px, transparent 1px), linear-gradient(rgba(147,197,253,.04) 1px, transparent 1px)",
+        "#0E1A2A linear-gradient(90deg, rgba(45,212,191,.065) 1px, transparent 1px), linear-gradient(rgba(148,163,184,.055) 1px, transparent 1px)",
       backgroundSize: "28px 28px",
-      borderColor: "rgba(147, 197, 253, 0.32)",
-      boxShadow: "0 12px 34px rgba(0,0,0,.34)",
+      borderColor: "rgba(45, 212, 191, 0.34)",
+      boxShadow:
+        "0 16px 40px rgba(0,0,0,.42), 0 0 0 1px rgba(45,212,191,.08), inset 0 1px 0 rgba(255,255,255,.06)",
     },
   };
   const radiusUsage = savedAttendance?.distance
@@ -428,12 +489,12 @@ export default function EmployeeAttendancePage() {
     }
 
     if (!faceDetected) {
-      setWarning("Wajah tidak terlihat, silakan arahkan wajah ke kamera.");
+      setWarning("Wajah tidak terdeteksi");
       return;
     }
 
     if ((faceConfidence || 0) < 80) {
-      setWarning("Wajah tidak sesuai dengan akun karyawan.");
+      setWarning("Wajah tidak teridentifikasi. Wajah absen pulang tidak sesuai dengan wajah absen masuk.");
       return;
     }
 
@@ -446,15 +507,30 @@ export default function EmployeeAttendancePage() {
 
     const capturedPhoto = captureFrame();
 
-    setTimeout(() => {
+    setTimeout(async () => {
       const savedAt = getStamp();
       const time = getClockOnly();
       const date = savedAt.split(",")[0];
+      const dateValue = getTodayIsoDate();
+      const faceSignature = await createImageSignature(capturedPhoto);
+
+      if (verificationType === "keluar") {
+        const distance = getSignatureDistance(savedAttendance?.faceSignature, faceSignature);
+        if (distance !== null && distance > 0.6) {
+          setWarning(
+            "Wajah tidak teridentifikasi. Wajah absen pulang tidak sesuai dengan wajah absen masuk.",
+          );
+          setSaving(false);
+          return;
+        }
+      }
+
       const baseRecord = {
         id: savedAttendance?.id || `attendance-${Date.now()}`,
         photo: capturedPhoto,
         savedAt,
         date,
+        dateValue,
         clockIn: verificationType === "masuk" ? time : savedAttendance?.clockIn,
         clockOut: verificationType === "keluar" ? time : "--:--:--",
         status:
@@ -468,6 +544,11 @@ export default function EmployeeAttendancePage() {
         distance: gps.distance,
         faceVerified: true,
         faceConfidence,
+        faceSignature:
+          verificationType === "keluar"
+            ? savedAttendance?.faceSignature || faceSignature
+            : faceSignature,
+        faceOutSignature: verificationType === "keluar" ? faceSignature : undefined,
         device: navigator.userAgent,
       };
 
@@ -493,6 +574,33 @@ export default function EmployeeAttendancePage() {
           category: "absensi",
           type: baseRecord.status === "Terlambat" ? "warning" : "success",
         });
+      }
+
+      try {
+        console.log("[attendance:capture:save-request]", {
+          dateValue,
+          type: verificationType,
+          clockIn: baseRecord.clockIn,
+          clockOut: baseRecord.clockOut,
+          status: baseRecord.status,
+        });
+        const response = await fetch("/api/employee/attendance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...baseRecord,
+            type: verificationType,
+          }),
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload.message || "Gagal menyimpan absensi ke Supabase.");
+        }
+
+        console.log("[attendance:capture:save-response]", payload);
+      } catch (error) {
+        console.error("[attendance:capture:save-error]", error);
       }
 
       playSuccessSound();
@@ -563,16 +671,18 @@ export default function EmployeeAttendancePage() {
   return (
     <EmployeeShell>
       {notice || warning ? (
-        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-[#8ABFFF]/30 bg-[#1B4164]/95 px-4 py-3 text-sm font-semibold text-[#F3F7FF] shadow-2xl backdrop-blur-xl">
+        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-[#2DD4BF]/30 bg-[#10251F]/95 px-4 py-3 text-sm font-semibold text-[#F3F7FF] shadow-2xl backdrop-blur-xl">
           {notice || warning}
         </div>
       ) : null}
 
       <div className="grid items-start gap-4 xl:grid-cols-12">
         <section
-          className="h-fit self-start rounded-3xl border p-5 xl:col-span-8"
+          className="relative h-fit self-start overflow-hidden rounded-3xl border p-5 ring-1 ring-white/[0.04] xl:col-span-8"
           style={cardStyles.main}
         >
+          <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#5EEAD4]/70 to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 h-28 w-44 rounded-bl-[5rem] bg-[#2DD4BF]/[0.06]" />
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm text-[#A8B5C7]">Face recognition attendance</p>
@@ -580,8 +690,8 @@ export default function EmployeeAttendancePage() {
                 {savedAttendance ? "Ringkasan Kehadiran" : "Verifikasi Kehadiran"}
               </h2>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#8ABFFF]/22 bg-gradient-to-b from-[#244D73] to-[#173B5B] px-4 py-2 text-sm text-[#B6C7DA]">
-              <Radio size={16} className="text-[#8ABFFF]" />
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#2DD4BF]/24 bg-gradient-to-b from-[#18352F] to-[#101F2C] px-4 py-2 text-sm text-[#B6C7DA]">
+              <Radio size={16} className="text-[#2DD4BF]" />
               {OFFICE_LOCATION.label}
             </span>
           </div>
@@ -644,7 +754,7 @@ export default function EmployeeAttendancePage() {
                     type="button"
                     onClick={() => openCamera("keluar")}
                     disabled={!savedAttendance?.clockIn || hasCheckedOut}
-                    className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-55"
+                    className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(20,184,166,0.18)] transition hover:-translate-y-1 hover:from-[#2DD4BF] hover:to-[#0F766E] disabled:pointer-events-none disabled:opacity-55"
                   >
                     <Clock3 size={20} />
                     {hasCheckedOut ? "Sudah Absen Keluar" : "Absensi Keluar"}
@@ -652,7 +762,7 @@ export default function EmployeeAttendancePage() {
                   <button
                     type="button"
                     onClick={resetAttendanceForTest}
-                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#3B82F6]/55 bg-transparent px-4 text-xs font-bold text-[#C7D6EC] transition hover:bg-[#3B82F6]/12 hover:text-[#F3F7FF]"
+                    className="inline-flex min-h-11 items-center justify-center rounded-2xl border border-[#F59E0B]/40 bg-[#F59E0B]/5 px-4 text-xs font-bold text-[#E8D8B8] transition hover:bg-[#F59E0B]/12 hover:text-[#F3F7FF]"
                   >
                     Reset Tes Absensi
                   </button>
@@ -665,13 +775,13 @@ export default function EmployeeAttendancePage() {
                 className="relative grid min-h-[280px] place-items-center overflow-hidden rounded-3xl border lg:min-h-[310px]"
                 style={cardStyles.photoFrame}
               >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(138,191,255,.14),transparent_40%),linear-gradient(90deg,rgba(138,191,255,.04)_1px,transparent_1px),linear-gradient(rgba(138,191,255,.034)_1px,transparent_1px)] bg-[size:auto,34px_34px,34px_34px]" />
-                <div className="absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-[#8ABFFF] to-transparent opacity-45" />
-                <div className="relative grid size-44 place-items-center rounded-full border border-[#8ABFFF]/34 bg-[#1B4164] shadow-[0_0_70px_rgba(138,191,255,.2)]">
-                  <div className="absolute inset-4 rounded-full border border-dashed border-[#8ABFFF]/28" />
-                  <ScanFace size={84} className="text-[#8ABFFF]" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,.16),transparent_40%),linear-gradient(90deg,rgba(45,212,191,.045)_1px,transparent_1px),linear-gradient(rgba(148,163,184,.04)_1px,transparent_1px)] bg-[size:auto,34px_34px,34px_34px]" />
+                <div className="absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-[#2DD4BF] to-transparent opacity-45" />
+                <div className="relative grid size-44 place-items-center rounded-full border border-[#2DD4BF]/34 bg-[#10251F] shadow-[0_0_70px_rgba(45,212,191,.18)]">
+                  <div className="absolute inset-4 rounded-full border border-dashed border-[#2DD4BF]/28" />
+                  <ScanFace size={84} className="text-[#2DD4BF]" />
                 </div>
-                <div className="absolute bottom-5 left-5 rounded-2xl border border-[#8ABFFF]/24 bg-[#1B4164]/90 p-4 text-sm text-[#B6C7DA] backdrop-blur-xl">
+                <div className="absolute bottom-5 left-5 rounded-2xl border border-[#2DD4BF]/24 bg-[#111C2B]/90 p-4 text-sm text-[#B6C7DA] backdrop-blur-xl">
                   <p>{stamp || "Menyiapkan waktu"}</p>
                   <p className="font-semibold text-[#F3F7FF]">Rina Pratiwi</p>
                   <p>Finance Officer</p>
@@ -683,12 +793,12 @@ export default function EmployeeAttendancePage() {
                   type="button"
                   onClick={() => openCamera("masuk")}
                   disabled={!TODAY_SCHEDULE.hasSchedule}
-                  className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-6 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-55 sm:min-w-[220px]"
+                  className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-6 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(20,184,166,0.18)] transition hover:-translate-y-1 hover:from-[#2DD4BF] hover:to-[#0F766E] disabled:pointer-events-none disabled:opacity-55 sm:min-w-[220px]"
                 >
                   <Camera size={20} />
                   Mulai Verifikasi
                 </button>
-                <div className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#8ABFFF]/16 bg-gradient-to-b from-[#1B4568] to-[#143452] px-6 text-sm font-semibold text-[#B6C7DA] sm:min-w-[240px]">
+                <div className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#34D399]/20 bg-gradient-to-b from-[#172A27] to-[#101B29] px-6 text-sm font-semibold text-[#B6C7DA] sm:min-w-[240px]">
                   <ShieldCheck size={20} className="text-[#34D399]" />
                   GPS validation online
                 </div>
@@ -698,7 +808,11 @@ export default function EmployeeAttendancePage() {
         </section>
 
         <aside className="space-y-4 xl:col-span-4">
-          <div className="rounded-3xl border p-5" style={cardStyles.verification}>
+          <div
+            className="relative overflow-hidden rounded-3xl border p-5 ring-1 ring-white/[0.04]"
+            style={cardStyles.verification}
+          >
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#86EFAC]/70 to-transparent" />
             <p className="text-sm text-[#A8B5C7]">Verification status</p>
             <div className="mt-4 flex items-center gap-3">
               <div className="grid size-12 place-items-center rounded-2xl bg-[#34D399]/12 text-[#34D399]">
@@ -711,7 +825,11 @@ export default function EmployeeAttendancePage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border p-5" style={cardStyles.activity}>
+          <div
+            className="relative overflow-hidden rounded-3xl border p-5 ring-1 ring-white/[0.04]"
+            style={cardStyles.activity}
+          >
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#FBBF24]/60 to-transparent" />
             <h3 className="font-semibold text-[#F3F7FF]">Aktivitas Hari Ini</h3>
             {savedAttendance ? (
               <div className="mt-4 space-y-3">
@@ -767,7 +885,11 @@ export default function EmployeeAttendancePage() {
             )}
           </div>
 
-          <div className="rounded-3xl border p-5" style={cardStyles.radius}>
+          <div
+            className="relative overflow-hidden rounded-3xl border p-5 ring-1 ring-white/[0.04]"
+            style={cardStyles.radius}
+          >
+            <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#67E8F9]/65 to-transparent" />
             <h3 className="font-semibold text-[#F3F7FF]">Radius Kantor</h3>
             <div className="mt-4 flex items-start gap-3 text-sm text-[#A8B5C7]">
               <MapPin size={20} className="mt-0.5 text-[#67E8F9]" />
@@ -930,7 +1052,7 @@ export default function EmployeeAttendancePage() {
                         (faceConfidence || 0) < 80 ||
                         saving
                       }
-                      className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#3F7FEA] to-[#2B62C7] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(37,99,235,0.2)] transition hover:-translate-y-1 hover:bg-[#1D4ED8] disabled:pointer-events-none disabled:opacity-60"
+                      className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(20,184,166,0.18)] transition hover:-translate-y-1 hover:from-[#2DD4BF] hover:to-[#0F766E] disabled:pointer-events-none disabled:opacity-60"
                     >
                       {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
                       {saving ? "Memproses..." : "Validasi GPS & Simpan"}

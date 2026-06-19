@@ -53,6 +53,8 @@ export function saveEmployeeAttendanceByType(type, record) {
       distance: record.distance,
       faceVerified: record.faceVerified,
       faceConfidence: record.faceConfidence,
+      faceSignature: nextRecords[todayIndex].faceSignature || record.faceSignature,
+      faceOutSignature: record.faceOutSignature,
       device: record.device,
     };
     window.localStorage.setItem(

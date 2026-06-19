@@ -111,6 +111,12 @@ create table if not exists public.attendances (
   status attendance_status not null,
   late_minutes integer default 0,
   photo_url text,
+  photo_out_url text,
+  location_out_label text,
+  latitude_out text,
+  longitude_out text,
+  face_signature text,
+  face_out_signature text,
   latitude text,
   longitude text,
   location_label text,
@@ -118,10 +124,49 @@ create table if not exists public.attendances (
   unique (user_id, attendance_date)
 );
 
+create table if not exists public.leave_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  type varchar(40) not null,
+  start_date date not null,
+  end_date date not null,
+  reason text not null,
+  attachment_name text,
+  attachment_url text,
+  status varchar(20) not null default 'Menunggu',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  constraint leave_requests_type_check check (
+    type in ('Izin', 'Sakit', 'Cuti', 'Keperluan pribadi')
+  ),
+  constraint leave_requests_status_check check (
+    status in ('Menunggu', 'Disetujui', 'Ditolak')
+  ),
+  constraint leave_requests_date_check check (end_date >= start_date)
+);
+
+alter table public.leave_requests add column if not exists type varchar(40) not null default 'Izin';
+alter table public.leave_requests add column if not exists start_date date not null default current_date;
+alter table public.leave_requests add column if not exists end_date date not null default current_date;
+alter table public.leave_requests add column if not exists reason text not null default '';
+alter table public.leave_requests add column if not exists attachment_name text;
+alter table public.leave_requests add column if not exists attachment_url text;
+alter table public.leave_requests add column if not exists status varchar(20) not null default 'Menunggu';
+alter table public.leave_requests add column if not exists created_at timestamptz default now();
+alter table public.leave_requests add column if not exists updated_at timestamptz default now();
+
 alter table public.users enable row level security;
 alter table public.attendances enable row level security;
+alter table public.leave_requests enable row level security;
 alter table public.divisions enable row level security;
 alter table public.positions enable row level security;
+
+alter table public.attendances add column if not exists photo_out_url text;
+alter table public.attendances add column if not exists location_out_label text;
+alter table public.attendances add column if not exists latitude_out text;
+alter table public.attendances add column if not exists longitude_out text;
+alter table public.attendances add column if not exists face_signature text;
+alter table public.attendances add column if not exists face_out_signature text;
 
 drop policy if exists "service role can manage users" on public.users;
 create policy "service role can manage users"
@@ -133,6 +178,13 @@ with check (auth.role() = 'service_role');
 drop policy if exists "service role can manage attendances" on public.attendances;
 create policy "service role can manage attendances"
 on public.attendances
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage leave requests" on public.leave_requests;
+create policy "service role can manage leave requests"
+on public.leave_requests
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');

@@ -54,8 +54,28 @@ export const attendances = pgTable("attendances", {
   status: attendanceStatus("status").notNull(),
   lateMinutes: integer("late_minutes").default(0),
   photoUrl: text("photo_url"),
+  photoOutUrl: text("photo_out_url"),
   latitude: text("latitude"),
   longitude: text("longitude"),
   locationLabel: text("location_label"),
+  latitudeOut: text("latitude_out"),
+  longitudeOut: text("longitude_out"),
+  locationOutLabel: text("location_out_label"),
+  faceSignature: text("face_signature"),
+  faceOutSignature: text("face_out_signature"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const leaveRequests = pgTable("leave_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  requestType: varchar("type", { length: 40 }).notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  reason: text("reason").notNull(),
+  attachmentName: text("attachment_name"),
+  attachmentUrl: text("attachment_url"),
+  status: varchar("status", { length: 20 }).notNull().default("Menunggu"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 });

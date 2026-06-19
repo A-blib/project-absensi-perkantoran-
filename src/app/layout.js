@@ -1,6 +1,5 @@
 import { Inter } from "next/font/google";
 import Script from "next/script";
-import { ThemeToggle } from "@/components/shared/theme-toggle";
 import "./globals.css";
 
 const inter = Inter({
@@ -33,7 +32,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-full flex flex-col">
         {children}
-        <ThemeToggle />
       </body>
     </html>
   );
