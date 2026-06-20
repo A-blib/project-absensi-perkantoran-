@@ -1,4 +1,6 @@
 const NOTIFICATION_STORAGE_KEY = "employee-notifications-v1";
+const NOTIFICATION_EVENT = "employee-notifications-updated";
+const NOTIFICATION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getNotificationStorageKey(ownerKey) {
   return ownerKey
@@ -43,16 +45,13 @@ const defaultNotifications = [
     isRead: true,
     createdAt: "2026-05-29T01:00:00.000Z",
   },
-  {
-    id: "notif-info-admin-default",
-    title: "Informasi dari admin",
-    message: "Briefing divisi dilakukan Jumat pukul 09:00 WIB.",
-    category: "info",
-    type: "info",
-    isRead: true,
-    createdAt: "2026-05-22T01:00:00.000Z",
-  },
 ];
+
+function isFreshNotification(notification) {
+  const createdAt = new Date(notification.createdAt).getTime();
+  if (!Number.isFinite(createdAt)) return false;
+  return Date.now() - createdAt < NOTIFICATION_MAX_AGE_MS;
+}
 
 function sortByNewest(notifications) {
   return [...notifications].sort(
@@ -62,10 +61,33 @@ function sortByNewest(notifications) {
 
 function dedupeNotifications(notifications) {
   const byId = new Map();
-  sortByNewest(notifications).forEach((notification) => {
+  sortByNewest(notifications).filter(isFreshNotification).forEach((notification) => {
     if (!byId.has(notification.id)) byId.set(notification.id, notification);
   });
   return Array.from(byId.values());
+}
+
+function notifySubscribers(ownerKey) {
+  window.dispatchEvent(
+    new CustomEvent(NOTIFICATION_EVENT, {
+      detail: { ownerKey },
+    }),
+  );
+}
+
+function showBrowserNotification(notification) {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification(notification.title, {
+      body: notification.message,
+      tag: notification.id,
+      silent: true,
+    });
+  } catch {
+    // Browser notifications are optional; the in-app notification is enough.
+  }
 }
 
 function writeNotifications(notifications, ownerKey) {
@@ -73,6 +95,7 @@ function writeNotifications(notifications, ownerKey) {
     getNotificationStorageKey(ownerKey),
     JSON.stringify(dedupeNotifications(notifications)),
   );
+  notifySubscribers(ownerKey);
 }
 
 export function readEmployeeNotifications(ownerKey) {
@@ -82,13 +105,16 @@ export function readEmployeeNotifications(ownerKey) {
     const value = window.localStorage.getItem(getNotificationStorageKey(ownerKey));
     if (!value) {
       writeNotifications(defaultNotifications, ownerKey);
-      return defaultNotifications;
+      return dedupeNotifications(defaultNotifications);
     }
 
     const notifications = JSON.parse(value);
-    return Array.isArray(notifications) ? dedupeNotifications(notifications) : [];
+    const nextNotifications = Array.isArray(notifications)
+      ? dedupeNotifications(notifications)
+      : [];
+    return nextNotifications;
   } catch {
-    return defaultNotifications;
+    return dedupeNotifications(defaultNotifications);
   }
 }
 
@@ -110,6 +136,7 @@ export function createEmployeeNotification(input, ownerKey) {
     ...currentNotifications.filter((item) => item.id !== notification.id),
   ]).slice(0, 50);
   writeNotifications(nextNotifications, ownerKey);
+  showBrowserNotification(notification);
   return nextNotifications;
 }
 
@@ -162,3 +189,17 @@ export function markAllEmployeeNotificationsRead(ownerKey) {
   writeNotifications(nextNotifications, ownerKey);
   return nextNotifications;
 }
+
+export function requestEmployeeNotificationPermission() {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission === "default") {
+    Notification.requestPermission().catch(() => {});
+  }
+}
+
+export function getEmployeeUnreadNotificationCount(ownerKey) {
+  return readEmployeeNotifications(ownerKey).filter((notification) => !notification.isRead)
+    .length;
+}
+
+export { NOTIFICATION_EVENT as employeeNotificationEvent };

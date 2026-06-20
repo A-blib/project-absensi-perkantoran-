@@ -5,7 +5,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  Download,
   Image as ImageIcon,
   Search,
   X,
@@ -80,6 +79,16 @@ function getDateTime(value) {
   return new Date(year, month - 1, day).getTime();
 }
 
+function getMonthKeyFromTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentMonthKey() {
+  return getMonthKeyFromTime(Date.now());
+}
+
 function parseRowDate(dateText) {
   const slashMatch = dateText.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (slashMatch) {
@@ -104,8 +113,8 @@ export default function EmployeeHistoryPage() {
   const ownerKey = user?.id;
   const [storedRows, setStoredRows] = useState([]);
   const [activePhoto, setActivePhoto] = useState(null);
-  const [startDate, setStartDate] = useState(() => getMonthRange().start);
-  const [endDate, setEndDate] = useState(() => getMonthRange().end);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [calendarMonth, setCalendarMonth] = useState(() => getMonthRange().month);
   const [calendarYear, setCalendarYear] = useState(() => getMonthRange().year);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -155,7 +164,11 @@ export default function EmployeeHistoryPage() {
       outPhoto: record.outPhoto,
     }));
 
-    return saved;
+    const currentMonthKey = getCurrentMonthKey();
+    return saved.filter((row) => {
+      const rowTime = parseRowDate(row.date);
+      return rowTime === null || getMonthKeyFromTime(rowTime) === currentMonthKey;
+    });
   }, [storedRows]);
 
   const filteredRows = useMemo(() => {
@@ -166,9 +179,11 @@ export default function EmployeeHistoryPage() {
     return rows.filter((row) => {
       const rowTime = parseRowDate(row.date);
       const matchesDate =
-        rowTime === null || start === null || end === null
+        rowTime === null || !startDate
           ? true
-          : rowTime >= Math.min(start, end) && rowTime <= Math.max(start, end);
+          : end === null
+            ? rowTime === start
+            : rowTime >= Math.min(start, end) && rowTime <= Math.max(start, end);
       const matchesQuery = query
         ? `${row.date} ${row.clockIn} ${row.clockOut} ${row.status} ${row.shift}`
             .toLowerCase()
@@ -210,15 +225,14 @@ export default function EmployeeHistoryPage() {
       <div className="mx-auto max-w-[1440px] space-y-8">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
-            <h2 className="text-3xl font-bold text-[#D4E4FA]">Data Kehadiran</h2>
+            <h2 className="text-3xl font-bold text-[#D4E4FA]">
+              Riwayat Kehadiran
+            </h2>
             <p className="mt-2 text-[#C2C6D6]">
-              Review riwayat absensi pribadi dan bukti foto kehadiran.
+              Riwayat bulan berjalan. Data bulan sebelumnya otomatis tidak
+              ditampilkan ketika bulan berganti.
             </p>
           </div>
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#24344D] bg-[#132238] px-6 text-sm font-bold text-[#D4E4FA] hover:bg-white/[0.05]">
-            <Download size={17} />
-            Export PDF
-          </button>
         </div>
 
         <section className="glass-panel rounded-2xl p-6">
@@ -231,8 +245,11 @@ export default function EmployeeHistoryPage() {
               >
                 <CalendarDays size={18} className="text-[#3B82F6]" />
                 <span className="min-w-0 flex-1 truncate font-semibold text-[#D4E4FA]">
-                  {formatDateInput(startDate)} -{" "}
-                  {endDate ? formatDateInput(endDate) : "Pilih tanggal akhir"}
+                  {startDate
+                    ? `${formatDateInput(startDate)} - ${
+                        endDate ? formatDateInput(endDate) : "Pilih tanggal akhir"
+                      }`
+                    : "Semua riwayat bulan ini"}
                 </span>
               </button>
 
@@ -250,16 +267,13 @@ export default function EmployeeHistoryPage() {
                     <button
                       type="button"
                       onClick={() => {
-                        const currentMonth = getMonthRange();
-                        setStartDate(currentMonth.start);
-                        setEndDate(currentMonth.end);
-                        setCalendarMonth(currentMonth.month);
-                        setCalendarYear(currentMonth.year);
+                        setStartDate("");
+                        setEndDate("");
                         setCalendarOpen(false);
                       }}
                       className="rounded-lg border border-[#24344D] px-3 py-1 text-xs font-bold text-[#ADC6FF] hover:border-[#3B82F6]"
                     >
-                      Bulan ini
+                      Semua
                     </button>
                   </div>
                   <div className="mb-3 flex items-center justify-between gap-2">
@@ -300,6 +314,8 @@ export default function EmployeeHistoryPage() {
                       const end = getDateTime(endDate || startDate);
                       const inRange =
                         day &&
+                        start !== null &&
+                        end !== null &&
                         current >= Math.min(start, end) &&
                         current <= Math.max(start, end);
                       const isEdge =
@@ -413,7 +429,7 @@ export default function EmployeeHistoryPage() {
             </table>
             {!filteredRows.length ? (
               <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] p-6 text-center text-sm font-semibold text-[#8B9DB5]">
-                Tidak ada riwayat absensi pada rentang tanggal ini.
+                Tidak ada riwayat kehadiran pada filter ini.
               </div>
             ) : null}
           </div>

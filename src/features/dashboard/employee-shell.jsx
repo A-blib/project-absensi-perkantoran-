@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -16,6 +16,10 @@ import { LogoutButton } from "@/features/auth/logout-button";
 import { EmployeeSessionGuard } from "@/features/dashboard/employee-session-guard";
 import { employeeNav } from "@/lib/constants/navigation";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
+import {
+  employeeNotificationEvent,
+  getEmployeeUnreadNotificationCount,
+} from "@/lib/browser/employee-notification-store";
 
 const pageTitles = {
   "/employee": "Dashboard Overview",
@@ -35,7 +39,7 @@ function getEmployeeTitle(user) {
   return user?.position || user?.division || "Pegawai";
 }
 
-function SidebarContent({ pathname, onNavigate, user }) {
+function SidebarContent({ pathname, onNavigate, user, unreadCount = 0 }) {
   const displayName = user?.name || "Pegawai";
   const displayTitle = getEmployeeTitle(user);
   const avatarAlt = `Foto profil ${displayName}`;
@@ -80,6 +84,11 @@ function SidebarContent({ pathname, onNavigate, user }) {
             >
               <item.icon size={22} />
               <span>{item.label}</span>
+              {item.href === "/employee/notifikasi" && unreadCount > 0 ? (
+                <span className="ml-auto min-w-5 rounded-full bg-[#3B82F6] px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}
@@ -110,11 +119,29 @@ export function EmployeeShell({ children, initialUser = null }) {
   const pathname = usePathname();
   const { user } = useCurrentUser(initialUser);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const title = pageTitles[pathname] || "Corporate EMS";
   const subtitle = pageSubtitles[pathname];
   const displayName = user?.name || "Pegawai";
   const displayTitle = getEmployeeTitle(user);
   const avatarAlt = `Foto profil ${displayName}`;
+
+  useEffect(() => {
+    function refreshUnreadCount() {
+      setUnreadCount(getEmployeeUnreadNotificationCount(user?.id));
+    }
+
+    refreshUnreadCount();
+    window.addEventListener(employeeNotificationEvent, refreshUnreadCount);
+    window.addEventListener("storage", refreshUnreadCount);
+    window.addEventListener("focus", refreshUnreadCount);
+
+    return () => {
+      window.removeEventListener(employeeNotificationEvent, refreshUnreadCount);
+      window.removeEventListener("storage", refreshUnreadCount);
+      window.removeEventListener("focus", refreshUnreadCount);
+    };
+  }, [user?.id]);
 
   return (
     <div className="employee-theme min-h-screen bg-[#0B1220] font-sans text-[#D4E4FA]">
@@ -140,13 +167,14 @@ export function EmployeeShell({ children, initialUser = null }) {
               pathname={pathname}
               onNavigate={() => setMobileOpen(false)}
               user={user}
+              unreadCount={unreadCount}
             />
           </aside>
         </div>
       ) : null}
 
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-[280px] flex-col border-r border-[#24344D] bg-[linear-gradient(180deg,#0F1B2E_0%,#0B1220_100%)] py-8 lg:flex">
-        <SidebarContent pathname={pathname} user={user} />
+        <SidebarContent pathname={pathname} user={user} unreadCount={unreadCount} />
       </aside>
 
       <main className="min-h-screen bg-[#0B1220] lg:ml-[280px]">
@@ -180,7 +208,11 @@ export function EmployeeShell({ children, initialUser = null }) {
                 aria-label="Buka notifikasi"
               >
                 <Bell size={24} />
-                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#0B1220]" />
+                {unreadCount > 0 ? (
+                  <span className="absolute -right-0.5 -top-0.5 grid min-w-5 place-items-center rounded-full bg-[#3B82F6] px-1 text-[10px] font-bold text-white ring-2 ring-[#0B1220]">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                ) : null}
               </Link>
               <button
                 type="button"

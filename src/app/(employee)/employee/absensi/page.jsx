@@ -207,6 +207,34 @@ export default function EmployeeAttendancePage() {
     [attendanceConfig],
   );
 
+  // Hitung apakah jam absensi masuk/keluar sedang aktif berdasarkan shift
+  const shiftAvailability = useMemo(() => {
+    const wh = attendanceConfig.workHours;
+    const now = new Date();
+    const jakartaTime = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Jakarta",
+    }).format(now);
+    const [nowH, nowM] = jakartaTime.split(":").map(Number);
+    const nowMinutes = nowH * 60 + nowM;
+
+    const [startH, startM] = (wh.startTime || "08:00").split(":").map(Number);
+    const [endH, endM] = (wh.endTime || "17:00").split(":").map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+    const tolerance = Number(wh.lateTolerance || 15);
+
+    const checkInWindowStart = startMinutes - 60; // boleh 60 menit sebelum jam masuk
+    const checkInWindowEnd = startMinutes + tolerance + 240; // sampai 4 jam setelah jam masuk
+    const checkOutWindowStart = endMinutes - 60; // boleh 60 menit sebelum jam pulang
+    const checkOutWindowEnd = endMinutes + 240; // sampai 4 jam setelah jam pulang
+
+    const canCheckIn = nowMinutes >= checkInWindowStart && nowMinutes <= checkInWindowEnd;
+    const canCheckOut = nowMinutes >= checkOutWindowStart && nowMinutes <= checkOutWindowEnd;
+    const shiftName = wh.shiftName || null;
+
+    return { canCheckIn, canCheckOut, shiftName, startTime: wh.startTime, endTime: wh.endTime };
+  }, [attendanceConfig]);
+
   async function resolveCurrentLocationAddress(latitude, longitude) {
     setCurrentLocationAddress("Mencari nama jalan...");
 
@@ -735,16 +763,20 @@ export default function EmployeeAttendancePage() {
             <button
               type="button"
               onClick={() => openCamera("masuk")}
-              disabled={Boolean(savedAttendance)}
+              disabled={Boolean(savedAttendance) || !shiftAvailability.canCheckIn}
               className={[
-                "flex min-h-14 items-center justify-center gap-3 rounded-2xl px-5 font-semibold shadow-lg transition hover:-translate-y-1 disabled:pointer-events-none disabled:opacity-55",
-                savedAttendance
+                "flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl px-5 font-semibold shadow-lg transition hover:-translate-y-1 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55",
+                savedAttendance || !shiftAvailability.canCheckIn
                   ? "border border-[#24344D] bg-[#0B1220] text-[#c2c6d6] shadow-none"
                   : "bg-[#3b82f6] text-white shadow-blue-500/20 hover:bg-[#60a5fa]",
               ].join(" ")}
             >
               <Camera size={20} />
-              {savedAttendance ? "Sudah Absen Hari Ini" : "Mulai Verifikasi"}
+              {savedAttendance
+                ? "Absen Masuk Sudah Tercatat"
+                : !shiftAvailability.canCheckIn
+                  ? `Absen Masuk Mulai ${shiftAvailability.startTime}`
+                  : "Mulai Absen Masuk"}
             </button>
             <div className="flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 text-sm font-semibold text-[#c2c6d6]">
               <ShieldCheck size={20} className="text-emerald-400" />
@@ -756,14 +788,17 @@ export default function EmployeeAttendancePage() {
             onClick={() => openCamera("keluar")}
             disabled={
               !savedAttendance?.clockIn ||
-              (savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--")
+              (savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--") ||
+              !shiftAvailability.canCheckOut
             }
-            className="mt-3 flex min-h-12 w-full items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 font-semibold text-[#c2c6d6] transition hover:-translate-y-1 hover:border-[#3b82f6]/60 hover:text-[#d4e4fa] disabled:pointer-events-none disabled:opacity-55"
+            className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 font-semibold text-[#c2c6d6] transition hover:-translate-y-1 hover:border-[#3b82f6]/60 hover:text-[#d4e4fa] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55"
           >
             <Clock3 size={20} />
             {savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--"
-              ? "Sudah Absen Keluar"
-              : "Absensi Keluar"}
+              ? "Absen Pulang Sudah Tercatat"
+              : !shiftAvailability.canCheckOut && savedAttendance?.clockIn
+                ? `Absen Pulang Mulai ${shiftAvailability.endTime}`
+                : "Ambil Absen Pulang"}
           </button>
         </section>
 

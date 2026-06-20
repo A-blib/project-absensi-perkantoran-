@@ -1,4 +1,3 @@
-import { demoAttendanceRows } from "@/features/reports/report-data";
 import { createSupabaseServerClient } from "@/server/db/client";
 import { getSystemSettings } from "@/server/repositories/settings-repository";
 
@@ -13,6 +12,7 @@ const attendanceColumns = `
   photo_url,
   latitude,
   longitude,
+  current_location_label,
   location_label,
   created_at,
   users (
@@ -232,26 +232,6 @@ function toRecapRow(row, settings) {
   };
 }
 
-function toGeneratedAlpaRow(user, dateKey, settings) {
-  return {
-    id: `missing-${user.id}-${dateKey}`,
-    userId: user.id,
-    name: user.name || "-",
-    division: user.division || "-",
-    date: formatDate(dateKey),
-    dateKey,
-    checkIn: settings.workHours.startTime,
-    checkOut: settings.workHours.endTime,
-    status: "alpa",
-    lateMinutes: 0,
-    overtimeMinutes: 0,
-    location: "-",
-    currentLocation: "-",
-    targetLocation: formatTargetLocation(settings, settings.location.name),
-    isGenerated: true,
-  };
-}
-
 function buildWeeklyAttendanceData(rows, totalEmployees, settings) {
   const dateKeys = getLastDateKeys();
   const workDays = new Set(settings.workHours.workDays || []);
@@ -312,12 +292,11 @@ function buildWeeklyAttendanceData(rows, totalEmployees, settings) {
 
 export async function getAttendanceRecap() {
   if (!hasSupabaseEnv()) {
-    return demoAttendanceRows;
+    return [];
   }
 
   const supabase = createSupabaseServerClient();
-  const today = getJakartaDateKey();
-  const [settings, attendanceResult, usersResult] = await Promise.all([
+  const [settings, attendanceResult] = await Promise.all([
     getSystemSettings(),
     supabase
       .from("attendances")
@@ -332,6 +311,7 @@ export async function getAttendanceRecap() {
           late_minutes,
           latitude,
           longitude,
+          current_location_label,
           location_label,
           users (
             name,
@@ -341,33 +321,16 @@ export async function getAttendanceRecap() {
       )
       .order("attendance_date", { ascending: false })
       .order("check_in_at", { ascending: false }),
-    supabase
-      .from("users")
-      .select("id, name, division")
-      .eq("role", "employee")
-      .eq("status", "active")
-      .order("name", { ascending: true }),
   ]);
 
   if (attendanceResult.error) {
     throw new Error(`Gagal mengambil rekap absensi: ${attendanceResult.error.message}`);
   }
 
-  if (usersResult.error) {
-    throw new Error(`Gagal mengambil daftar pegawai: ${usersResult.error.message}`);
-  }
-
-  const rows = attendanceResult.data.map((row) => toRecapRow(row, settings));
-  const todayUserIds = new Set(
-    attendanceResult.data
-      .filter((row) => row.attendance_date === today)
-      .map((row) => row.user_id),
-  );
-  const missingTodayRows = usersResult.data
-    .filter((user) => !todayUserIds.has(user.id))
-    .map((user) => toGeneratedAlpaRow(user, today, settings));
-
-  return [...missingTodayRows, ...rows];
+  const workDays = new Set(settings.workHours.workDays || []);
+  return attendanceResult.data
+    .filter((row) => !workDays.size || workDays.has(getDayName(row.attendance_date)))
+    .map((row) => toRecapRow(row, settings));
 }
 
 export async function listEmployeeAttendance(userId) {
@@ -530,20 +493,12 @@ export async function createAttendanceByAdmin(input) {
 }
 
 export async function getAdminAttendanceDashboard() {
-  const fallbackCounts = demoAttendanceRows.reduce(
-    (acc, row) => {
-      if (row.status in acc) acc[row.status] += 1;
-      return acc;
-    },
-    { hadir: 0, telat: 0, izin: 0, alpa: 0 },
-  );
-
   if (!hasSupabaseEnv()) {
     return {
       totalEmployees: 0,
-      counts: fallbackCounts,
+      counts: { hadir: 0, telat: 0, izin: 0, alpa: 0 },
       weeklyData: null,
-      recentActivities: demoAttendanceRows.slice(0, 5),
+      recentActivities: [],
     };
   }
 
@@ -593,17 +548,15 @@ export async function getAdminAttendanceDashboard() {
     },
     { hadir: 0, telat: 0, izin: 0, alpa: 0 },
   );
+  
   const totalEmployees = count || 0;
-  const counts = {
-    ...recordedTodayCounts,
-    alpa: Math.max(
-      totalEmployees -
-        recordedTodayCounts.hadir -
-        recordedTodayCounts.telat -
-        recordedTodayCounts.izin,
-      recordedTodayCounts.alpa,
-    ),
-  };
+  const counts = recordedTodayCounts;
+  
+  // Hitung jumlah Alpa secara implisit untuk hari ini
+  const recordedToday = counts.hadir + counts.telat + counts.izin;
+  const workDays = new Set(settings.workHours.workDays || []);
+  const isWorkDay = workDays.size ? workDays.has(getDayName(today)) : true;
+  counts.alpa = isWorkDay ? Math.max(totalEmployees - recordedToday, counts.alpa) : counts.alpa;
 
   return {
     totalEmployees,
@@ -620,5 +573,114 @@ export async function getAdminAttendanceDashboard() {
       lateMinutes: row.late_minutes || 0,
       location: row.location_label || "-",
     })),
+  };
+}
+
+export async function getAttendanceAnalyticsData(period = "monthly") {
+  if (!hasSupabaseEnv()) {
+    return { labels: [], datasets: [], summary: { hadir: 0, telat: 0, izin: 0, alpa: 0 }, totalDays: 0 };
+  }
+
+  const today = getJakartaDateKey();
+  const todayDate = getJakartaDateFromKey(today);
+
+  let startDate;
+  let groupBy;
+
+  if (period === "weekly") {
+    // last 8 weeks
+    const start = new Date(todayDate);
+    start.setDate(start.getDate() - 55);
+    startDate = getJakartaDateKey(start);
+    groupBy = "week";
+  } else if (period === "yearly") {
+    // last 12 months of this year and past year
+    const start = new Date(todayDate);
+    start.setFullYear(start.getFullYear() - 1);
+    start.setDate(1);
+    startDate = getJakartaDateKey(start);
+    groupBy = "month";
+  } else {
+    // monthly = last 30 days
+    const start = new Date(todayDate);
+    start.setDate(start.getDate() - 29);
+    startDate = getJakartaDateKey(start);
+    groupBy = "day";
+  }
+
+  const supabase = createSupabaseServerClient();
+  const [{ data: rows, error }, { count: totalEmployees }] = await Promise.all([
+    supabase
+      .from("attendances")
+      .select("attendance_date, status")
+      .gte("attendance_date", startDate)
+      .lte("attendance_date", today)
+      .order("attendance_date"),
+    supabase
+      .from("users")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "employee")
+      .eq("status", "active"),
+  ]);
+
+  if (error) throw new Error(`Gagal mengambil data grafik: ${error.message}`);
+
+  const grouped = new Map();
+
+  (rows || []).forEach((row) => {
+    const d = getJakartaDateFromKey(row.attendance_date);
+    let key;
+
+    if (groupBy === "week") {
+      const dayOfWeek = d.getDay();
+      const monday = new Date(d);
+      monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7));
+      key = getJakartaDateKey(monday);
+    } else if (groupBy === "month") {
+      key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    } else {
+      key = row.attendance_date;
+    }
+
+    if (!grouped.has(key)) grouped.set(key, { hadir: 0, telat: 0, izin: 0, alpa: 0 });
+    const bucket = grouped.get(key);
+    if (row.status in bucket) bucket[row.status] += 1;
+  });
+
+  const sortedKeys = [...grouped.keys()].sort();
+
+  function formatLabel(key) {
+    if (groupBy === "month") {
+      const [year, month] = key.split("-");
+      return new Intl.DateTimeFormat("id-ID", { month: "short", year: "2-digit" })
+        .format(new Date(Number(year), Number(month) - 1, 1));
+    }
+    if (groupBy === "week") {
+      return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short" })
+        .format(getJakartaDateFromKey(key));
+    }
+    return getShortDayDate(key);
+  }
+
+  const labels = sortedKeys.map(formatLabel);
+  const buckets = sortedKeys.map((k) => grouped.get(k));
+
+  const summary = (rows || []).reduce(
+    (acc, row) => { if (row.status in acc) acc[row.status] += 1; return acc; },
+    { hadir: 0, telat: 0, izin: 0, alpa: 0 },
+  );
+
+  return {
+    period,
+    labels,
+    totalEmployees: totalEmployees || 0,
+    summary,
+    totalDays: sortedKeys.length,
+    datasets: [
+      { label: "Hadir",    data: buckets.map((b) => b.hadir), backgroundColor: "#16a34a", borderRadius: 4 },
+      { label: "Telat",    data: buckets.map((b) => b.telat), backgroundColor: "#f59e0b", borderRadius: 4 },
+      { label: "Izin/Cuti",data: buckets.map((b) => b.izin),  backgroundColor: "#06b6d4", borderRadius: 4 },
+      { label: "Alpa",     data: buckets.map((b) => b.alpa),  backgroundColor: "#ef4444", borderRadius: 4 },
+    ],
   };
 }

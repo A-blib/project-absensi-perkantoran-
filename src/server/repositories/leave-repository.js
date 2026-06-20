@@ -71,6 +71,18 @@ function toLeaveRequest(row) {
   };
 }
 
+function isActiveLeaveRequest(row) {
+  const now = Date.now();
+
+  if (row.status === "Menunggu") {
+    const submittedAt = new Date(row.submitted_at).getTime();
+    return !Number.isFinite(submittedAt) || now - submittedAt < 7 * 24 * 60 * 60 * 1000;
+  }
+
+  const decidedAt = new Date(row.decided_at || row.submitted_at).getTime();
+  return !Number.isFinite(decidedAt) || now - decidedAt < 24 * 60 * 60 * 1000;
+}
+
 export async function listLeaveRequests({ userId } = {}) {
   const supabase = createSupabaseServerClient();
   let query = supabase
@@ -90,7 +102,7 @@ export async function listLeaveRequests({ userId } = {}) {
     throw new Error(`Gagal mengambil pengajuan izin: ${error.message}`);
   }
 
-  return data.map(toLeaveRequest);
+  return data.filter(isActiveLeaveRequest).map(toLeaveRequest);
 }
 
 export async function createLeaveRequest(userId, input) {

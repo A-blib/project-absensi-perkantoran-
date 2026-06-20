@@ -23,11 +23,6 @@ export function AdminSessionGuard() {
           return;
         }
 
-        if (payload.user.mustChangePassword) {
-          window.location.replace("/change-password");
-          return;
-        }
-
         if (payload.user.role !== "admin") {
           window.location.replace("/employee");
         }

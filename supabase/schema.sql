@@ -84,6 +84,20 @@ create unique index if not exists positions_division_code_unique
 on public.positions (division_id, code)
 where code is not null;
 
+create table if not exists public.shifts (
+  id uuid primary key default gen_random_uuid(),
+  name varchar(120) not null unique,
+  start_time varchar(5) not null,
+  end_time varchar(5) not null,
+  description text,
+  status varchar(20) not null default 'active',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  constraint shifts_status_check check (status in ('active', 'inactive'))
+);
+
+alter table public.users add column if not exists shift_id uuid references public.shifts(id) on delete set null;
+
 alter table public.users add column if not exists division varchar(120);
 alter table public.users add column if not exists position varchar(120);
 alter table public.users add column if not exists phone varchar(40);
@@ -180,6 +194,7 @@ alter table public.positions enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.leave_requests enable row level security;
 alter table public.employee_activities enable row level security;
+alter table public.shifts enable row level security;
 
 drop policy if exists "service role can manage users" on public.users;
 create policy "service role can manage users"
@@ -226,6 +241,20 @@ with check (auth.role() = 'service_role');
 drop policy if exists "service role can manage employee activities" on public.employee_activities;
 create policy "service role can manage employee activities"
 on public.employee_activities
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage shifts" on public.shifts;
+create policy "service role can manage shifts"
+on public.shifts
+for all
+using (auth.role() = 'service_role')
+with check (auth.role() = 'service_role');
+
+drop policy if exists "service role can manage shifts" on public.shifts;
+create policy "service role can manage shifts"
+on public.shifts
 for all
 using (auth.role() = 'service_role')
 with check (auth.role() = 'service_role');

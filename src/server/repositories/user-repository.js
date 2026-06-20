@@ -11,6 +11,7 @@ const userColumns = `
   position,
   phone,
   employee_code,
+  shift_id,
   status,
   must_change_password,
   photo_url,
@@ -43,6 +44,7 @@ function toUser(row) {
     position: row.position || null,
     phone: row.phone || null,
     employeeCode: row.employee_code || null,
+    shiftId: row.shift_id || null,
     status: row.status || "active",
     mustChangePassword: Boolean(row.must_change_password),
     photoUrl: row.photo_url,
@@ -143,8 +145,9 @@ export async function createUser(input) {
       position: input.position,
       phone: input.phone,
       employee_code: input.employeeCode,
+      shift_id: input.shiftId || null,
       status: input.status,
-      must_change_password: input.mustChangePassword,
+      must_change_password: false,
     })
     .select(userColumns)
     .single();
@@ -169,10 +172,8 @@ export async function updateUser(id, input) {
   if (input.position !== undefined) payload.position = input.position;
   if (input.phone !== undefined) payload.phone = input.phone;
   if (input.employeeCode !== undefined) payload.employee_code = input.employeeCode;
+  if (input.shiftId !== undefined) payload.shift_id = input.shiftId;
   if (input.status !== undefined) payload.status = input.status;
-  if (input.mustChangePassword !== undefined) {
-    payload.must_change_password = input.mustChangePassword;
-  }
 
   const { data, error } = await supabase
     .from("users")
@@ -188,10 +189,9 @@ export async function updateUser(id, input) {
   return toUser(data);
 }
 
-export async function resetUserPassword(id, password, mustChangePassword = true) {
+export async function resetUserPassword(id, password) {
   const passwordHash = await hashPassword(password);
-
-  return updatePasswordHash(id, passwordHash, mustChangePassword);
+  return updatePasswordHash(id, passwordHash, false);
 }
 
 export async function updatePasswordHash(id, passwordHash, mustChangePassword) {

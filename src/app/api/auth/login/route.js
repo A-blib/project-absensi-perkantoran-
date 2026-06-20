@@ -52,11 +52,7 @@ export async function POST(request) {
       );
     }
 
-    const redirectTo = user.mustChangePassword
-      ? "/change-password"
-      : user.role === "employee"
-        ? "/employee"
-        : "/admin";
+    const redirectTo = user.role === "employee" ? "/employee" : "/admin";
     const response = NextResponse.json({ redirectTo });
 
     response.cookies.set(

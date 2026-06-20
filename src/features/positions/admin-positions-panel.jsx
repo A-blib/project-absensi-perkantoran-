@@ -125,30 +125,6 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
     setModal(null);
   }
 
-  async function patchPosition(position, payload) {
-    setIsLoading(true);
-    setMessage("");
-
-    const response = await fetch(`/api/admin/positions/${position.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    setIsLoading(false);
-
-    if (!response.ok) {
-      setMessage(result.message || "Aksi gagal diproses.");
-      return;
-    }
-
-    setPositions((current) =>
-      current.map((item) =>
-        item.id === result.position.id ? result.position : item,
-      ),
-    );
-  }
-
   async function deleteSelectedPosition() {
     const activeModal = modal;
 
@@ -235,13 +211,7 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
               <PositionMobileCard
                 key={position.id}
                 position={position}
-                isLoading={isLoading}
                 onEdit={() => openEdit(position)}
-                onToggleStatus={() =>
-                  patchPosition(position, {
-                    status: position.status === "active" ? "inactive" : "active",
-                  })
-                }
                 onDelete={() => {
                   setMessage("");
                   setModal({ type: "delete", position });
@@ -299,19 +269,6 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={isLoading}
-                        onClick={() =>
-                          patchPosition(position, {
-                            status:
-                              position.status === "active" ? "inactive" : "active",
-                          })
-                        }
-                      >
-                        {position.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
                         onClick={() => {
                           setMessage("");
                           setModal({ type: "delete", position });
@@ -359,9 +316,7 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
 
 function PositionMobileCard({
   position,
-  isLoading,
   onEdit,
-  onToggleStatus,
   onDelete,
 }) {
   return (
@@ -423,17 +378,8 @@ function PositionMobileCard({
         <Button
           size="sm"
           variant="outline"
-          disabled={isLoading}
-          onClick={onToggleStatus}
-          className="w-full"
-        >
-          {position.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
           onClick={onDelete}
-          className="col-span-2 w-full border-red-200 text-red-600 hover:bg-red-50"
+          className="w-full border-red-200 text-red-600 hover:bg-red-50"
         >
           <Trash2 size={16} />
           Hapus

@@ -27,7 +27,7 @@ export default function RootLayout({ children }) {
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html:
-              'try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark")}}catch(error){}',
+              'try{var t=localStorage.getItem("theme");if(t==="dark"){document.documentElement.classList.add("dark")}else{document.documentElement.classList.remove("dark")}}catch(error){}',
           }}
         />
         {children}

@@ -1,20 +1,42 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/server/auth/guards";
+import { getCurrentSession } from "@/server/auth/guards";
 import { getSystemSettings } from "@/server/repositories/settings-repository";
+import { findShiftById } from "@/server/repositories/shift-repository";
+import { findUserById } from "@/server/repositories/user-repository";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const session = await getCurrentSession();
 
-  if (!user || !["admin", "employee"].includes(user.role)) {
+  if (!session?.id) {
     return NextResponse.json({ message: "Login dibutuhkan." }, { status: 401 });
   }
 
   try {
-    const settings = await getSystemSettings();
+    // Baca user langsung dari DB agar shiftId selalu terbaru
+    const [settings, dbUser] = await Promise.all([
+      getSystemSettings(),
+      findUserById(session.id),
+    ]);
+
+    if (!dbUser || !["admin", "employee"].includes(dbUser.role)) {
+      return NextResponse.json({ message: "Login dibutuhkan." }, { status: 401 });
+    }
+
+    const userShift = dbUser.shiftId ? await findShiftById(dbUser.shiftId) : null;
+
+    const workHours = userShift
+      ? {
+          ...settings.workHours,
+          startTime: userShift.startTime,
+          endTime: userShift.endTime,
+          shiftName: userShift.name,
+          shiftId: userShift.id,
+        }
+      : settings.workHours;
 
     return NextResponse.json({
       config: {
-        workHours: settings.workHours,
+        workHours,
         location: settings.location,
         attendanceRules: settings.attendanceRules,
       },

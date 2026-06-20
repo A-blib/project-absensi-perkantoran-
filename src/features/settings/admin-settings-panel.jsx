@@ -160,8 +160,8 @@ export function AdminSettingsPanel({ initialSettings = defaultSystemSettings }) 
             Pengaturan Sistem
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-            Kelola identitas perusahaan, jam kerja, lokasi kantor, dan aturan
-            dasar absensi sebagai fondasi rancangan menu Setting.
+            Kelola identitas perusahaan, jam kerja dasar, lokasi kantor, dan
+            aturan absensi.
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -363,19 +363,11 @@ function WorkHoursSettings({ values, onChange, onToggleDay }) {
             );
           })}
         </div>
+        <p className="text-xs font-medium leading-5 text-slate-500">
+          Jam kerja default digunakan untuk karyawan yang belum memiliki shift khusus.
+          Karyawan dengan shift akan mengikuti jadwal shift masing-masing.
+        </p>
       </div>
-
-      <label className="grid gap-2 text-sm font-semibold text-slate-700">
-        Mode Jadwal
-        <select
-          value={values.shiftMode}
-          onChange={(event) => onChange("shiftMode", event.target.value)}
-          className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm lg:max-w-sm"
-        >
-          <option value="non-shift">Non-shift</option>
-          <option value="shift">Shift</option>
-        </select>
-      </label>
     </div>
   );
 }
@@ -386,9 +378,6 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
   const [resolvingMapsLink, setResolvingMapsLink] = useState(false);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     `${values.latitude},${values.longitude}`,
-  )}`;
-  const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    values.name || "kantor",
   )}`;
   const radiusSize = Math.max(96, Math.min(240, Number(values.radiusMeters) * 1.4));
   const parsedMapsLink = parseGoogleMapsLink(values.googleMapsLink);
@@ -461,13 +450,6 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
 
   return (
     <div className="grid gap-5">
-      <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-700">
-        Field lokasi disiapkan untuk diisi dari Google Maps picker: admin
-        mencari alamat, memilih titik kantor, lalu nama lokasi, latitude, dan
-        longitude terisi otomatis. Radius tetap bisa diatur manual dan preview
-        lingkaran mengikuti nilai radius tersebut.
-      </div>
-
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <label className="grid gap-2 text-sm font-semibold text-slate-700">
           Link Google Maps
@@ -506,89 +488,35 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
           </div>
         ) : null}
         <p className="text-xs font-medium leading-5 text-slate-500">
-          Mendukung link Google Maps yang memuat koordinat seperti{" "}
-          <span className="font-bold text-slate-700">@-6.208763,106.845599</span>
-          {" "}atau parameter{" "}
-          <span className="font-bold text-slate-700">
-            query=-6.208763,106.845599
-          </span>
-          . Link pendek seperti maps.app.goo.gl akan dicoba dibaca lewat backend.
+          Tempel link Google Maps dari titik kantor agar koordinat absensi
+          terisi otomatis.
         </p>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
         <label className="grid gap-2 text-sm font-semibold text-slate-700">
-          Cari Lokasi Google Maps
+          Nama Lokasi
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               value={values.name}
               onChange={(event) => onChange("name", event.target.value)}
-              placeholder="Cari nama kantor, gedung, atau alamat"
+              placeholder="Contoh: Kantor Pusat Jakarta"
               className="h-11 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm outline-none placeholder:text-slate-400"
             />
-            <Button
-              variant="outline"
-              asChild
-              href={mapsSearchUrl}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(values.name || "kantor")}`}
               target="_blank"
               rel="noreferrer"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
-              <MapPin size={17} />
+              <ExternalLink size={17} />
               Cari di Maps
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (!navigator.geolocation) {
-                  setMapsMessageType("error");
-                  setMapsMessage("GPS browser tidak tersedia.");
-                  return;
-                }
-
-                navigator.geolocation.getCurrentPosition((position) => {
-                  const latitude = String(position.coords.latitude);
-                  const longitude = String(position.coords.longitude);
-
-                  onChange("latitude", latitude);
-                  onChange("longitude", longitude);
-                  onApplyLocation(
-                    {
-                      latitude,
-                      longitude,
-                      name: values.name,
-                    },
-                    "Lokasi dari GPS admin berhasil tersimpan untuk absensi karyawan.",
-                  ).then((saved) => {
-                    setMapsMessageType(saved ? "success" : "error");
-                    setMapsMessage(
-                      saved
-                        ? "Lokasi saat ini berhasil tersimpan dan terhubung ke karyawan."
-                        : "Lokasi saat ini gagal disimpan.",
-                    );
-                  });
-                });
-              }}
-            >
-              <MapPin size={17} />
-              Pakai Lokasi Saat Ini
-            </Button>
+            </a>
           </div>
         </label>
-        <p className="text-xs font-medium leading-5 text-slate-500">
-          Cari lokasi di Google Maps, salin link titik kantor, lalu tempel ke
-          field Link Google Maps dan tekan Terapkan Lokasi. Tombol lokasi saat
-          ini hanya memakai GPS perangkat admin saat memang diperlukan.
-        </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Field
-          label="Nama Lokasi"
-          value={values.name}
-          onChange={(value) => onChange("name", value)}
-          hint="Nanti otomatis dari Google Maps, tetap bisa diedit manual."
-        />
         <Field
           label="Radius Valid"
           type="number"
@@ -596,19 +524,17 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
           value={values.radiusMeters}
           suffix="meter"
           onChange={(value) => onChange("radiusMeters", Number(value))}
-          hint="Diatur manual oleh admin; lingkaran radius di peta mengikuti nilai ini."
+          hint="Jarak maksimal dari titik kantor agar absensi dianggap valid."
         />
         <Field
           label="Latitude"
           value={values.latitude}
           onChange={(value) => onChange("latitude", value)}
-          hint="Nanti otomatis dari titik yang dipilih di Google Maps."
         />
         <Field
           label="Longitude"
           value={values.longitude}
           onChange={(value) => onChange("longitude", value)}
-          hint="Nanti otomatis dari titik yang dipilih di Google Maps."
         />
       </div>
 
@@ -633,20 +559,15 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
 
           <div className="grid content-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div>
-              <p className="text-sm font-bold text-slate-950">
-                Fondasi Google Maps
-              </p>
+              <p className="text-sm font-bold text-slate-950">Koordinat Kantor</p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Titik ini adalah koordinat kantor/perusahaan yang akan dipakai
-                untuk validasi GPS pegawai. Sistem tidak memakai lokasi admin
-                yang sedang membuka dashboard.
+                Koordinat ini digunakan untuk memvalidasi lokasi pegawai saat absensi.
               </p>
             </div>
             <div className="grid gap-2 text-sm">
               <InfoRow label="Latitude" value={values.latitude || "-"} />
               <InfoRow label="Longitude" value={values.longitude || "-"} />
               <InfoRow label="Radius" value={`${values.radiusMeters || 0} meter`} />
-              <InfoRow label="Sumber" value="Google Maps + manual" />
             </div>
             <a
               href={mapsUrl}
@@ -658,13 +579,6 @@ function LocationSettings({ values, onChange, onApplyLocation }) {
               Buka di Google Maps
             </a>
           </div>
-        </div>
-        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-500">
-          Tahap integrasi berikutnya bisa mengganti preview ini dengan Google
-          Maps Places/Geocoding picker agar admin mencari alamat, klik titik
-          kantor, lalu nama lokasi, latitude, dan longitude terisi otomatis.
-          Radius tetap berasal dari input sistem dan divisualkan sebagai
-          lingkaran validasi di atas peta.
         </div>
       </div>
 

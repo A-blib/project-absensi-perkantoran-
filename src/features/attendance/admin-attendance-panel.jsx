@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CalendarDays,
   Clock3,
   Edit3,
   MapPin,
+  Radio,
   Save,
   Search,
   UserCheck,
@@ -212,6 +213,33 @@ export function AdminAttendancePanel({ data }) {
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [liveLocations, setLiveLocations] = useState([]);
+
+  // Fetch live locations karyawan yang belum absen
+  useEffect(() => {
+    let active = true;
+
+    async function fetchLiveLocations() {
+      try {
+        const res = await fetch("/api/admin/live-locations", { cache: "no-store" });
+        if (!active || !res.ok) return;
+        const payload = await res.json();
+        setLiveLocations(Array.isArray(payload.locations) ? payload.locations : []);
+      } catch {
+        // silent fail
+      }
+    }
+
+    fetchLiveLocations();
+    const interval = setInterval(fetchLiveLocations, 60000);
+    window.addEventListener("focus", fetchLiveLocations);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", fetchLiveLocations);
+    };
+  }, []);
 
   const summary = useMemo(
     () =>
@@ -308,6 +336,46 @@ export function AdminAttendancePanel({ data }) {
             />
           ))}
         </div>
+
+        {/* Live Location Widget */}
+        {liveLocations.length > 0 ? (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+            <div className="mb-3 flex items-center gap-2">
+              <Radio size={16} className="text-blue-600" />
+              <h3 className="text-sm font-bold text-blue-800">
+                Lokasi Live Karyawan
+              </h3>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                {liveLocations.length} aktif
+              </span>
+              <span className="text-xs text-blue-500">· belum absen hari ini</span>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {liveLocations.map((loc) => (
+                <div
+                  key={loc.userId}
+                  className="flex items-center gap-3 rounded-xl border border-blue-200 bg-white px-3 py-2.5"
+                >
+                  <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-blue-100 text-blue-600">
+                    <MapPin size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-slate-900">{loc.name}</p>
+                    <p className="text-xs text-slate-500">{loc.division || "-"}</p>
+                    <a
+                      href={`https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-0.5 block truncate font-mono text-xs text-blue-600 hover:underline"
+                    >
+                      {Number(loc.latitude).toFixed(5)}, {Number(loc.longitude).toFixed(5)}
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="grid gap-4 border-b border-slate-100 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:p-5">

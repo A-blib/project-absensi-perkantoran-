@@ -110,30 +110,6 @@ export function AdminDivisionsPanel({ initialDivisions }) {
     setModal(null);
   }
 
-  async function patchDivision(division, payload) {
-    setIsLoading(true);
-    setMessage("");
-
-    const response = await fetch(`/api/admin/divisions/${division.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    setIsLoading(false);
-
-    if (!response.ok) {
-      setMessage(result.message || "Aksi gagal diproses.");
-      return;
-    }
-
-    setDivisions((current) =>
-      current.map((item) =>
-        item.id === result.division.id ? result.division : item,
-      ),
-    );
-  }
-
   async function deleteSelectedDivision() {
     const activeModal = modal;
 
@@ -205,13 +181,7 @@ export function AdminDivisionsPanel({ initialDivisions }) {
               <DivisionMobileCard
                 key={division.id}
                 division={division}
-                isLoading={isLoading}
                 onEdit={() => openEdit(division)}
-                onToggleStatus={() =>
-                  patchDivision(division, {
-                    status: division.status === "active" ? "inactive" : "active",
-                  })
-                }
                 onDelete={() => {
                   setMessage("");
                   setModal({ type: "delete", division });
@@ -258,34 +228,14 @@ export function AdminDivisionsPanel({ initialDivisions }) {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEdit(division)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => openEdit(division)}>
                         <Pencil size={16} />
                         Edit
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={isLoading}
-                        onClick={() =>
-                          patchDivision(division, {
-                            status:
-                              division.status === "active" ? "inactive" : "active",
-                          })
-                        }
-                      >
-                        {division.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setMessage("");
-                          setModal({ type: "delete", division });
-                        }}
+                        onClick={() => { setMessage(""); setModal({ type: "delete", division }); }}
                         className="border-red-200 text-red-600 hover:bg-red-50"
                       >
                         <Trash2 size={16} />
@@ -328,9 +278,7 @@ export function AdminDivisionsPanel({ initialDivisions }) {
 
 function DivisionMobileCard({
   division,
-  isLoading,
   onEdit,
-  onToggleStatus,
   onDelete,
 }) {
   return (
@@ -372,17 +320,8 @@ function DivisionMobileCard({
         <Button
           size="sm"
           variant="outline"
-          disabled={isLoading}
-          onClick={onToggleStatus}
-          className="w-full"
-        >
-          {division.status === "active" ? "Nonaktifkan" : "Aktifkan"}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
           onClick={onDelete}
-          className="col-span-2 w-full border-red-200 text-red-600 hover:bg-red-50"
+          className="w-full border-red-200 text-red-600 hover:bg-red-50"
         >
           <Trash2 size={16} />
           Hapus

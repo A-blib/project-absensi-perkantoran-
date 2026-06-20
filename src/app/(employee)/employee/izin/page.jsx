@@ -3,9 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle2,
   FileText,
   FileUp,
@@ -17,7 +14,6 @@ import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
-const REQUESTS_PER_PAGE = 5;
 const MAX_ATTACHMENT_SIZE = 1.5 * 1024 * 1024;
 const ALLOWED_ATTACHMENT_TYPES = [
   "image/jpeg",
@@ -66,6 +62,14 @@ function formatDecisionTime(value) {
   }).format(new Date(value));
 }
 
+function shouldShowRequest(request) {
+  if (request.status === "Menunggu") return true;
+  if (!request.decidedAt) return true;
+
+  const ageMs = Date.now() - new Date(request.decidedAt).getTime();
+  return ageMs < 24 * 60 * 60 * 1000;
+}
+
 export default function EmployeeLeavePage() {
   const { user } = useCurrentUser();
   const ownerKey = user?.id;
@@ -80,7 +84,6 @@ export default function EmployeeLeavePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingRequests, setIsLoadingRequests] = useState(true);
   const [notice, setNotice] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (!ownerKey) return undefined;
@@ -156,37 +159,20 @@ export default function EmployeeLeavePage() {
   }, [notice]);
 
   const requests = useMemo(() => {
-    return storedRequests.map((request) => ({
-      id: request.id,
-      type: request.type,
-      date: request.dateRange || request.date,
-      status: request.status,
-      reason: request.reason,
-      attachmentName: request.attachmentName,
-      adminNote: request.adminNote,
-      decidedAt: request.decidedAt,
-      submittedAt: request.submittedAt,
-    }));
+    return storedRequests
+      .filter(shouldShowRequest)
+      .map((request) => ({
+        id: request.id,
+        type: request.type,
+        date: request.dateRange || request.date,
+        status: request.status,
+        reason: request.reason,
+        attachmentName: request.attachmentName,
+        adminNote: request.adminNote,
+        decidedAt: request.decidedAt,
+        submittedAt: request.submittedAt,
+      }));
   }, [storedRequests]);
-
-  const totalPages = Math.max(1, Math.ceil(requests.length / REQUESTS_PER_PAGE));
-  const activePage = Math.min(currentPage, totalPages);
-  const pageStart = (activePage - 1) * REQUESTS_PER_PAGE;
-  const paginatedRequests = requests.slice(
-    pageStart,
-    pageStart + REQUESTS_PER_PAGE,
-  );
-  const monthlySummary = useMemo(() => {
-    return {
-      total: requests.length,
-      approved: requests.filter(
-        (request) => request.status === "Disetujui",
-      ).length,
-      pending: requests.filter(
-        (request) => request.status === "Menunggu",
-      ).length,
-    };
-  }, [requests]);
 
   function handleSubmit(event) {
     event.preventDefault();
@@ -251,7 +237,6 @@ export default function EmployeeLeavePage() {
           ownerKey,
         );
         setStoredRequests((current) => [savedRequest, ...current]);
-        setCurrentPage(1);
         setRequestType("Izin");
         setStartDate("");
         setEndDate("");
@@ -444,26 +429,6 @@ export default function EmployeeLeavePage() {
 
         <aside className="space-y-6">
           <div className="glass-panel rounded-3xl p-6">
-            <h3 className="text-lg font-bold text-[#d4e4fa]">
-              Ringkasan Pengajuan
-            </h3>
-            <div className="mt-5 grid grid-cols-3 gap-3">
-              {[
-                ["Total", monthlySummary.total],
-                ["Disetujui", monthlySummary.approved],
-                ["Menunggu", monthlySummary.pending],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl bg-[#0B1220] p-4">
-                  <p className="text-xs text-[#8B9DB5]">{label}</p>
-                  <p className="mt-2 text-2xl font-bold text-[#d4e4fa]">
-                    {value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-3xl p-6">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-bold text-[#d4e4fa]">
@@ -471,17 +436,13 @@ export default function EmployeeLeavePage() {
                 </h3>
                 <p className="mt-1 text-xs text-[#8B9DB5]">
                   {requests.length
-                    ? `Menampilkan ${pageStart + 1}-${Math.min(
-                        pageStart + REQUESTS_PER_PAGE,
-                        requests.length,
-                      )} dari ${requests.length} pengajuan`
+                    ? `${requests.length} pengajuan aktif atau baru diproses`
                     : "Belum ada pengajuan izin"}
                 </p>
               </div>
-              <CalendarDays size={20} className="text-[#60a5fa]" />
             </div>
             <div className="min-h-[384px] space-y-3">
-              {paginatedRequests.map((request) => {
+              {requests.map((request) => {
                 const StatusIcon = statusStyles[request.status].icon;
 
                 return (
@@ -542,7 +503,7 @@ export default function EmployeeLeavePage() {
                   </div>
                 );
               })}
-              {!paginatedRequests.length ? (
+              {!requests.length ? (
                 <div className="grid min-h-[300px] place-items-center rounded-2xl border border-dashed border-[#24344D] text-center">
                   <div>
                     <FileText className="mx-auto text-[#3b82f6]" size={32} />
@@ -557,51 +518,6 @@ export default function EmployeeLeavePage() {
                   </div>
                 </div>
               ) : null}
-            </div>
-            <div className="mt-5 flex flex-col gap-3 border-t border-[#24344D] pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-[#8B9DB5]">
-                Halaman {activePage} dari {totalPages}
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  disabled={activePage === 1}
-                  className="grid size-10 place-items-center rounded-xl border border-[#24344D] bg-[#0B1220] text-[#d4e4fa] transition hover:border-[#3b82f6] disabled:pointer-events-none disabled:opacity-40"
-                  aria-label="Halaman sebelumnya"
-                >
-                  <ChevronLeft size={18} />
-                </button>
-                {Array.from({ length: totalPages }, (_, index) => index + 1).map(
-                  (page) => (
-                    <button
-                      key={page}
-                      type="button"
-                      onClick={() => setCurrentPage(page)}
-                      className={[
-                        "grid size-10 place-items-center rounded-xl border text-sm font-bold transition",
-                        activePage === page
-                          ? "border-[#3b82f6] bg-[#3b82f6] text-white shadow-lg shadow-blue-500/20"
-                          : "border-[#24344D] bg-[#0B1220] text-[#c2c6d6] hover:border-[#3b82f6]",
-                      ].join(" ")}
-                      aria-label={`Halaman ${page}`}
-                    >
-                      {page}
-                    </button>
-                  ),
-                )}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setCurrentPage((page) => Math.min(totalPages, page + 1))
-                  }
-                  disabled={activePage === totalPages}
-                  className="grid size-10 place-items-center rounded-xl border border-[#24344D] bg-[#0B1220] text-[#d4e4fa] transition hover:border-[#3b82f6] disabled:pointer-events-none disabled:opacity-40"
-                  aria-label="Halaman berikutnya"
-                >
-                  <ChevronRight size={18} />
-                </button>
-              </div>
             </div>
           </div>
         </aside>
