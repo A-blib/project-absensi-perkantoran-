@@ -170,7 +170,7 @@ export default function EmployeeSchedulePage() {
           <div className="absolute right-6 top-4 h-24 w-24 rounded-full bg-[#38BDF8]/10 blur-2xl" />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#38BDF8]/25 bg-[#38BDF8]/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-[#BAE6FD]">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#38BDF8]/40 bg-[#E0F2FE] px-3 py-1 text-xs font-bold uppercase tracking-[0.08em] text-[#075985] dark:border-[#38BDF8]/25 dark:bg-[#38BDF8]/10 dark:text-[#BAE6FD]">
                 <CalendarDays size={14} />
                 Work schedule calendar
               </div>

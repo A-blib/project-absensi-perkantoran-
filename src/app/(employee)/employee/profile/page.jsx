@@ -296,7 +296,7 @@ export default function EmployeeProfilePage() {
                   <TrendingUp size={22} className="text-emerald-300" />
                 </div>
 
-                <div className="grid place-items-center rounded-xl border border-[#2C4564] bg-[#0A1526]/60 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+                <div className="grid place-items-center rounded-xl border border-[#93C5FD] bg-[#EFF6FF] py-3 shadow-[inset_0_1px_0_rgba(255,255,255,.9)] dark:border-[#2C4564] dark:bg-[#0A1526]/60 dark:shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
                   <div className="relative size-28">
                     <svg className="size-full -rotate-90" viewBox="0 0 180 180">
                       <circle
@@ -304,7 +304,7 @@ export default function EmployeeProfilePage() {
                         cy="90"
                         fill="transparent"
                         r="74"
-                        stroke="#273647"
+                        className="stroke-[#BFDBFE] dark:stroke-[#273647]"
                         strokeWidth="14"
                       />
                       <circle
@@ -312,7 +312,7 @@ export default function EmployeeProfilePage() {
                         cy="90"
                         fill="transparent"
                         r="74"
-                        stroke="#adc6ff"
+                        className="stroke-[#2563EB] dark:stroke-[#adc6ff]"
                         strokeDasharray="465"
                         strokeDashoffset="37"
                         strokeLinecap="round"
@@ -321,8 +321,8 @@ export default function EmployeeProfilePage() {
                     </svg>
                     <div className="absolute inset-0 grid place-items-center text-center">
                       <div>
-                        <p className="text-3xl font-extrabold text-white">9.2</p>
-                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.22em] text-[#adc6ff]">
+                        <p className="text-3xl font-extrabold text-[#0F172A] dark:text-white">9.2</p>
+                        <p className="mt-1 max-w-[76px] text-[10px] font-bold uppercase tracking-[0.12em] text-[#2563EB] dark:text-[#adc6ff]">
                           Excellent
                         </p>
                       </div>

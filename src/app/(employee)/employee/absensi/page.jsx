@@ -192,47 +192,50 @@ export default function EmployeeAttendancePage() {
   const infoRowClass = "rounded-2xl px-4 py-3";
   const cardStyles = {
     main: {
-      background:
-        "radial-gradient(circle at 86% 8%, rgba(45,212,191,.2), transparent 18rem), linear-gradient(145deg, #1B2638 0%, #151F30 56%, #101928 100%)",
-      borderColor: "rgba(94, 234, 212, 0.28)",
-      boxShadow:
-        "0 26px 64px rgba(0,0,0,.56), 0 0 0 1px rgba(148,163,184,.08), inset 0 1px 0 rgba(255,255,255,.1), inset 0 -1px 0 rgba(15,23,42,.72)",
+      background: "var(--employee-attendance-main-bg)",
+      borderColor: "var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-shadow)",
     },
     verification: {
-      background:
-        "radial-gradient(circle at 88% 16%, rgba(52,211,153,.2), transparent 10rem), linear-gradient(145deg, #193036 0%, #122431 100%)",
-      borderColor: "rgba(52, 211, 153, 0.32)",
-      boxShadow:
-        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(52,211,153,.08), inset 0 1px 0 rgba(255,255,255,.09)",
+      background: "var(--employee-attendance-verification-bg)",
+      borderColor: "var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-shadow)",
     },
     activity: {
-      background:
-        "radial-gradient(circle at 12% 10%, rgba(245,158,11,.18), transparent 11rem), linear-gradient(145deg, #272735 0%, #171F2E 100%)",
-      borderColor: "rgba(245, 158, 11, 0.3)",
-      boxShadow:
-        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(245,158,11,.07), inset 0 1px 0 rgba(255,255,255,.09)",
+      background: "var(--employee-attendance-activity-bg)",
+      borderColor: "var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-shadow)",
     },
     radius: {
-      background:
-        "radial-gradient(circle at 88% 12%, rgba(103,232,249,.18), transparent 11rem), linear-gradient(145deg, #1A3039 0%, #122331 100%)",
-      borderColor: "rgba(103, 232, 249, 0.32)",
-      boxShadow:
-        "0 20px 46px rgba(0,0,0,.5), 0 0 0 1px rgba(103,232,249,.07), inset 0 1px 0 rgba(255,255,255,.09)",
+      background: "var(--employee-attendance-radius-bg)",
+      borderColor: "var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-shadow)",
     },
     row: {
-      background:
-        "linear-gradient(180deg, rgba(255,255,255,.095) 0%, rgba(255,255,255,.045) 100%)",
-      border: "1px solid rgba(203,213,225,.22)",
-      boxShadow:
-        "0 8px 18px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.08)",
+      background: "var(--employee-attendance-row-bg)",
+      border: "1px solid var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-row-shadow)",
     },
     photoFrame: {
-      background:
-        "#0E1A2A linear-gradient(90deg, rgba(45,212,191,.065) 1px, transparent 1px), linear-gradient(rgba(148,163,184,.055) 1px, transparent 1px)",
+      background: "var(--employee-attendance-photo-bg)",
       backgroundSize: "28px 28px",
-      borderColor: "rgba(45, 212, 191, 0.34)",
-      boxShadow:
-        "0 16px 40px rgba(0,0,0,.42), 0 0 0 1px rgba(45,212,191,.08), inset 0 1px 0 rgba(255,255,255,.06)",
+      borderColor: "var(--employee-attendance-border)",
+      boxShadow: "var(--employee-attendance-photo-shadow)",
+    },
+    pill: {
+      background: "var(--employee-attendance-pill-bg)",
+      borderColor: "var(--employee-attendance-pill-border)",
+      boxShadow: "var(--employee-attendance-pill-shadow)",
+      color: "var(--employee-attendance-pill-text)",
+    },
+    faceTarget: {
+      background: "var(--employee-attendance-target-bg)",
+      boxShadow: "var(--employee-attendance-target-shadow)",
+    },
+    stamp: {
+      background: "var(--employee-attendance-stamp-bg)",
+      borderColor: "var(--employee-attendance-pill-border)",
+      boxShadow: "var(--employee-attendance-row-shadow)",
     },
   };
   const radiusUsage = savedAttendance?.distance
@@ -682,17 +685,20 @@ export default function EmployeeAttendancePage() {
           style={cardStyles.main}
         >
           <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#5EEAD4]/70 to-transparent" />
-          <div className="pointer-events-none absolute right-0 top-0 h-28 w-44 rounded-bl-[5rem] bg-[#2DD4BF]/[0.06]" />
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="attendance-card-glow pointer-events-none absolute right-0 top-0 z-0 h-28 w-44 rounded-bl-[5rem] bg-[#2DD4BF]/[0.06]" />
+          <div className="relative z-10 mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-sm text-[#A8B5C7]">Face recognition attendance</p>
               <h2 className="mt-1 text-2xl font-bold text-[#F3F7FF]">
                 {savedAttendance ? "Ringkasan Kehadiran" : "Verifikasi Kehadiran"}
               </h2>
             </div>
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#2DD4BF]/24 bg-gradient-to-b from-[#18352F] to-[#101F2C] px-4 py-2 text-sm text-[#B6C7DA]">
+            <span
+              className="attendance-location-pill inline-flex max-w-full shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-left text-sm leading-5 sm:max-w-[52%]"
+              style={cardStyles.pill}
+            >
               <Radio size={16} className="text-[#2DD4BF]" />
-              {OFFICE_LOCATION.label}
+              <span className="min-w-0 whitespace-normal">{OFFICE_LOCATION.label}</span>
             </span>
           </div>
 
@@ -777,11 +783,17 @@ export default function EmployeeAttendancePage() {
               >
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(45,212,191,.16),transparent_40%),linear-gradient(90deg,rgba(45,212,191,.045)_1px,transparent_1px),linear-gradient(rgba(148,163,184,.04)_1px,transparent_1px)] bg-[size:auto,34px_34px,34px_34px]" />
                 <div className="absolute inset-x-10 top-1/2 h-px bg-gradient-to-r from-transparent via-[#2DD4BF] to-transparent opacity-45" />
-                <div className="relative grid size-44 place-items-center rounded-full border border-[#2DD4BF]/34 bg-[#10251F] shadow-[0_0_70px_rgba(45,212,191,.18)]">
+                <div
+                  className="relative grid size-44 place-items-center rounded-full border border-[#2DD4BF]/34"
+                  style={cardStyles.faceTarget}
+                >
                   <div className="absolute inset-4 rounded-full border border-dashed border-[#2DD4BF]/28" />
                   <ScanFace size={84} className="text-[#2DD4BF]" />
                 </div>
-                <div className="absolute bottom-5 left-5 rounded-2xl border border-[#2DD4BF]/24 bg-[#111C2B]/90 p-4 text-sm text-[#B6C7DA] backdrop-blur-xl">
+                <div
+                  className="absolute bottom-5 left-5 rounded-2xl border p-4 text-sm text-[#B6C7DA] backdrop-blur-xl"
+                  style={cardStyles.stamp}
+                >
                   <p>{stamp || "Menyiapkan waktu"}</p>
                   <p className="font-semibold text-[#F3F7FF]">Rina Pratiwi</p>
                   <p>Finance Officer</p>
@@ -798,7 +810,10 @@ export default function EmployeeAttendancePage() {
                   <Camera size={20} />
                   Mulai Verifikasi
                 </button>
-                <div className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#34D399]/20 bg-gradient-to-b from-[#172A27] to-[#101B29] px-6 text-sm font-semibold text-[#B6C7DA] sm:min-w-[240px]">
+                <div
+                  className="attendance-gps-pill flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border px-6 text-sm font-semibold sm:min-w-[240px]"
+                  style={cardStyles.pill}
+                >
                   <ShieldCheck size={20} className="text-[#34D399]" />
                   GPS validation online
                 </div>

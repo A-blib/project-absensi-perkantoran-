@@ -236,7 +236,7 @@ export function EmployeeShell({ children }) {
   }, []);
 
   return (
-    <div className="employee-app-shell min-h-screen bg-[#0B1120] font-sans text-[#F1F5F9]">
+    <div className="employee-app-shell min-h-screen bg-[#F4F9FF] font-sans text-[#0F172A] dark:bg-[#0B1120] dark:text-[#F1F5F9]">
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
@@ -274,10 +274,10 @@ export function EmployeeShell({ children }) {
         />
       </aside>
 
-      <main className="min-h-screen bg-[#0B1120] lg:ml-[280px]">
+      <main className="min-h-screen bg-[#F4F9FF] lg:ml-[280px] dark:bg-[#0B1120]">
         <header
           className={[
-            "employee-command-header z-30 mx-3 mt-3 flex min-h-[76px] items-center justify-between rounded-3xl border border-[#38BDF8]/24 bg-[radial-gradient(circle_at_18%_0%,rgba(56,189,248,.16),transparent_22rem),radial-gradient(circle_at_70%_0%,rgba(34,197,94,.10),transparent_18rem),linear-gradient(180deg,rgba(20,33,54,.98),rgba(11,17,32,.92))] px-4 shadow-[0_18px_42px_rgba(0,0,0,.34),inset_0_-1px_0_rgba(56,189,248,.10)] backdrop-blur-xl sm:px-6",
+            "employee-command-header z-30 mx-3 mt-3 flex min-h-[76px] items-center justify-between rounded-3xl border border-[#93C5FD] bg-[radial-gradient(circle_at_18%_0%,rgba(56,189,248,.18),transparent_22rem),radial-gradient(circle_at_70%_0%,rgba(34,197,94,.10),transparent_18rem),linear-gradient(180deg,rgba(255,255,255,.98),rgba(239,246,255,.94))] px-4 text-[#0F172A] shadow-[0_18px_42px_rgba(37,99,235,.12),inset_0_1px_0_rgba(255,255,255,.92)] backdrop-blur-xl dark:border-[#38BDF8]/24 dark:bg-[radial-gradient(circle_at_18%_0%,rgba(56,189,248,.16),transparent_22rem),radial-gradient(circle_at_70%_0%,rgba(34,197,94,.10),transparent_18rem),linear-gradient(180deg,rgba(20,33,54,.98),rgba(11,17,32,.92))] dark:text-[#F1F5F9] dark:shadow-[0_18px_42px_rgba(0,0,0,.34),inset_0_-1px_0_rgba(56,189,248,.10)] sm:px-6",
           ].join(" ")}
         >
           <div className="flex min-w-0 items-center gap-4">
@@ -293,22 +293,22 @@ export function EmployeeShell({ children }) {
               <div
                 className={[
                   "hidden size-11 shrink-0 place-items-center rounded-2xl border sm:grid",
-                  "border-[#38BDF8]/35 bg-[#38BDF8]/12 text-[#BAE6FD] shadow-[0_12px_28px_rgba(56,189,248,.16)]",
+                  "border-[#93C5FD] bg-[#E0F2FE] text-[#1D4ED8] shadow-[0_12px_28px_rgba(37,99,235,.14)] dark:border-[#38BDF8]/35 dark:bg-[#38BDF8]/12 dark:text-[#BAE6FD]",
                 ].join(" ")}
               >
                 <CurrentIcon size={22} />
               </div>
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-3">
-                  <h1 className="truncate text-xl font-extrabold tracking-tight text-[#E5EEFF]">
+                  <h1 className="truncate text-xl font-extrabold tracking-tight text-[#0F172A] dark:text-[#E5EEFF]">
                     {title}
                   </h1>
-                  <span className="hidden shrink-0 rounded-full border border-[#38BDF8]/25 bg-[#38BDF8]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#BAE6FD] md:inline-flex">
+                  <span className="hidden shrink-0 rounded-full border border-[#93C5FD] bg-[#DBEAFE] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-[#1D4ED8] dark:border-[#38BDF8]/25 dark:bg-[#38BDF8]/10 dark:text-[#BAE6FD] md:inline-flex">
                     Synced
                   </span>
                 </div>
                 {subtitle ? (
-                  <p className="mt-0.5 hidden truncate text-xs font-medium text-[#9AA8BD] sm:block">
+                  <p className="mt-0.5 hidden truncate text-xs font-medium text-[#475569] dark:text-[#9AA8BD] sm:block">
                     {subtitle}
                   </p>
                 ) : null}
@@ -322,18 +322,18 @@ export function EmployeeShell({ children }) {
                 href="/employee/notifikasi"
                 className={[
                   "relative grid size-10 place-items-center rounded-xl transition-colors",
-                  "border border-[#2D4568]/70 bg-[#0D1728]/70 text-[#B6C8E3] hover:border-[#38BDF8]/50 hover:text-[#38BDF8]",
+                  "border border-[#93C5FD] bg-white text-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,.12)] hover:border-[#60A5FA] hover:bg-[#DBEAFE] dark:border-[#2D4568]/70 dark:bg-[#0D1728]/70 dark:text-[#B6C8E3] dark:hover:border-[#38BDF8]/50 dark:hover:text-[#38BDF8]",
                 ].join(" ")}
                 aria-label="Buka notifikasi"
               >
                 <Bell size={24} />
-                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-[#081322]" />
+                <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-white dark:ring-[#081322]" />
               </Link>
               <button
                 type="button"
                 className={[
                   "grid size-10 place-items-center rounded-xl transition-colors",
-                  "border border-[#2D4568]/70 bg-[#0D1728]/70 text-[#B6C8E3] hover:border-[#38BDF8]/50 hover:text-[#38BDF8]",
+                  "border border-[#93C5FD] bg-white text-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,.12)] hover:border-[#60A5FA] hover:bg-[#DBEAFE] dark:border-[#2D4568]/70 dark:bg-[#0D1728]/70 dark:text-[#B6C8E3] dark:hover:border-[#38BDF8]/50 dark:hover:text-[#38BDF8]",
                 ].join(" ")}
                 aria-label="Pengaturan"
               >
@@ -341,11 +341,11 @@ export function EmployeeShell({ children }) {
               </button>
               <ThemeToggle placement="inline" />
             </div>
-            <div className="hidden h-8 w-px bg-[#2C5B9A]/45 sm:block" />
+            <div className="hidden h-8 w-px bg-[#93C5FD] dark:bg-[#2C5B9A]/45 sm:block" />
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold text-[#E5EEFF]">{employee.name}</p>
-                <p className="text-[11px] text-[#9AA8BD]">{employee.position}</p>
+                <p className="text-sm font-bold text-[#0F172A] dark:text-[#E5EEFF]">{employee.name}</p>
+                <p className="text-[11px] text-[#475569] dark:text-[#9AA8BD]">{employee.position}</p>
               </div>
               <Image
                 src="/avatar-rina.svg"
@@ -354,7 +354,7 @@ export function EmployeeShell({ children }) {
                 height={40}
                 className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"
               />
-              <ChevronDown size={16} className="hidden text-[#9AA8BD] sm:block" />
+              <ChevronDown size={16} className="hidden text-[#475569] dark:text-[#9AA8BD] sm:block" />
               <div className="hidden sm:block">
                 <LogoutButton audience="employee" />
               </div>
