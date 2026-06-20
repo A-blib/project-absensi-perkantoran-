@@ -7,13 +7,7 @@ import { getAdminAttendanceDashboard } from "@/server/repositories/attendance-re
 
 export default async function AdminDashboardPage() {
   const dashboard = await getAdminAttendanceDashboard();
-  const absentToday = Math.max(
-    dashboard.totalEmployees -
-      dashboard.counts.hadir -
-      dashboard.counts.telat -
-      dashboard.counts.izin,
-    dashboard.counts.alpa,
-  );
+  const absentToday = dashboard.counts.alpa;
   const cards = [
     {
       label: "Total Pegawai",

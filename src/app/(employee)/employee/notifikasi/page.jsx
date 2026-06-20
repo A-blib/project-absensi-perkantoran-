@@ -16,7 +16,7 @@ import { useCurrentUser } from "@/lib/browser/use-current-user";
 import {
   markAllEmployeeNotificationsRead,
   markEmployeeNotificationRead,
-  readEmployeeNotifications,
+  requestEmployeeNotificationPermission,
   syncEmployeeNotifications,
 } from "@/lib/browser/employee-notification-store";
 import { readEmployeeAttendanceRecords } from "@/lib/browser/employee-attendance-store";
@@ -25,7 +25,6 @@ const categories = [
   { label: "Semua", value: "semua" },
   { label: "Absensi", value: "absensi" },
   { label: "Izin", value: "izin" },
-  { label: "Info", value: "info" },
 ];
 
 const toneClasses = {
@@ -38,7 +37,6 @@ const toneClasses = {
 const categoryLabels = {
   absensi: "Absensi",
   izin: "Izin",
-  info: "Info",
 };
 
 const typeIcons = {
@@ -152,6 +150,8 @@ export default function EmployeeNotificationsPage() {
   const [query, setQuery] = useState("");
 
   useEffect(() => {
+    requestEmployeeNotificationPermission();
+
     const timer = setTimeout(() => {
       const attendanceNotifications = getAttendanceNotifications(ownerKey);
       setNotificationsData(

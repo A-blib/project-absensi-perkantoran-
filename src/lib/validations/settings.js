@@ -15,7 +15,6 @@ export const defaultSystemSettings = {
     lateTolerance: 15,
     endTime: "17:00",
     workDays: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat"],
-    shiftMode: "non-shift",
   },
   location: {
     name: "Kantor Pusat Jakarta",
@@ -61,7 +60,6 @@ export const systemSettingsSchema = z.object({
           ]),
         )
         .min(1),
-      shiftMode: z.enum(["non-shift", "shift"]),
     })
     .refine((value) => value.startTime < value.endTime, {
       message: "Jam masuk harus lebih awal dari jam pulang.",

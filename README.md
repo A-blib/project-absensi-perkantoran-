@@ -2,15 +2,72 @@
 
 Sistem absensi perkantoran berbasis **Next.js App Router** dan **Supabase**. Project ini dibuat untuk mengelola login admin/pegawai, data pegawai, master divisi, master jabatan, dan pondasi absensi kantor.
 
-Saat ini fokus utama project adalah:
+## 🌟 Fitur Lengkap Sistem (Referensi Presentasi)
 
-- Autentikasi admin dan pegawai.
-- Manajemen user/pegawai.
-- Master data divisi.
-- Master data jabatan.
-- Dashboard admin dan pegawai.
-- Rekap absensi awal.
-- Fondasi untuk fitur absensi produksi.
+Sistem ini memiliki berbagai fitur utama yang dirancang untuk mendigitalisasi dan mengotomatisasi proses absensi serta manajemen SDM di lingkungan perkantoran:
+
+### 1. Manajemen Pengguna & Hak Akses (Role-Based)
+Sistem ini memisahkan hak akses secara ketat antara **Admin** (pengelola sistem) dan **Pegawai** (pengguna akhir) untuk menjaga keamanan dan privasi data perusahaan.
+- **Multi-Role Login:** Akses masuk menggunakan autentikasi *JSON Web Token (JWT)* dan enkripsi *password Bcrypt* yang keamanannya setara dengan standar industri.
+- **Kelola Pegawai:** Melalui dashboard, Admin dapat melihat daftar lengkap pegawai, menambah akun baru, mengedit profil, serta menonaktifkan akun pegawai yang sudah *resign* (tanpa menghapus data histori absensi mereka yang penting).
+- **Reset Password:** Jika ada pegawai yang lupa *password*, Admin memiliki kendali penuh untuk langsung melakukan *reset password* agar pegawai tidak kehilangan jam absennya.
+
+### 2. Master Data Perusahaan Terpusat
+Sistem menyimpan hierarki struktural perusahaan secara rapi agar pengelompokan data menjadi konsisten di seluruh modul aplikasi.
+- **Manajemen Divisi:** Admin dapat membuat dan mengatur departemen atau divisi yang ada di perusahaan (contoh: IT, HRD, Keuangan, Operasional).
+- **Manajemen Jabatan:** Setiap divisi memiliki tingkatan peran (jabatan) spesifik. Saat menambah pegawai baru, daftar pilihan jabatan akan otomatis menyesuaikan secara dinamis dengan divisi yang dipilih.
+
+### 3. Dashboard Admin & Monitoring Real-Time
+*Dashboard* ini bertindak sebagai pusat komando (Command Center) bagi HRD/Admin untuk memantau level kedisiplinan seluruh pegawai dari hari ke hari secara instan.
+- **Pemantauan Absensi Hari Ini:** Menampilkan data *live* jumlah pegawai yang *Hadir*, *Terlambat*, *Izin*, maupun *Tidak Hadir (Alpa)* hari ini. Alpa akan otomatis dihitung untuk pegawai yang belum melakukan absen di hari kerja.
+- **Grafik Analitik:** Menampilkan tren kedisiplinan pegawai melalui visualisasi grafik *Chart.js* yang intuitif. Data bisa dikelompokkan secara Harian, Mingguan, Bulanan, dan Tahunan.
+- **Live Location Tracking:** Inovasi fitur di mana admin dapat melihat titik lokasi GPS terakhir dari pegawai yang *belum* melakukan check-in, guna mengantisipasi keterlambatan.
+- **Aktivitas Terbaru:** Tabel log berjalan yang langsung menampilkan nama, jam kedatangan, dan menit keterlambatan sesaat setelah pegawai melakukan absensi.
+
+### 4. Sistem Absensi Cerdas & Manajemen Shift Kerja
+Sistem absensi utama yang canggih, dibuat untuk mencegah kecurangan (Anti-Fraud) dan menyesuaikan dengan waktu operasional perusahaan yang fleksibel.
+- **Manajemen Shift:** Admin dapat mendefinisikan jam kerja (*Shift Karyawan*) misalnya Shift Pagi (08:00-16:00) atau Shift Malam (22:00-06:00), dan menugaskannya kepada pegawai secara spesifik. Tombol absen di aplikasi pegawai *hanya akan aktif* saat memasuki rentang jam shift tersebut.
+- **Validasi Geofencing (GPS):** Mengunci absensi berdasarkan radius (jarak dalam meter) dari titik koordinat gedung kantor. Sistem akan menolak absensi jika pegawai mendeteksi berada di luar jangkauan wilayah valid.
+- **Validasi Wajah (Face Capture):** Mewajibkan proses Check-in/Check-out menyertakan pengambilan foto *(selfie)* langsung dari kamera *smartphone* atau laptop pengguna sebagai bukti otentik fisik.
+
+### 5. Manajemen Izin & Cuti Otomatis (Paperless)
+Menggantikan sistem pengajuan cuti/izin manual berbasis kertas menjadi proses *paperless* yang sepenuhnya diurus oleh sistem.
+- **Pengajuan Mandiri:** Pegawai yang berhalangan dapat mengajukan izin, cuti, atau sakit dari layar ponsel mereka beserta alasan spesifiknya.
+- **Sistem Approval (Persetujuan):** Admin akan menerima *request* tersebut dan dapat segera memutuskan untuk *Menyetujui* (Approve) atau *Menolak* (Reject) izin dari dashboard admin.
+- **Pembersihan Otomatis (Auto-Cleanup):** Untuk memastikan database tetap ringan, pengajuan yang sudah diselesaikan (Disetujui/Ditolak) akan otomatis diarsipkan (hilang dari tabel aktif) setelah 24 jam. Pengajuan yang menggantung/belum dijawab selama 7 hari akan dibatalkan/dihapus otomatis oleh sistem.
+
+### 6. Pelaporan (Report) & Rekapitulasi Data
+Menyajikan seluruh olahan data mentah menjadi wawasan bisnis yang siap pakai untuk evaluasi kinerja maupun penghitungan penggajian (Payroll).
+- **Tabel Rekap Akurat:** Seluruh catatan jam kedatangan, jam kepulangan, menit keterlambatan, hingga durasi jam lembur terhitung secara otomatis dengan akurasi tinggi tanpa *data dummy*.
+- **Pencarian & Filter Fleksibel:** HRD dapat menyaring laporan berdasarkan periode tanggal spesifik, divisi, maupun status kelulusan absensi.
+- **Export Data:** Seluruh data rekap dapat dengan mudah diekspor untuk diproses pada aplikasi keuangan pihak ketiga.
+
+### 7. Konfigurasi Sistem Terpusat
+Halaman pengaturan yang membiarkan aplikasi beradaptasi dengan kebijakan unik masing-masing perusahaan tanpa perlu mengubah kode.
+- **Peta Lokasi Kantor:** Integrasi tautan *Google Maps* yang mengizinkan Admin menetapkan letak kantor di atas peta. Admin juga mengatur angka batas toleransi radius (misal: absensi sah hingga 100 meter dari titik pusat).
+- **Aturan Absensi Khusus:** Pengaturan nyala/mati (*toggle*) untuk kebijakan tertentu seperti apakah wajib foto saat pulang, batas maksimal jam absen pulang, dan toleransi menit keterlambatan.
+
+---
+
+## 🏗️ Arsitektur Proyek & Alur Sistem
+
+Proyek ini dibangun dengan menggunakan arsitektur *Monolith Serverless* yang modern (berbasis kerangka kerja **Next.js App Router**). Pendekatan ini memungkinkan *Frontend* (antarmuka klien) dan *Backend* (logika server) hidup dan bekerja sama dalam satu repositori (*codebase*), menghasilkan kecepatan *development* dan pemeliharaan tingkat tinggi.
+
+### 1. Lapisan Frontend (Client-Side / UI)
+- **Framework Utama:** Dibangun di atas **React 19** terbaru dan **Next.js 16 (App Router)** untuk menghasilkan navigasi halaman yang sangat cepat (SPA-like) dan rendering server (SSR).
+- **Sistem Desain (Styling):** Menggunakan **Tailwind CSS v4** untuk memberikan desain UI yang *clean*, minimalis, konsisten, responsif pada *mobile*, serta mendukung kapabilitas tema *Dark Mode*.
+- **Modularisasi Komponen:** Komponen UI yang sering dipakai ulang (*reusable* seperti tabel, *form*, tombol) disimpan di `src/components/`, sedangkan logika rumit spesifik milik setiap fitur halaman dipusatkan di direktori `src/features/`.
+- **State Management:** Memanfaatkan *React Hooks* standar dengan perpaduan keunggulan *React Server Components* untuk meminimalkan ukuran ukuran paket javascript (*bundle*) yang dikirim ke *browser*.
+
+### 2. Lapisan Backend (Server-Side / Logic)
+- **API Routes (Controller):** Rute API terletak di direktori `src/app/api/`. Fitur ini bertindak sebagai jembatan penerima *request* HTTP (GET, POST, PATCH, DELETE) dari tampilan depan (Frontend).
+- **Validasi Data Instan:** Sebelum data apa pun masuk ke server, skema masukan (*user input*) divalidasi secara ketat dan anti-lolos menggunakan pustaka **Zod**, hal ini krusial untuk menangkal *bug* masukan atau serangan injeksi data asing.
+- **Data Access Layer (Repository):** Logika komunikasi dengan *database* dibungkus rapi dalam file *Repositories* (di `src/server/repositories/`). Artinya, tidak ada proses kueri memanggil *database* secara sporadis di halaman visual.
+- **Autentikasi Aman:** Autentikasi dibuat dari nol (tanpa provider pihak ketiga) menggunakan strategi token JWT yang disimpan dalam *Cookie HTTP-Only* agar tak terlihat oleh Javascript eksternal (mencegah *XSS Attack*). Sandi disimpan menggunakan siklus *hashing Bcrypt*.
+
+### 3. Lapisan Database (Supabase PostgreSQL)
+- **Basis Data:** Menggunakan struktur relasional **PostgreSQL** tingkat *enterprise* yang di-hosting otomatis oleh **Supabase**.
+- **Row Level Security (RLS):** Konfigurasi keamanan diaktifkan pada level baris data di database. *Database* tidak akan menerima modifikasi data apa pun kecuali memiliki izin akses valid (*service role key*) dari lapisan Backend resmi kita.
 
 ## Tech Stack
 

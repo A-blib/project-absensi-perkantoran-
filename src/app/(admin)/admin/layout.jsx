@@ -10,10 +10,6 @@ export default async function AdminLayout({ children }) {
     redirect("/login");
   }
 
-  if (user.mustChangePassword) {
-    redirect("/change-password");
-  }
-
   if (user.role !== "admin") {
     redirect("/employee");
   }

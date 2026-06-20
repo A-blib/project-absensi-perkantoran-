@@ -49,11 +49,11 @@ const summaryCardMeta = {
 };
 
 const defaultWeeklySchedule = [
-  { dayIndex: 1, day: "SEN", start: "08:00", end: "17:00", shift: "REGULAR" },
-  { dayIndex: 2, day: "SEL", start: "08:00", end: "17:00", shift: "REGULAR" },
-  { dayIndex: 3, day: "RAB", start: "08:00", end: "17:00", shift: "WFH" },
-  { dayIndex: 4, day: "KAM", start: "08:00", end: "17:00", shift: "REGULAR" },
-  { dayIndex: 5, day: "JUM", start: "08:00", end: "16:30", shift: "SHORT" },
+  { dayIndex: 1, day: "SEN", shift: "REGULER" },
+  { dayIndex: 2, day: "SEL", shift: "REGULER" },
+  { dayIndex: 3, day: "RAB", shift: "REGULER" },
+  { dayIndex: 4, day: "KAM", shift: "REGULER" },
+  { dayIndex: 5, day: "JUM", shift: "REGULER" },
 ];
 
 const DEFAULT_ATTENDANCE_CONFIG = {
@@ -293,10 +293,13 @@ function getWeekNumberInMonth(date) {
   return Math.ceil(date.getDate() / 7);
 }
 
-function buildWeeklySchedule() {
+function buildWeeklySchedule(workHours = DEFAULT_ATTENDANCE_CONFIG.workHours) {
   const today = getJakartaDate();
   const todayKey = formatScheduleDate(today);
   const weekStart = getWeekStart(today);
+  const shiftLabel = workHours.shiftName || "REGULER";
+  const startTime = workHours.startTime || "08:00";
+  const endTime = workHours.endTime || "17:00";
 
   return defaultWeeklySchedule.map((schedule) => {
     const date = new Date(weekStart);
@@ -305,6 +308,9 @@ function buildWeeklySchedule() {
 
     return {
       ...schedule,
+      start: startTime,
+      end: endTime,
+      shift: shiftLabel,
       date: dateKey,
       isToday: dateKey === todayKey,
     };
@@ -373,7 +379,7 @@ export default function EmployeeHomePage() {
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [activities, setActivities] = useState([]);
   const [deletingActivityId, setDeletingActivityId] = useState(null);
-  const [weeklySchedule, setWeeklySchedule] = useState(buildWeeklySchedule);
+  const [weeklySchedule, setWeeklySchedule] = useState(() => buildWeeklySchedule());
   const [currentMonth, setCurrentMonth] = useState(() => getCurrentMonthRange());
   const officeLocation = useMemo(
     () => toOfficeLocation(attendanceConfig),
@@ -397,12 +403,12 @@ export default function EmployeeHomePage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setWeeklySchedule(buildWeeklySchedule());
+      setWeeklySchedule(buildWeeklySchedule(attendanceConfig.workHours));
       setCurrentMonth(getCurrentMonthRange());
     }, 60000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [attendanceConfig.workHours]);
 
   useEffect(() => {
     let active = true;
@@ -418,6 +424,7 @@ export default function EmployeeHomePage() {
         const payload = await response.json();
         if (active && payload.config) {
           setAttendanceConfig(payload.config);
+          setWeeklySchedule(buildWeeklySchedule(payload.config.workHours));
           setTodayAttendance((current) => ({
             ...current,
             location: current.clockIn ? current.location : payload.config.location.name,
@@ -476,6 +483,46 @@ export default function EmployeeHomePage() {
       gpsValid: valid,
     }));
   }, []);
+
+  // Kirim lokasi real-time ke server saat karyawan buka dashboard dan belum absen
+  useEffect(() => {
+    let active = true;
+    let intervalId = null;
+
+    function sendLocation() {
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          if (!active) return;
+          fetch("/api/employee/location", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }),
+          }).catch(() => {});
+        },
+        () => {},
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 },
+      );
+    }
+
+    // Hanya kirim jika belum ada check-in
+    if (!todayAttendance.clockIn) {
+      sendLocation();
+      intervalId = setInterval(sendLocation, 3 * 60 * 1000); // update tiap 3 menit
+    } else {
+      // Hapus lokasi saat sudah absen
+      fetch("/api/employee/location", { method: "DELETE" }).catch(() => {});
+    }
+
+    return () => {
+      active = false;
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [todayAttendance.clockIn]);
 
   const checkGpsReachability = useCallback(() => {
     return new Promise((resolve) => {

@@ -32,8 +32,8 @@ const emptyForm = {
   position: "",
   phone: "",
   employeeCode: "",
+  shiftId: "",
   status: "active",
-  mustChangePassword: true,
 };
 
 const sortOptions = [
@@ -53,7 +53,12 @@ function roleLabel(role) {
   return role === "admin" ? "Admin" : "Pegawai";
 }
 
-export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }) {
+export function AdminUsersPanel({
+  initialUsers,
+  divisions = [],
+  positions = [],
+  shifts = [],
+}) {
   const [users, setUsers] = useState(initialUsers);
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState(null);
@@ -118,8 +123,8 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
       position: user.position || "",
       phone: user.phone || "",
       employeeCode: user.employeeCode || "",
+      shiftId: user.shiftId || "",
       status: user.status || "active",
-      mustChangePassword: Boolean(user.mustChangePassword),
     });
     setMessage("");
     setModal({ type: "edit", user });
@@ -127,7 +132,7 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
 
   function openReset(user) {
     setOpenMenuId(null);
-    setForm({ password: "", mustChangePassword: true });
+    setForm({ password: "" });
     setMessage("");
     setModal({ type: "reset", user });
   }
@@ -379,7 +384,6 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
                 <th className="px-5 py-3">Divisi</th>
                 <th className="px-5 py-3">Role</th>
                 <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Password</th>
                 <th className="px-5 py-3">Aksi</th>
               </tr>
             </thead>
@@ -406,13 +410,6 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
                     <Badge status={user.status === "active" ? "hadir" : "alpa"}>
                       {statusLabel(user.status)}
                     </Badge>
-                  </td>
-                  <td className="px-5 py-4">
-                    {user.mustChangePassword ? (
-                      <Badge status="telat">Wajib ganti</Badge>
-                    ) : (
-                      <Badge status="default">Normal</Badge>
-                    )}
                   </td>
                   <td className="px-5 py-4">
                     <UserActionMenu
@@ -471,6 +468,7 @@ export function AdminUsersPanel({ initialUsers, divisions = [], positions = [] }
           isCreate={modal.type === "create"}
           divisions={divisions}
           positions={positions}
+          shifts={shifts}
           onClose={() => setModal(null)}
           onSubmit={submitForm}
         />
@@ -575,18 +573,6 @@ function UserMobileCard({
           </dt>
           <dd className="mt-1 truncate font-bold text-slate-700">
             {user.position || "-"}
-          </dd>
-        </div>
-        <div className="rounded-lg bg-slate-50 px-3 py-2">
-          <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Password
-          </dt>
-          <dd className="mt-1">
-            {user.mustChangePassword ? (
-              <Badge status="telat">Wajib ganti</Badge>
-            ) : (
-              <Badge status="default">Normal</Badge>
-            )}
           </dd>
         </div>
       </dl>
@@ -749,33 +735,41 @@ function UserActionMenu({
 
       {isOpen && menuPosition
         ? createPortal(
-        <div
-          className="z-50 w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-2 shadow-2xl shadow-slate-950/20"
-          role="menu"
-          style={menuPosition}
-        >
-          <MenuItem icon={UserRound} label="Lihat Detail" onClick={onDetail} />
-          <MenuItem icon={Pencil} label="Edit Data" onClick={onEdit} />
-          <MenuItem
-            icon={Shield}
-            label={user.role === "admin" ? "Ubah Jadi Pegawai" : "Ubah Jadi Admin"}
-            onClick={onToggleRole}
-            disabled={isLoading}
-          />
-          <MenuItem
-            label={user.status === "active" ? "Nonaktifkan Akun" : "Aktifkan Akun"}
-            onClick={onToggleStatus}
-            disabled={isLoading}
-          />
-          <MenuItem icon={KeyRound} label="Reset Password" onClick={onReset} />
-          <div className="my-2 border-t border-slate-100" />
-          <MenuItem
-            icon={Trash2}
-            label="Hapus Akun"
-            onClick={onDelete}
-            danger
-          />
-        </div>,
+            <>
+              <button
+                type="button"
+                className="fixed inset-0 z-40 cursor-default bg-transparent"
+                aria-label="Tutup menu aksi"
+                onClick={() => onToggle(null)}
+              />
+              <div
+                className="z-50 w-56 overflow-y-auto rounded-xl border border-slate-200 bg-white py-2 shadow-2xl shadow-slate-950/20"
+                role="menu"
+                style={menuPosition}
+              >
+                <MenuItem icon={UserRound} label="Lihat Detail" onClick={onDetail} />
+                <MenuItem icon={Pencil} label="Edit Data" onClick={onEdit} />
+                <MenuItem
+                  icon={Shield}
+                  label={user.role === "admin" ? "Ubah Jadi Pegawai" : "Ubah Jadi Admin"}
+                  onClick={onToggleRole}
+                  disabled={isLoading}
+                />
+                <MenuItem
+                  label={user.status === "active" ? "Nonaktifkan Akun" : "Aktifkan Akun"}
+                  onClick={onToggleStatus}
+                  disabled={isLoading}
+                />
+                <MenuItem icon={KeyRound} label="Reset Password" onClick={onReset} />
+                <div className="my-2 border-t border-slate-100" />
+                <MenuItem
+                  icon={Trash2}
+                  label="Hapus Akun"
+                  onClick={onDelete}
+                  danger
+                />
+              </div>
+            </>,
           document.body,
         )
         : null}
@@ -833,6 +827,7 @@ function UserFormModal({
   isCreate,
   divisions,
   positions,
+  shifts,
   onClose,
   onSubmit,
 }) {
@@ -927,6 +922,21 @@ function UserFormModal({
           </label>
           <Field label="Nomor HP" value={form.phone} onChange={(value) => update("phone", value)} />
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Shift Karyawan
+            <select
+              value={form.shiftId || ""}
+              onChange={(event) => update("shiftId", event.target.value)}
+              className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm"
+            >
+              <option value="">Ikuti jam kerja default</option>
+              {shifts.map((shift) => (
+                <option key={shift.id} value={shift.id}>
+                  {shift.name} ({shift.startTime}-{shift.endTime})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Role
             <select
               value={form.role}
@@ -947,15 +957,6 @@ function UserFormModal({
               <option value="active">Aktif</option>
               <option value="inactive">Nonaktif</option>
             </select>
-          </label>
-          <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={form.mustChangePassword}
-              onChange={(event) => update("mustChangePassword", event.target.checked)}
-              className="size-4"
-            />
-            Wajib ganti password saat login berikutnya
           </label>
           {message ? (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:col-span-2">
@@ -1011,7 +1012,6 @@ function DetailModal({ user, onClose }) {
     ["Nomor HP", user.phone || "-"],
     ["Role", roleLabel(user.role)],
     ["Status", statusLabel(user.status)],
-    ["Wajib Ganti Password", user.mustChangePassword ? "Ya" : "Tidak"],
   ];
 
   return (
@@ -1046,7 +1046,7 @@ function ResetPasswordModal({
         <div className="px-6 py-5">
           <p className="text-sm leading-6 text-slate-500">
             Buat password awal baru untuk <strong className="text-slate-950">{user.name}</strong>.
-            Setelah reset, user wajib mengganti password saat login.
+            Password baru langsung aktif dan dikelola sepenuhnya oleh admin.
           </p>
           <div className="mt-4">
             <Field

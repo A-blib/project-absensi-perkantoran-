@@ -36,16 +36,17 @@ export const createUserSchema = z.object({
     .max(60)
     .optional()
     .transform((value) => value || null),
+  shiftId: z
+    .string()
+    .uuid()
+    .nullable()
+    .optional()
+    .transform((value) => value || null),
   status: z.enum(["active", "inactive"]).default("active"),
-  mustChangePassword: z.boolean().default(true),
+  mustChangePassword: z.boolean().default(false),
 });
 
-export const updateUserSchema = createUserSchema
-  .omit({ password: true })
-  .partial()
-  .extend({
-    mustChangePassword: z.boolean().optional(),
-  });
+export const updateUserSchema = createUserSchema.omit({ password: true }).partial();
 
 export const resetPasswordSchema = z.object({
   password: z.string().min(6).max(120),
