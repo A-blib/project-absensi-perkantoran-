@@ -90,12 +90,11 @@ export default async function AdminDashboardPage() {
                   className="flex flex-col gap-1 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
                 >
                   <span className="font-medium text-slate-700">
-                    {item.name} {item.checkIn !== "-" ? `masuk ${item.checkIn}` : "belum check in"}
+                    {item.name} — {item.message}
                   </span>
-                  <span className="text-xs font-semibold uppercase text-slate-400">
-                    {item.status}
-                    {item.lateMinutes ? ` - telat ${item.lateMinutes} menit` : ""}
-                  </span>
+                  <Badge status={item.status}>
+                    {item.status === "hadir" ? "Hadir" : item.status === "telat" ? "Telat" : item.status === "izin" ? "Izin" : item.status === "alpa" ? "Ditolak" : item.status}
+                  </Badge>
                 </div>
               ))
             ) : (

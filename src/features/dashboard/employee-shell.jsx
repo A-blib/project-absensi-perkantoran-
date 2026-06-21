@@ -8,6 +8,7 @@ import {
   Bell,
   Building2,
   ChevronDown,
+  LogOut,
   Menu,
   Settings,
   X,
@@ -103,12 +104,13 @@ function SidebarContent({ pathname, onNavigate, user, unreadCount = 0 }) {
             height={40}
             className="size-10 rounded-full object-cover ring-2 ring-[#3B82F6]/20"
           />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-[#D4E4FA]">
               {displayName}
             </p>
             <p className="text-[11px] text-[#C2C6D6]">{displayTitle}</p>
           </div>
+          <LogoutButton audience="employee" />
         </div>
       </div>
     </>

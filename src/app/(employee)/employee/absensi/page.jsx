@@ -763,10 +763,10 @@ export default function EmployeeAttendancePage() {
             <button
               type="button"
               onClick={() => openCamera("masuk")}
-              disabled={Boolean(savedAttendance) || !shiftAvailability.canCheckIn}
+              disabled={Boolean(savedAttendance) || !shiftAvailability.canCheckIn || currentLocationStatus === "invalid" || currentLocationStatus === "error"}
               className={[
                 "flex min-h-14 cursor-pointer items-center justify-center gap-3 rounded-2xl px-5 font-semibold shadow-lg transition hover:-translate-y-1 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55",
-                savedAttendance || !shiftAvailability.canCheckIn
+                savedAttendance || !shiftAvailability.canCheckIn || currentLocationStatus === "invalid" || currentLocationStatus === "error"
                   ? "border border-[#24344D] bg-[#0B1220] text-[#c2c6d6] shadow-none"
                   : "bg-[#3b82f6] text-white shadow-blue-500/20 hover:bg-[#60a5fa]",
               ].join(" ")}
@@ -776,7 +776,11 @@ export default function EmployeeAttendancePage() {
                 ? "Absen Masuk Sudah Tercatat"
                 : !shiftAvailability.canCheckIn
                   ? `Absen Masuk Mulai ${shiftAvailability.startTime}`
-                  : "Mulai Absen Masuk"}
+                  : currentLocationStatus === "invalid"
+                    ? "Di Luar Radius Kantor"
+                    : currentLocationStatus === "error"
+                      ? "GPS Tidak Terdeteksi"
+                      : "Mulai Absen Masuk"}
             </button>
             <div className="flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 text-sm font-semibold text-[#c2c6d6]">
               <ShieldCheck size={20} className="text-emerald-400" />
@@ -789,16 +793,22 @@ export default function EmployeeAttendancePage() {
             disabled={
               !savedAttendance?.clockIn ||
               (savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--") ||
-              !shiftAvailability.canCheckOut
+              !shiftAvailability.canCheckOut ||
+              currentLocationStatus === "invalid" ||
+              currentLocationStatus === "error"
             }
             className="mt-3 flex min-h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-5 font-semibold text-[#c2c6d6] transition hover:-translate-y-1 hover:border-[#3b82f6]/60 hover:text-[#d4e4fa] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-55"
           >
             <Clock3 size={20} />
             {savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--"
               ? "Absen Pulang Sudah Tercatat"
-              : !shiftAvailability.canCheckOut && savedAttendance?.clockIn
-                ? `Absen Pulang Mulai ${shiftAvailability.endTime}`
-                : "Ambil Absen Pulang"}
+              : currentLocationStatus === "invalid"
+                ? "Di Luar Radius Kantor"
+                : currentLocationStatus === "error"
+                  ? "GPS Tidak Terdeteksi"
+                  : !shiftAvailability.canCheckOut && savedAttendance?.clockIn
+                    ? `Absen Pulang Mulai ${shiftAvailability.endTime}`
+                    : "Ambil Absen Pulang"}
           </button>
         </section>
 

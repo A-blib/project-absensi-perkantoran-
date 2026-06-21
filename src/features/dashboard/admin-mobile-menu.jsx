@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
+import { LogoutButton } from "@/features/auth/logout-button";
 import { adminNav } from "@/lib/constants/navigation";
 
 export function AdminMobileMenu({ user }) {
@@ -64,9 +65,9 @@ export function AdminMobileMenu({ user }) {
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="text-sm font-bold text-slate-950">{displayName}</p>
                     <p className="mt-1 text-xs text-slate-500">{displayEmail}</p>
-                    <p className="mt-3 text-xs leading-5 text-slate-500">
-                      Pilih menu untuk berpindah halaman dashboard.
-                    </p>
+                    <div className="mt-3">
+                      <LogoutButton audience="admin" />
+                    </div>
                   </div>
                 </div>
               </aside>

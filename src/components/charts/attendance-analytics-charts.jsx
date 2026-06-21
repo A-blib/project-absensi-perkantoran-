@@ -84,7 +84,7 @@ export function AttendanceAnalyticsCharts({ initialData }) {
   const totalRecorded = Object.values(data.summary || {}).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 overflow-x-hidden">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {STATUS_META.map(({ key, label, color }) => (
           <SummaryCard
@@ -106,7 +106,7 @@ export function AttendanceAnalyticsCharts({ initialData }) {
               {totalRecorded} entri absensi tercatat dalam periode ini.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {PERIOD_OPTIONS.map((opt) => (
               <button
                 key={opt.value}

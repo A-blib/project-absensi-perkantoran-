@@ -151,7 +151,7 @@ export function AdminPositionsPanel({ initialPositions, divisions }) {
   }
 
   return (
-    <div className="grid gap-4 sm:gap-6">
+    <div className="grid gap-4 overflow-x-hidden sm:gap-6">
       <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <p className="text-sm font-bold uppercase tracking-wide text-blue-600">
@@ -320,7 +320,7 @@ function PositionMobileCard({
   onDelete,
 }) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
         <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600">
           <BriefcaseBusiness size={21} />
