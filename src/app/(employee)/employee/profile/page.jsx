@@ -1,23 +1,32 @@
+"use client";
+
 import Image from "next/image";
+import { useRef, useState } from "react";
 import {
   BadgeCheck,
   Building2,
   Edit3,
   IdCard,
+  Loader2,
   Mail,
   Phone,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
-import { getCurrentUser } from "@/server/auth/guards";
+import { useCurrentUser } from "@/lib/browser/use-current-user";
 
 function getDisplayValue(value, fallback = "-") {
   return value || fallback;
 }
 
-function getEmployeeProfile(user) {
-  return {
+export default function EmployeeProfilePage() {
+  const { user, setUser } = useCurrentUser();
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const employee = {
     name: getDisplayValue(user?.name, "Pegawai"),
     employeeCode: getDisplayValue(user?.employeeCode || user?.id),
     position: getDisplayValue(user?.position, "Pegawai"),
@@ -25,22 +34,39 @@ function getEmployeeProfile(user) {
     email: getDisplayValue(user?.email),
     phone: getDisplayValue(user?.phone),
     status: user?.status === "active" ? "Akun Aktif" : "Akun Nonaktif",
+    photoUrl: user?.photoUrl || null,
   };
-}
 
-function getPersonalInfo(employee) {
-  return [
+  const personalInfo = [
     ["Email", employee.email, Mail],
     ["Nomor Telepon", employee.phone, Phone],
     ["Divisi", employee.division, Building2],
     ["Jabatan", employee.position, IdCard],
   ];
-}
 
-export default async function EmployeeProfilePage() {
-  const user = await getCurrentUser();
-  const employee = getEmployeeProfile(user);
-  const personalInfo = getPersonalInfo(employee);
+  async function handleFileChange(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("photo", file);
+
+      const res = await fetch("/api/employee/profile", { method: "POST", body: formData });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      if (setUser) setUser((prev) => ({ ...prev, photoUrl: data.photoUrl }));
+    } catch (err) {
+      setError(err.message || "Gagal upload foto.");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  }
 
   return (
     <EmployeeShell initialUser={user}>
@@ -51,7 +77,7 @@ export default async function EmployeeProfilePage() {
             <div className="flex flex-col gap-5 md:flex-row md:items-center">
               <div className="relative mx-auto size-36 shrink-0 rounded-full bg-gradient-to-br from-[#adc6ff] via-[#3b82f6] to-[#0267b8] p-1 md:mx-0 md:size-40">
                 <Image
-                  src="/avatar-rina.svg"
+                  src={employee.photoUrl || "/avatar-rina.svg"}
                   alt={`Foto profil ${employee.name}`}
                   width={200}
                   height={200}
@@ -79,21 +105,29 @@ export default async function EmployeeProfilePage() {
                   {employee.name}
                 </h2>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-base text-[#c2c6d6] md:justify-start">
-                  <span className="font-semibold text-[#adc6ff]">
-                    {employee.position}
-                  </span>
+                  <span className="font-semibold text-[#adc6ff]">{employee.position}</span>
                   <span className="hidden size-1.5 rounded-full bg-[#64748b] sm:block" />
                   <span>Divisi {employee.division}</span>
                 </div>
+                {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
               </div>
             </div>
 
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             <button
               type="button"
-              className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#adc6ff] px-5 font-bold text-[#002e6a] shadow-lg shadow-blue-300/20 transition duration-300 hover:-translate-y-1 hover:brightness-110"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#adc6ff] px-5 font-bold text-[#002e6a] shadow-lg shadow-blue-300/20 transition duration-300 hover:-translate-y-1 hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Edit3 size={18} />
-              Edit Profil
+              {uploading ? <Loader2 size={18} className="animate-spin" /> : <Edit3 size={18} />}
+              {uploading ? "Mengupload..." : "Ganti Foto"}
             </button>
           </div>
         </section>
@@ -102,9 +136,7 @@ export default async function EmployeeProfilePage() {
           <div className="mb-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-[#8B9DB5]">Data akun karyawan</p>
-              <h3 className="mt-1 text-xl font-bold text-[#d4e4fa]">
-                Informasi Personal
-              </h3>
+              <h3 className="mt-1 text-xl font-bold text-[#d4e4fa]">Informasi Personal</h3>
             </div>
             <div className="grid size-12 place-items-center rounded-2xl bg-[#3b82f6]/12 text-[#60a5fa]">
               <IdCard size={23} />
@@ -121,9 +153,7 @@ export default async function EmployeeProfilePage() {
                   <Icon size={21} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8B9DB5]">
-                    {label}
-                  </p>
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#8B9DB5]">{label}</p>
                   <p className="mt-1 break-words text-base font-semibold text-[#d4e4fa] transition group-hover:text-[#adc6ff]">
                     {value}
                   </p>

@@ -45,7 +45,9 @@ export async function AdminShell({ children }) {
             <button className="grid size-10 place-items-center rounded-lg border border-slate-200 bg-white text-slate-600">
               <Bell size={18} />
             </button>
-            <LogoutButton />
+            <div className="hidden lg:block">
+              <LogoutButton />
+            </div>
             <div className="flex items-center gap-3">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-bold">{displayName}</p>
@@ -55,7 +57,7 @@ export async function AdminShell({ children }) {
             </div>
           </div>
         </header>
-        <main className="px-5 py-6 lg:px-8">{children}</main>
+        <main className="overflow-x-hidden px-5 py-6 lg:px-8">{children}</main>
       </div>
     </div>
   );

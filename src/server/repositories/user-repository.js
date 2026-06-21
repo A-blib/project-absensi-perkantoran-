@@ -174,6 +174,7 @@ export async function updateUser(id, input) {
   if (input.employeeCode !== undefined) payload.employee_code = input.employeeCode;
   if (input.shiftId !== undefined) payload.shift_id = input.shiftId;
   if (input.status !== undefined) payload.status = input.status;
+  if (input.photo_url !== undefined) payload.photo_url = input.photo_url;
 
   const { data, error } = await supabase
     .from("users")

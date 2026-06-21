@@ -291,41 +291,51 @@ function buildWeeklyAttendanceData(rows, totalEmployees, settings) {
 }
 
 export async function getAttendanceRecap() {
-  if (!hasSupabaseEnv()) {
-    return [];
-  }
+  if (!hasSupabaseEnv()) return [];
 
   const supabase = createSupabaseServerClient();
+  const today = getJakartaDateKey();
+  const sevenDaysAgo = getJakartaDateKey(addDays(getJakartaDateFromKey(today), -6));
+
   const [settings, attendanceResult] = await Promise.all([
     getSystemSettings(),
     supabase
       .from("attendances")
-      .select(
-        `
-          id,
-          user_id,
-          attendance_date,
-          check_in_at,
-          check_out_at,
-          status,
-          late_minutes,
-          latitude,
-          longitude,
-          current_location_label,
-          location_label,
-          users (
-            name,
-            division
-          )
-        `,
-      )
+      .select(`id,user_id,attendance_date,check_in_at,check_out_at,status,late_minutes,latitude,longitude,current_location_label,location_label,users(name,division)`)
+      .gte("attendance_date", sevenDaysAgo)
+      .lte("attendance_date", today)
       .order("attendance_date", { ascending: false })
       .order("check_in_at", { ascending: false }),
   ]);
 
-  if (attendanceResult.error) {
-    throw new Error(`Gagal mengambil rekap absensi: ${attendanceResult.error.message}`);
-  }
+  if (attendanceResult.error) throw new Error(`Gagal mengambil rekap absensi: ${attendanceResult.error.message}`);
+
+  const workDays = new Set(settings.workHours.workDays || []);
+  return attendanceResult.data
+    .filter((row) => !workDays.size || workDays.has(getDayName(row.attendance_date)))
+    .map((row) => toRecapRow(row, settings));
+}
+
+export async function getAttendanceReport({ startDate, endDate } = {}) {
+  if (!hasSupabaseEnv()) return [];
+
+  const supabase = createSupabaseServerClient();
+  const today = getJakartaDateKey();
+  const from = startDate || getJakartaDateKey(addDays(getJakartaDateFromKey(today), -29));
+  const to = endDate || today;
+
+  const [settings, attendanceResult] = await Promise.all([
+    getSystemSettings(),
+    supabase
+      .from("attendances")
+      .select(`id,user_id,attendance_date,check_in_at,check_out_at,status,late_minutes,latitude,longitude,current_location_label,location_label,users(name,division)`)
+      .gte("attendance_date", from)
+      .lte("attendance_date", to)
+      .order("attendance_date", { ascending: false })
+      .order("check_in_at", { ascending: false }),
+  ]);
+
+  if (attendanceResult.error) throw new Error(`Gagal mengambil laporan absensi: ${attendanceResult.error.message}`);
 
   const workDays = new Set(settings.workHours.workDays || []);
   return attendanceResult.data
@@ -510,6 +520,7 @@ export async function getAdminAttendanceDashboard() {
     { count, error: countError },
     { data, error },
     { data: weeklyRows, error: weeklyError },
+    { data: leaveRows },
   ] = await Promise.all([
     getSystemSettings(),
     supabase
@@ -527,6 +538,11 @@ export async function getAdminAttendanceDashboard() {
       .select("attendance_date, status")
       .gte("attendance_date", startDate)
       .lte("attendance_date", today),
+    supabase
+      .from("leave_requests")
+      .select("id, user_id, type, status, submitted_at, decided_at, users!leave_requests_user_id_fkey(name)")
+      .or(`submitted_at.gte.${today}T00:00:00+07:00,decided_at.gte.${today}T00:00:00+07:00`)
+      .order("submitted_at", { ascending: false }),
   ]);
 
   if (countError) {
@@ -558,21 +574,40 @@ export async function getAdminAttendanceDashboard() {
   const isWorkDay = workDays.size ? workDays.has(getDayName(today)) : true;
   counts.alpa = isWorkDay ? Math.max(totalEmployees - recordedToday, counts.alpa) : counts.alpa;
 
+  const attendanceActivities = data.map((row) => ({
+    id: `att-${row.id}`,
+    name: row.users?.name || "Pegawai",
+    message: row.check_in_at
+      ? `masuk ${formatTime(row.check_in_at)}${row.late_minutes ? `, telat ${row.late_minutes} menit` : ""}`
+      : "belum check in",
+    status: row.status,
+    lateMinutes: row.late_minutes || 0,
+    occurredAt: row.check_in_at || row.created_at,
+  }));
+
+  const leaveActivities = (leaveRows || []).map((row) => {
+    const isDecided = ["Disetujui", "Ditolak"].includes(row.status);
+    return {
+      id: `leave-${row.id}`,
+      name: row.users?.name || "Pegawai",
+      message: isDecided
+        ? `pengajuan ${row.type} ${row.status.toLowerCase()} oleh admin`
+        : `mengajukan ${row.type}`,
+      status: isDecided ? (row.status === "Disetujui" ? "hadir" : "alpa") : "izin",
+      lateMinutes: 0,
+      occurredAt: isDecided ? row.decided_at : row.submitted_at,
+    };
+  });
+
+  const recentActivities = [...attendanceActivities, ...leaveActivities]
+    .sort((a, b) => new Date(b.occurredAt) - new Date(a.occurredAt))
+    .slice(0, 8);
+
   return {
     totalEmployees,
     counts,
     weeklyData: buildWeeklyAttendanceData(weeklyRows || [], totalEmployees, settings),
-    recentActivities: data.slice(0, 6).map((row) => ({
-      id: row.id,
-      name: row.users?.name || "Pegawai",
-      division: row.users?.division || "-",
-      date: formatDate(row.attendance_date),
-      checkIn: formatTime(row.check_in_at),
-      checkOut: formatTime(row.check_out_at),
-      status: row.status,
-      lateMinutes: row.late_minutes || 0,
-      location: row.location_label || "-",
-    })),
+    recentActivities,
   };
 }
 

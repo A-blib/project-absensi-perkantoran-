@@ -1,8 +1,9 @@
 import { AdminShell } from "@/features/dashboard/admin-shell";
-import { getAttendanceRecap } from "@/server/repositories/attendance-repository";
+import { getAttendanceReport } from "@/server/repositories/attendance-repository";
 import { AttendanceRecapTable } from "@/components/tables/attendance-recap-table";
 import { DivisionBreakdown, TopLateWidget, AlpaAlertWidget } from "@/features/reports/recap-widgets";
 import { Card } from "@/components/ui/card";
+import { RekapDateFilter } from "@/features/reports/rekap-date-filter";
 import {
   CalendarDays,
   CheckCircle2,
@@ -11,6 +12,8 @@ import {
   ShieldAlert,
   Users,
 } from "lucide-react";
+
+export const dynamic = "force-dynamic";
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
@@ -79,8 +82,9 @@ function DistributionBar({ counts, total }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function RecapPage() {
-  const rows = await getAttendanceRecap();
+export default async function RecapPage({ searchParams }) {
+  const { startDate, endDate } = await searchParams;
+  const rows = await getAttendanceReport({ startDate, endDate });
 
   const counts = rows.reduce(
     (acc, r) => { if (r.status in acc) acc[r.status]++; return acc; },
@@ -117,6 +121,11 @@ export default async function RecapPage() {
             {hadirPct}%
           </span>
         </p>
+      </div>
+
+      {/* ── Filter tanggal ─────────────────────────────────────── */}
+      <div className="mb-6">
+        <RekapDateFilter startDate={startDate} endDate={endDate} />
       </div>
 
       {/* ── Alpa alert (conditional) ───────────────────────────── */}

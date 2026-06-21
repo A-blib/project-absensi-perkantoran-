@@ -195,7 +195,7 @@ export function AdminLeavePanel({ initialRequests }) {
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-6 overflow-x-hidden">
       {previewAttachment ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/70 p-4">
           <div className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">

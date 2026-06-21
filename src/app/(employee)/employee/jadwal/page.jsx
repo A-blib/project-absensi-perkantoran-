@@ -191,25 +191,24 @@ export default function EmployeeSchedulePage() {
               {state.calendarDays.map((day, index) => {
                 const schedule = day ? state.monthSchedules[day - 1] : null;
                 const isToday = schedule?.date === state.todayKey;
+                const isWork = schedule?.status === "Kerja";
                 return (
                   <div
                     key={`${day ?? "e"}-${index}`}
                     className={[
-                      "min-h-[64px] rounded-xl border p-2",
-                      day ? "border-[#24344D] bg-[#0B1220]" : "border-transparent bg-transparent",
-                      isToday ? "ring-2 ring-[#3b82f6]/60" : "",
-                      schedule?.status === "Libur" && day ? "opacity-40" : "",
+                      "aspect-square rounded-xl flex flex-col items-center justify-center",
+                      !day ? "border-transparent bg-transparent" : isToday
+                        ? "border-2 border-[#3b82f6] bg-[#3b82f6]/10"
+                        : isWork
+                          ? "border-2 border-emerald-500/70 bg-[#0B1220]"
+                          : "border-2 border-[#3b82f6]/40 bg-[#0B1220]",
                     ].join(" ")}
                   >
-                    {schedule ? (
-                      <div className="flex items-start justify-between">
-                        <span className="text-sm font-semibold text-[#d4e4fa]">{day}</span>
-                        {isToday ? (
-                          <span className="rounded-full bg-[#3b82f6] px-1.5 py-0.5 text-[9px] font-bold text-white">
-                            Hari ini
-                          </span>
-                        ) : null}
-                      </div>
+                    {day ? (
+                      <span className={[
+                        "text-sm font-bold",
+                        isToday ? "text-[#60a5fa]" : "text-[#d4e4fa]",
+                      ].join(" ")}>{day}</span>
                     ) : null}
                   </div>
                 );

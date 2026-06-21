@@ -39,5 +39,5 @@ export function useCurrentUser(initialUser = null) {
     };
   }, [initialUser]);
 
-  return { user, loading };
+  return { user, setUser, loading };
 }
