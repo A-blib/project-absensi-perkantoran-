@@ -6,11 +6,13 @@ import { AdminMobileMenu } from "@/features/dashboard/admin-mobile-menu";
 import { AdminSessionGuard } from "@/features/dashboard/admin-session-guard";
 import { adminNav } from "@/lib/constants/navigation";
 import { getCurrentUser } from "@/server/auth/guards";
+import { countPendingLeaveRequests } from "@/server/repositories/leave-repository";
 
 export async function AdminShell({ children }) {
   const user = await getCurrentUser();
   const displayName = user?.name || "Admin";
   const displayEmail = user?.email || "-";
+  const pendingLeaveCount = await countPendingLeaveRequests().catch(() => 0);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -26,6 +28,11 @@ export async function AdminShell({ children }) {
             >
               <item.icon size={18} aria-hidden="true" />
               {item.label}
+              {item.href === "/admin/izin" && pendingLeaveCount > 0 && (
+                <span className="ml-auto min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                  {pendingLeaveCount > 9 ? "9+" : pendingLeaveCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -34,7 +41,7 @@ export async function AdminShell({ children }) {
       <div className="lg:pl-72">
         <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex h-16 items-center justify-between gap-4 px-5">
-            <AdminMobileMenu user={user} />
+            <AdminMobileMenu user={user} pendingLeaveCount={pendingLeaveCount} />
             <div className="flex min-w-0 flex-1 items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 lg:max-w-md">
               <Search size={18} className="shrink-0 text-slate-400" />
               <input

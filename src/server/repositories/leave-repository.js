@@ -130,7 +130,17 @@ export async function createLeaveRequest(userId, input) {
   return toLeaveRequest(data);
 }
 
-export async function decideLeaveRequest(id, input, adminId) {
+export async function countPendingLeaveRequests() {
+  const supabase = createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("leave_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "Menunggu");
+
+  if (isMissingTable(error)) return 0;
+  if (error) return 0;
+  return count || 0;
+}
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("leave_requests")

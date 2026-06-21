@@ -8,7 +8,7 @@ import { Logo } from "@/components/shared/logo";
 import { LogoutButton } from "@/features/auth/logout-button";
 import { adminNav } from "@/lib/constants/navigation";
 
-export function AdminMobileMenu({ user }) {
+export function AdminMobileMenu({ user, pendingLeaveCount = 0 }) {
   const [isOpen, setIsOpen] = useState(false);
   const displayName = user?.name || "Admin";
   const displayEmail = user?.email || "-";
@@ -57,6 +57,11 @@ export function AdminMobileMenu({ user }) {
                     >
                       <item.icon size={19} aria-hidden="true" />
                       {item.label}
+                      {item.href === "/admin/izin" && pendingLeaveCount > 0 && (
+                        <span className="ml-auto min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-[10px] font-bold text-white">
+                          {pendingLeaveCount > 9 ? "9+" : pendingLeaveCount}
+                        </span>
+                      )}
                     </Link>
                   ))}
                 </nav>

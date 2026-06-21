@@ -98,7 +98,7 @@ function SidebarContent({ pathname, onNavigate, user, unreadCount = 0 }) {
       <div className="mt-auto border-t border-[#24344D]/50 px-6 pt-6">
         <div className="flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.05] p-3">
           <Image
-            src="/avatar-rina.svg"
+            src={user?.photoUrl || "/avatar-rina.svg"}
             alt={avatarAlt}
             width={40}
             height={40}
@@ -231,7 +231,7 @@ export function EmployeeShell({ children, initialUser = null }) {
                 <p className="text-[11px] text-[#C2C6D6]">{displayTitle}</p>
               </div>
               <Image
-                src="/avatar-rina.svg"
+                src={user?.photoUrl || "/avatar-rina.svg"}
                 alt={avatarAlt}
                 width={40}
                 height={40}

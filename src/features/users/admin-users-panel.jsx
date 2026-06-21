@@ -7,6 +7,8 @@ import {
   ArrowUpAZ,
   Check,
   ChevronDown,
+  Eye,
+  EyeOff,
   KeyRound,
   MoreHorizontal,
   Pencil,
@@ -986,17 +988,33 @@ function Field({
   placeholder = "",
   hint = "",
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
     <label className="grid gap-2 text-sm font-semibold text-slate-700">
       {label}
-      <input
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        required={required}
-        placeholder={placeholder}
-        className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm placeholder:text-slate-400"
-      />
+      <div className="relative">
+        <input
+          type={inputType}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          required={required}
+          placeholder={placeholder}
+          className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-950 shadow-sm placeholder:text-slate-400"
+        />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+            aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+          >
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        )}
+      </div>
       {hint ? <span className="text-xs font-normal text-slate-500">{hint}</span> : null}
     </label>
   );

@@ -323,21 +323,15 @@ export function AdminLeavePanel({ initialRequests }) {
                 />
               </label>
               <div className="flex gap-1.5">
-                {statusOptions.map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => { setActiveStatus(status); setActiveRequestId(null); }}
-                    className={[
-                      "h-10 rounded-lg border px-3 text-sm font-semibold transition",
-                      activeStatus === status
-                        ? "border-blue-200 bg-blue-50 text-blue-700"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-                    ].join(" ")}
-                  >
-                    {status}
-                  </button>
-                ))}
+                <select
+                  value={activeStatus}
+                  onChange={(e) => { setActiveStatus(e.target.value); setActiveRequestId(null); }}
+                  className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm"
+                >
+                  {statusOptions.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
