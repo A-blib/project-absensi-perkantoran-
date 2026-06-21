@@ -62,11 +62,11 @@ export async function POST(request) {
       }),
     );
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[LOGIN ERROR]", err?.message, err?.stack);
     return NextResponse.json(
       {
-        message:
-          "Login hanya bisa memakai akun yang terdaftar di menu Pegawai. Pastikan Supabase aktif dan data pegawai sudah dibuat.",
+        message: err?.message || "Internal server error",
       },
       { status: 503 },
     );
