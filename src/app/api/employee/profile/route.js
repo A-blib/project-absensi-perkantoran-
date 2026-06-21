@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/server/db/client";
 import { updateUser } from "@/server/repositories/user-repository";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_SIZE = 8 * 1024 * 1024; // 8MB
 
 export async function POST(request) {
   const session = await requireEmployeeSession();
@@ -22,7 +22,7 @@ export async function POST(request) {
   }
 
   if (file.size > MAX_SIZE) {
-    return NextResponse.json({ message: "Ukuran foto maksimal 2MB." }, { status: 422 });
+    return NextResponse.json({ message: "Ukuran foto maksimal 8MB." }, { status: 422 });
   }
 
   try {

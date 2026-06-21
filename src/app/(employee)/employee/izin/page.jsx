@@ -14,7 +14,7 @@ import { EmployeeShell } from "@/features/dashboard/employee-shell";
 import { useCurrentUser } from "@/lib/browser/use-current-user";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
-const MAX_ATTACHMENT_SIZE = 1.5 * 1024 * 1024;
+const MAX_ATTACHMENT_SIZE = 8 * 1024 * 1024;
 const ALLOWED_ATTACHMENT_TYPES = [
   "image/jpeg",
   "image/png",
@@ -282,7 +282,7 @@ export default function EmployeeLeavePage() {
     if (file.size > MAX_ATTACHMENT_SIZE) {
       setNotice({
         type: "error",
-        message: "Ukuran lampiran maksimal 1.5MB.",
+        message: "Ukuran lampiran maksimal 8MB.",
       });
       return;
     }
