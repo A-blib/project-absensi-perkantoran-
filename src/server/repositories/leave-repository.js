@@ -141,6 +141,8 @@ export async function countPendingLeaveRequests() {
   if (error) return 0;
   return count || 0;
 }
+
+export async function decideLeaveRequest(id, input, adminId) {
   const supabase = createSupabaseServerClient();
   const { data, error } = await supabase
     .from("leave_requests")
