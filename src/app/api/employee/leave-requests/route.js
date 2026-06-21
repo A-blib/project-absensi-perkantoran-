@@ -31,7 +31,27 @@ function normalizeType(value) {
   return value || "Izin";
 }
 
-function mapRow(row) {
+function getJakartaDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function inferSubmittedDate(row) {
+  if (row.created_at) return row.created_at;
+
+  const today = getJakartaDateString();
+  if (row.start_date && row.start_date >= today) return today;
+  return row.start_date || today;
+}
+
+function mapRow(row, fallbackCreatedAt = null) {
   return {
     id: row.id,
     type: normalizeType(row.request_type || row.type),
@@ -41,7 +61,7 @@ function mapRow(row) {
     attachmentName: row.attachment_name,
     attachmentUrl: row.attachment_url,
     status: normalizeStatus(row.status),
-    createdAt: row.created_at || row.start_date,
+    createdAt: row.created_at || fallbackCreatedAt || inferSubmittedDate(row),
     updatedAt: row.updated_at || null,
     adminNote: row.admin_note || row.note || row.rejection_reason || "",
   };
@@ -58,6 +78,25 @@ function buildSummary(rows) {
     },
     { total: 0, approved: 0, pending: 0, rejected: 0 },
   );
+}
+
+function getRequestTime(row) {
+  const value = row.createdAt;
+  const date = value ? new Date(value) : null;
+
+  if (!date || !Number.isFinite(date.getTime()) || date.getFullYear() < 2000) {
+    return 0;
+  }
+
+  return date.getTime();
+}
+
+function sortRequestsNewestFirst(rows) {
+  return [...rows].sort((first, second) => {
+    const createdDiff = getRequestTime(second) - getRequestTime(first);
+    if (createdDiff !== 0) return createdDiff;
+    return String(second.id || "").localeCompare(String(first.id || ""));
+  });
 }
 
 function parsePositiveInt(value, fallback, max = 100) {
@@ -164,6 +203,8 @@ async function runEmployeeIdLeaveQuery(supabase, selectColumns, employeeIds, { o
 async function getLeaveRequests(supabase, employeeIds) {
   const fullSelect =
     "id, type, start_date, end_date, reason, attachment_name, attachment_url, status, created_at";
+  const createdAtSelect =
+    "id, type, start_date, end_date, reason, attachment_name, status, created_at";
   const legacySelect = "id, type, start_date, end_date, reason, attachment_name, status";
 
   const fullResult = await runLeaveQuery(supabase, fullSelect, employeeIds, {
@@ -182,6 +223,40 @@ async function getLeaveRequests(supabase, employeeIds) {
   console.log("[leave-request:fallback-query]", {
     message: fullResult.error.message,
   });
+
+  const createdAtUserResult = await runLeaveQuery(supabase, createdAtSelect, employeeIds, {
+    orderColumn: "created_at",
+  });
+
+  if (!createdAtUserResult.error && createdAtUserResult.data?.length) {
+    return createdAtUserResult;
+  }
+
+  const missingCreatedAtRelation =
+    createdAtUserResult.error?.message?.includes("user_id") ||
+    createdAtUserResult.error?.message?.includes("does not exist");
+
+  const createdAtEmployeeIdResult = await runEmployeeIdLeaveQuery(
+    supabase,
+    createdAtSelect,
+    employeeIds,
+    { orderColumn: "created_at" },
+  );
+
+  if (!createdAtEmployeeIdResult.error) return createdAtEmployeeIdResult;
+
+  const missingCreatedAtEmployeeRelation =
+    createdAtEmployeeIdResult.error.message?.includes("employee_id") ||
+    createdAtEmployeeIdResult.error.message?.includes("does not exist");
+
+  if (missingCreatedAtRelation && missingCreatedAtEmployeeRelation) {
+    const createdAtResult = await supabase
+      .from("leave_requests")
+      .select(createdAtSelect)
+      .order("created_at", { ascending: false });
+
+    if (!createdAtResult.error) return createdAtResult;
+  }
 
   const legacyUserResult = await runLeaveQuery(supabase, legacySelect, employeeIds, {
     orderColumn: "start_date",
@@ -232,6 +307,7 @@ async function insertLeaveRequest(supabase, payload) {
     attachment_name: payload.attachmentName,
     attachment_url: payload.attachmentUrl,
     status: "Menunggu",
+    created_at: payload.createdAt,
   };
   const fullSelect =
     "id, type, start_date, end_date, reason, attachment_name, attachment_url, status, created_at";
@@ -254,6 +330,29 @@ async function insertLeaveRequest(supabase, payload) {
   console.log("[leave-request:fallback-insert]", {
     message: fullResult.error.message,
   });
+
+  const createdAtFallbackResult = await supabase
+    .from("leave_requests")
+    .insert({
+      user_id: payload.userId,
+      type: payload.requestType,
+      start_date: payload.startDate,
+      end_date: payload.endDate,
+      reason: payload.reason,
+      attachment_name: payload.attachmentName,
+      status: "Menunggu",
+      created_at: payload.createdAt,
+    })
+    .select("id, type, start_date, end_date, reason, attachment_name, status, created_at")
+    .single();
+
+  if (!createdAtFallbackResult.error) return createdAtFallbackResult;
+
+  const canUseLegacyFallback =
+    createdAtFallbackResult.error.message?.includes("created_at") ||
+    createdAtFallbackResult.error.message?.includes("does not exist");
+
+  if (!canUseLegacyFallback) return createdAtFallbackResult;
 
   return supabase
     .from("leave_requests")
@@ -325,7 +424,7 @@ export async function GET(request) {
     );
   }
 
-  const allRequests = (data || []).map(mapRow);
+  const allRequests = sortRequestsNewestFirst((data || []).map(mapRow));
   const filteredRequests = filterRequests(allRequests, filters);
   const from = (page - 1) * pageSize;
   const requests = filteredRequests.slice(from, from + pageSize);
@@ -389,6 +488,7 @@ export async function POST(request) {
   const supabase = createSupabaseServerClient();
   const uploaded = await uploadAttachment(supabase, attachment, session.id);
   const storedRequestType = requestType === "Dispensasi" ? "Keperluan pribadi" : requestType;
+  const submittedAt = new Date().toISOString();
   const { data, error } = await insertLeaveRequest(supabase, {
     userId: session.id,
     requestType: storedRequestType,
@@ -397,6 +497,7 @@ export async function POST(request) {
     reason,
     attachmentName: uploaded.name,
     attachmentUrl: uploaded.url,
+    createdAt: submittedAt,
   });
 
   if (error) {
@@ -406,5 +507,5 @@ export async function POST(request) {
     );
   }
 
-  return noStoreJson({ request: mapRow(data) }, { status: 201 });
+  return noStoreJson({ request: mapRow(data, submittedAt) }, { status: 201 });
 }

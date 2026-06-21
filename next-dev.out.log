@@ -1,0 +1,1551 @@
+
+> system-absen-perkantoran@0.1.0 dev
+> next dev --hostname 0.0.0.0 --port 3000
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://0.0.0.0:3000
+- Environments: .env.local
+✓ Ready in 1604ms
+Creating turbopack project {
+  dir: 'C:\\Users\\HP\\Desktop\\project-absensi-perkantoran-',
+  testMode: true
+}
+
+ GET /login 200 in 3.1s (next.js: 1784ms, application-code: 1316ms)
+ POST /api/auth/login 200 in 7.2s (next.js: 4.6s, application-code: 2.7s)
+ POST /api/auth/login 200 in 1604ms (next.js: 9ms, application-code: 1595ms)
+ GET /employee 200 in 580ms (next.js: 96ms, proxy.ts: 109ms, application-code: 375ms)
+ GET /api/employee/profile 200 in 373ms (next.js: 135ms, application-code: 238ms)
+ GET /employee 200 in 432ms (next.js: 188ms, proxy.ts: 102ms, application-code: 142ms)
+ GET /employee/riwayat-izin 200 in 199ms (next.js: 103ms, proxy.ts: 22ms, application-code: 73ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 528ms (next.js: 436ms, application-code: 92ms)
+ GET /api/employee/profile 200 in 777ms (next.js: 75ms, application-code: 702ms)
+ GET /api/employee/profile 200 in 1348ms (next.js: 165ms, application-code: 1183ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1637ms (next.js: 49ms, application-code: 1588ms)
+ GET /employee/riwayat-izin 200 in 545ms (next.js: 347ms, proxy.ts: 77ms, application-code: 121ms)
+ GET /employee/riwayat-izin 200 in 702ms (next.js: 18ms, proxy.ts: 13ms, application-code: 672ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 420ms (next.js: 237ms, application-code: 183ms)
+ GET /api/employee/profile 200 in 1251ms (next.js: 124ms, application-code: 1127ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1185ms (next.js: 11ms, application-code: 1174ms)
+ GET /employee/riwayat-izin 200 in 547ms (next.js: 221ms, proxy.ts: 139ms, application-code: 187ms)
+✓ Compiled in 1338ms
+ GET /employee/riwayat-izin 200 in 408ms (next.js: 156ms, proxy.ts: 69ms, application-code: 182ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.1s (next.js: 222ms, application-code: 1916ms)
+ GET /employee/riwayat-izin 200 in 655ms (next.js: 18ms, proxy.ts: 23ms, application-code: 615ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 402ms (next.js: 65ms, application-code: 337ms)
+ GET /api/employee/profile 200 in 775ms (next.js: 41ms, application-code: 734ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1564ms (next.js: 13ms, application-code: 1551ms)
+ GET /employee/riwayat-izin 200 in 515ms (next.js: 214ms, proxy.ts: 53ms, application-code: 248ms)
+ GET /employee/riwayat-izin 200 in 329ms (next.js: 159ms, proxy.ts: 48ms, application-code: 122ms)
+ GET /employee/riwayat-izin 200 in 505ms (next.js: 12ms, proxy.ts: 23ms, application-code: 470ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 594ms (next.js: 505ms, application-code: 89ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+ GET /api/employee/profile 200 in 1703ms (next.js: 177ms, application-code: 1525ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1891ms (next.js: 7ms, application-code: 1884ms)
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /employee/riwayat-izin 200 in 569ms (next.js: 290ms, proxy.ts: 93ms, application-code: 186ms)
+ GET /employee/riwayat-izin 200 in 301ms (next.js: 120ms, proxy.ts: 46ms, application-code: 135ms)
+ GET /employee/riwayat-izin 200 in 150ms (next.js: 41ms, proxy.ts: 15ms, application-code: 94ms)
+ GET /employee/riwayat-izin 200 in 73ms (next.js: 7ms, proxy.ts: 14ms, application-code: 52ms)
+✓ Compiled in 1502ms
+ GET /employee/riwayat-izin 200 in 385ms (next.js: 159ms, proxy.ts: 60ms, application-code: 166ms)
+ GET /employee/riwayat-izin 200 in 89ms (next.js: 12ms, proxy.ts: 15ms, application-code: 62ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.2s (next.js: 205ms, application-code: 2.0s)
+✓ Compiled in 1135ms
+ GET /employee/riwayat-izin 200 in 588ms (next.js: 261ms, proxy.ts: 195ms, application-code: 131ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.9s (next.js: 229ms, application-code: 2.7s)
+✓ Compiled in 1432ms
+ GET /employee/riwayat-izin 200 in 467ms (next.js: 214ms, proxy.ts: 88ms, application-code: 166ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.1s (next.js: 238ms, application-code: 1840ms)
+ GET /employee/riwayat-izin 200 in 493ms (next.js: 190ms, proxy.ts: 43ms, application-code: 261ms)
+✓ Compiled in 1070ms
+ GET /employee/riwayat-izin 200 in 777ms (next.js: 233ms, proxy.ts: 116ms, application-code: 428ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.7s (next.js: 523ms, application-code: 2.2s)
+ GET /employee/riwayat-izin 200 in 390ms (next.js: 201ms, proxy.ts: 87ms, application-code: 102ms)
+ GET /employee/riwayat-izin 200 in 637ms (next.js: 12ms, proxy.ts: 29ms, application-code: 597ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 669ms (next.js: 420ms, application-code: 249ms)
+ GET /api/employee/profile 200 in 1196ms (next.js: 172ms, application-code: 1024ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1232ms (next.js: 5ms, application-code: 1227ms)
+ GET /employee/riwayat-izin 200 in 496ms (next.js: 254ms, proxy.ts: 92ms, application-code: 150ms)
+✓ Compiled in 1081ms
+ GET /employee/riwayat-izin 200 in 417ms (next.js: 275ms, proxy.ts: 51ms, application-code: 91ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 1816ms (next.js: 204ms, application-code: 1612ms)
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 401 in 30ms (next.js: 6ms, application-code: 24ms)
+✓ Compiled in 1189ms
+ GET /employee/riwayat-izin 200 in 753ms (next.js: 565ms, proxy.ts: 102ms, application-code: 86ms)
+currentUser: {
+  id: '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798',
+  role: 'employee',
+  name: 'Rina Pratiwi',
+  email: 'pegawai@kantor.test',
+  mustChangePassword: false,
+  exp: 1782061200,
+  iat: 1782041559
+}
+employeeId: [ '3f36c76b-5018-4ee2-9c5b-f0cfc8a33798' ]
+[leave-request:fallback-query] { message: 'column leave_requests.attachment_url does not exist' }
+query result: [
+  {
+    id: '1aec8a38-8eb3-414c-ae69-b96d94ca6070',
+    type: 'Cuti',
+    start_date: '2026-07-01',
+    end_date: '2026-07-03',
+    reason: 'Cuti pribadi untuk agenda keluarga di luar kota.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '45aea2cb-8cba-4de5-808d-6829b0447aba',
+    type: 'Cuti',
+    start_date: '2026-06-24',
+    end_date: '2026-06-26',
+    reason: 'Cuti tahunan untuk keperluan keluarga yang sudah direncanakan.',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: '94973bc1-c18f-4938-b377-c80fef060222',
+    type: 'Izin',
+    start_date: '2026-06-22',
+    end_date: '2026-06-24',
+    reason: 'beli kucing',
+    attachment_name: null,
+    status: 'Menunggu'
+  },
+  {
+    id: 'ffd2e4d2-86e9-4d32-8d76-fe5a6148f4ce',
+    type: 'Izin',
+    start_date: '2026-06-19',
+    end_date: '2026-06-19',
+    reason: 'Keperluan keluarga mendadak dan harus diselesaikan hari ini.',
+    attachment_name: 'surat-izin-keluarga.pdf',
+    status: 'Menunggu'
+  },
+  {
+    id: 'ed374aee-e26a-4230-9c71-617c9d7b08b2',
+    type: 'Sakit',
+    start_date: '2026-06-17',
+    end_date: '2026-06-18',
+    reason: 'Kondisi kesehatan menurun dan membutuhkan istirahat sesuai anjuran dokter.',
+    attachment_name: 'surat-dokter-rina.png',
+    status: 'Disetujui'
+  },
+  {
+    id: '3db6814f-4fff-4479-aea0-bffbb435a2cd',
+    type: 'Izin',
+    start_date: '2026-06-12',
+    end_date: '2026-06-12',
+    reason: 'Keperluan pribadi untuk mengurus dokumen administrasi di instansi pemerintah.',
+    attachment_name: 'bukti-jadwal-administrasi.jpg',
+    status: 'Ditolak'
+  },
+  {
+    id: 'c991cdff-e524-4633-9c93-cc5f3100f746',
+    type: 'Izin',
+    start_date: '2026-06-10',
+    end_date: '2026-06-10',
+    reason: 'Mengantar anggota keluarga ke rumah sakit untuk pemeriksaan lanjutan.',
+    attachment_name: null,
+    status: 'Disetujui'
+  },
+  {
+    id: 'b02829ee-6520-40ac-b58c-5f761492046e',
+    type: 'Sakit',
+    start_date: '2026-06-05',
+    end_date: '2026-06-05',
+    reason: 'Demam dan tidak memungkinkan bekerja secara optimal.',
+    attachment_name: 'resep-obat.png',
+    status: 'Disetujui'
+  }
+]
+query error: null
+ GET /api/employee/leave-requests?page=1&pageSize=10&status=Semua&type=Semua&startDate=&endDate=&search= 200 in 2.3s (next.js: 281ms, application-code: 1997ms)
+ GET /employee/jadwal 200 in 222ms (next.js: 147ms, proxy.ts: 19ms, application-code: 57ms)
+ GET /api/employee/profile 200 in 562ms (next.js: 38ms, application-code: 524ms)
+ GET /api/employee/profile 200 in 1110ms (next.js: 117ms, application-code: 993ms)
+ GET /api/employee/profile 200 in 1059ms (next.js: 12ms, application-code: 1047ms)
+ GET /api/employee/profile 200 in 1987ms (next.js: 96ms, application-code: 1891ms)
+ GET /employee/upcoming-activities 200 in 143ms (next.js: 80ms, proxy.ts: 9ms, application-code: 55ms)
+ GET /api/employee/profile 200 in 476ms (next.js: 52ms, application-code: 425ms)
+ GET /api/employee/profile 200 in 950ms (next.js: 6ms, application-code: 944ms)
+ GET /employee/profile 200 in 167ms (next.js: 93ms, proxy.ts: 10ms, application-code: 63ms)
+ GET /api/employee/profile 200 in 651ms (next.js: 40ms, application-code: 611ms)
+ GET /api/employee/profile 200 in 789ms (next.js: 11ms, application-code: 778ms)
+ GET /employee/notifikasi 200 in 164ms (next.js: 73ms, proxy.ts: 9ms, application-code: 82ms)
+ GET /api/employee/profile 200 in 209ms (next.js: 11ms, application-code: 197ms)
+ GET /api/employee/profile 200 in 246ms (next.js: 12ms, application-code: 234ms)

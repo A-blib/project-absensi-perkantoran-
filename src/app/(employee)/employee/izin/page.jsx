@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { saveEmployeeLeaveRequest } from "@/lib/browser/employee-leave-store";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
 
 const requestTypes = ["Izin", "Sakit", "Cuti", "Dispensasi"];
@@ -210,6 +211,10 @@ export default function EmployeeLeavePage() {
         pending: current.pending + 1,
         rejected: current.rejected,
       }));
+      saveEmployeeLeaveRequest({
+        ...payload.request,
+        createdAt: payload.request.createdAt || new Date().toISOString(),
+      });
       setForm(emptyForm);
       setErrors({});
       setNotice({
@@ -422,7 +427,7 @@ export default function EmployeeLeavePage() {
               ))}
             </div>
 
-            <div className="relative mt-5 rounded-xl border border-[#22C55E]/30 bg-[linear-gradient(145deg,rgba(34,197,94,0.15),rgba(13,23,40,0.86))] p-3 text-sm text-[#BBF7D0] shadow-[0_12px_26px_rgba(34,197,94,0.08)]">
+            <div className="employee-leave-history-note relative mt-5 rounded-xl border border-[#22C55E]/30 bg-[linear-gradient(145deg,rgba(34,197,94,0.15),rgba(13,23,40,0.86))] p-3 text-sm text-[#BBF7D0] shadow-[0_12px_26px_rgba(34,197,94,0.08)]">
               <div className="flex items-center gap-2 font-bold">
                 <CalendarDays size={16} />
                 Riwayat otomatis diperbarui

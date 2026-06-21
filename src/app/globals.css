@@ -2018,6 +2018,280 @@ html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[#0D1728]"] {
   color: #1d4ed8 !important;
 }
 
+/* Employee light mode card palette
+ * The application used to flatten every dark-authored card into the same white
+ * surface. These cool and warm tints keep blue as the visual anchor while making
+ * groups easier to scan. Dark mode is intentionally unaffected. */
+html:not(.dark) .employee-app-shell {
+  --employee-card-surface:
+    radial-gradient(circle at 92% 4%, rgb(14 165 233 / 0.18), transparent 15rem),
+    linear-gradient(145deg, #d8e7f5 0%, #e5eff7 52%, #d1e2f3 100%);
+  --employee-card-border: #82aad7;
+  --employee-card-shadow: 0 18px 42px rgb(37 99 235 / 0.13);
+  --employee-card-blue:
+    radial-gradient(circle at 94% 0%, rgb(37 99 235 / 0.2), transparent 14rem),
+    linear-gradient(145deg, #cbdcf0 0%, #dce8f4 56%, #c5d9ee 100%);
+  --employee-card-cyan:
+    radial-gradient(circle at 92% 4%, rgb(14 165 233 / 0.2), transparent 14rem),
+    linear-gradient(145deg, #c8e5e9 0%, #d9edf0 56%, #c7e1e9 100%);
+  --employee-card-mint:
+    radial-gradient(circle at 92% 4%, rgb(37 99 235 / 0.12), transparent 14rem),
+    linear-gradient(145deg, #cce6da 0%, #dcece5 56%, #cbe2df 100%);
+  --employee-card-lavender:
+    radial-gradient(circle at 92% 4%, rgb(37 99 235 / 0.14), transparent 14rem),
+    linear-gradient(145deg, #d9d9ed 0%, #e4e3f2 54%, #d3dced 100%);
+  --employee-card-peach:
+    radial-gradient(circle at 92% 4%, rgb(37 99 235 / 0.1), transparent 14rem),
+    linear-gradient(145deg, #ead8c4 0%, #f0e2d0 54%, #e9d4c8 100%);
+  --employee-card-rose:
+    radial-gradient(circle at 92% 4%, rgb(37 99 235 / 0.1), transparent 14rem),
+    linear-gradient(145deg, #ead3d9 0%, #efdee2 54%, #e6d3df 100%);
+}
+
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[#0"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[#1"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[#2"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[#334155"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[linear-gradient(145deg,#"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[class*="bg-[linear-gradient(135deg,#1"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[style*="#0"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[style*="#1"],
+html:not(.dark) .employee-app-shell :is(section, article, aside, form, div, label, span)[style*="#2"] {
+  background: var(--employee-card-surface) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"] {
+  background: var(--employee-card-blue) !important;
+  border-color: #8cbcff !important;
+  box-shadow:
+    0 16px 36px rgb(37 99 235 / 0.13),
+    inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"]:nth-child(6n + 2) {
+  background: var(--employee-card-cyan) !important;
+  border-color: #72cce7 !important;
+  box-shadow: 0 16px 36px rgb(8 145 178 / 0.13), inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"]:nth-child(6n + 3) {
+  background: var(--employee-card-mint) !important;
+  border-color: #79cdb8 !important;
+  box-shadow: 0 16px 36px rgb(13 148 136 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"]:nth-child(6n + 4) {
+  background: var(--employee-card-lavender) !important;
+  border-color: #aaa7e8 !important;
+  box-shadow: 0 16px 36px rgb(99 102 241 / 0.12), inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"]:nth-child(6n + 5) {
+  background: var(--employee-card-peach) !important;
+  border-color: #e8b985 !important;
+  box-shadow: 0 16px 36px rgb(217 119 6 / 0.11), inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(
+  section,
+  article,
+  form,
+  div[class*="shadow"]
+)[class*="rounded"][class*="border"]:nth-child(6n) {
+  background: var(--employee-card-rose) !important;
+  border-color: #e8a4ba !important;
+  box-shadow: 0 16px 36px rgb(225 29 72 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.72) !important;
+}
+
+/* Keep high-emphasis actions blue even when they happen to be card-shaped. */
+html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[#1D4ED8]"],
+html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[#2563EB]"],
+html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[#3B82F6]"],
+html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[linear-gradient(135deg,#2563EB"],
+html:not(.dark) .employee-app-shell :is(button, a)[class*="from-[#14B8A6]"] {
+  background: linear-gradient(135deg, #2563eb, #0ea5e9) !important;
+  border-color: rgb(37 99 235 / 0.42) !important;
+  color: #ffffff !important;
+}
+
+/* Eye-comfort pass: reserve pure white for document previews and button text. */
+html:not(.dark) .employee-app-shell,
+html:not(.dark) .employee-app-shell main {
+  background:
+    radial-gradient(circle at 14% 4%, rgb(59 130 246 / 0.1), transparent 25rem),
+    radial-gradient(circle at 88% 16%, rgb(20 184 166 / 0.07), transparent 24rem),
+    linear-gradient(135deg, #e5edf6 0%, #dce7f2 50%, #d8e4f0 100%) !important;
+}
+
+html:not(.dark) .employee-app-shell .employee-command-header {
+  background:
+    radial-gradient(circle at 14% 0%, rgb(37 99 235 / 0.13), transparent 20rem),
+    linear-gradient(145deg, #dce8f4, #cfdeed) !important;
+  border-color: #8cadd2 !important;
+  box-shadow: 0 14px 34px rgb(30 64 175 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.5) !important;
+}
+
+html:not(.dark) .employee-app-shell .employee-shell-sidebar {
+  background:
+    radial-gradient(circle at 18% 6%, rgb(37 99 235 / 0.12), transparent 12rem),
+    radial-gradient(circle at 92% 84%, rgb(14 165 233 / 0.1), transparent 14rem),
+    linear-gradient(180deg, #e3ebf4 0%, #d7e4f1 52%, #d1dfed 100%) !important;
+}
+
+html:not(.dark) .employee-app-shell main > div > div[class*="mx-auto"] > div:first-child:is(.flex, .grid),
+html:not(.dark) .employee-app-shell main > div > div[class*="mx-auto"] > section:first-child {
+  background:
+    radial-gradient(circle at 12% 0%, rgb(56 189 248 / 0.14), transparent 19rem),
+    radial-gradient(circle at 88% 18%, rgb(34 197 94 / 0.08), transparent 17rem),
+    linear-gradient(145deg, #d9e7f3, #ccdeed) !important;
+  border-color: #86add5 !important;
+  box-shadow: 0 15px 34px rgb(30 64 175 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.52) !important;
+}
+
+html:not(.dark) .employee-app-shell :is(input, select, textarea),
+html:not(.dark) .employee-app-shell span:has(> input) {
+  background: #e8eff6 !important;
+  border-color: #91aed0 !important;
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.05) !important;
+}
+
+html:not(.dark) .employee-app-shell table {
+  background: #e5edf5 !important;
+}
+
+html:not(.dark) .employee-app-shell thead {
+  background: #c9dced !important;
+}
+
+html:not(.dark) .employee-app-shell tbody tr {
+  background: #e8eff6 !important;
+}
+
+html:not(.dark) .employee-app-shell tbody tr:nth-child(even) {
+  background: #dce7f1 !important;
+}
+
+html:not(.dark) .employee-app-shell .bg-white:not(.max-w-2xl),
+html:not(.dark) .employee-app-shell .bg-white\/90,
+html:not(.dark) .employee-app-shell .bg-white\/95 {
+  background-color: #e5edf6 !important;
+}
+
+/* Dashboard attendance: stronger contrast without returning to a white card. */
+html:not(.dark) .employee-app-shell .employee-today-attendance-card,
+html:not(.dark) .employee-app-shell .employee-today-attendance-card:hover {
+  background:
+    radial-gradient(circle at 88% 12%, rgb(14 165 233 / 0.22), transparent 18rem),
+    radial-gradient(circle at 8% 90%, rgb(20 184 166 / 0.15), transparent 16rem),
+    linear-gradient(145deg, #cad8e6 0%, #aebdd0 52%, #9aaec3 100%) !important;
+  border-color: #799bbb !important;
+  box-shadow: 0 18px 40px rgb(8 47 73 / 0.14), inset 0 1px 0 rgb(255 255 255 / 0.4) !important;
+}
+
+html:not(.dark) .employee-app-shell .attendance-sub-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  border-color: rgba(147, 197, 253, 0.45) !important;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 0.05) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html:not(.dark) .employee-app-shell .employee-attendance-face-panel {
+  background:
+    radial-gradient(circle at 50% 44%, rgb(37 99 235 / 0.14), transparent 9rem),
+    linear-gradient(145deg, #c8d8e8, #b9d0e2) !important;
+  border-color: #7ea9d6 !important;
+}
+
+/* Active and Disabled Check-In and Check-Out buttons styled specifically to prevent generic rewrites from overriding them */
+html:not(.dark) .employee-app-shell button.attendance-check-in-button[class*="bg-"]:not(:disabled),
+html:not(.dark) .employee-app-shell button.attendance-check-in-button:not(:disabled) {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  border-color: #047857 !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.24) !important;
+}
+html:not(.dark) .employee-app-shell button.attendance-check-in-button[class*="bg-"]:not(:disabled) *,
+html:not(.dark) .employee-app-shell button.attendance-check-in-button:not(:disabled) * {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .employee-app-shell button.attendance-check-in-button[class*="bg-"]:disabled,
+html:not(.dark) .employee-app-shell button.attendance-check-in-button:disabled {
+  background: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+html:not(.dark) .employee-app-shell button.attendance-check-in-button[class*="bg-"]:disabled *,
+html:not(.dark) .employee-app-shell button.attendance-check-in-button:disabled * {
+  color: #64748b !important;
+}
+
+html:not(.dark) .employee-app-shell button.attendance-check-out-button[class*="bg-"]:not(:disabled),
+html:not(.dark) .employee-app-shell button.attendance-check-out-button:not(:disabled) {
+  background: linear-gradient(135deg, #ea580c, #f97316) !important;
+  border-color: #c2410c !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 24px rgba(234, 88, 12, 0.24) !important;
+}
+html:not(.dark) .employee-app-shell button.attendance-check-out-button[class*="bg-"]:not(:disabled) *,
+html:not(.dark) .employee-app-shell button.attendance-check-out-button:not(:disabled) * {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .employee-app-shell button.attendance-check-out-button[class*="bg-"]:disabled,
+html:not(.dark) .employee-app-shell button.attendance-check-out-button:disabled {
+  background: #cbd5e1 !important;
+  border-color: #94a3b8 !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
+}
+html:not(.dark) .employee-app-shell button.attendance-check-out-button[class*="bg-"]:disabled *,
+html:not(.dark) .employee-app-shell button.attendance-check-out-button:disabled * {
+  color: #64748b !important;
+}
+
+/* Leave submission note: specific classes override the generic :nth-child rules */
+html:not(.dark) .employee-app-shell .employee-leave-history-note,
+html:not(.dark) .employee-app-shell div.employee-leave-history-note[class*="rounded"][class*="border"][class*="shadow"] {
+  background: #f0fdf4 !important;
+  border-color: #66a98b !important;
+  color: #153f32 !important;
+  box-shadow: 0 12px 26px rgba(34, 197, 94, 0.08) !important;
+}
+
+html:not(.dark) .employee-app-shell .employee-leave-history-note *,
+html:not(.dark) .employee-app-shell div.employee-leave-history-note[class*="rounded"][class*="border"][class*="shadow"] * {
+  color: #153f32 !important;
+}
+
 @keyframes employee-grid-shift {
   from {
     background-position: 0 0, 0 0, center, center;
@@ -2098,4 +2372,192 @@ html:not(.dark) .employee-app-shell :is(button, a)[class*="bg-[#0D1728]"] {
     top: 88%;
     opacity: 0;
   }
+}
+
+/* Custom Light Mode Card Theme Enhancements for Employee Role */
+html:not(.dark) .employee-app-shell {
+  /* Redefine card colors to be slightly more vivid and premium */
+  --employee-card-blue:
+    radial-gradient(circle at 94% 0%, rgba(59, 130, 246, 0.22), transparent 15rem),
+    linear-gradient(145deg, #cadcef 0%, #dbedf7 56%, #b8d1eb 100%);
+  --employee-card-cyan:
+    radial-gradient(circle at 92% 4%, rgba(6, 182, 212, 0.22), transparent 15rem),
+    linear-gradient(145deg, #c0eaf1 0%, #d3f3f7 56%, #abdfeb 100%);
+  --employee-card-mint:
+    radial-gradient(circle at 92% 4%, rgba(16, 185, 129, 0.2), transparent 15rem),
+    linear-gradient(145deg, #c4ebd8 0%, #d8f5e6 56%, #aeebd0 100%);
+  --employee-card-lavender:
+    radial-gradient(circle at 92% 4%, rgba(139, 92, 246, 0.2), transparent 15rem),
+    linear-gradient(145deg, #d3d3f5 0%, #e2e1f7 54%, #bfcdfa 100%);
+  --employee-card-peach:
+    radial-gradient(circle at 92% 4%, rgba(245, 158, 11, 0.2), transparent 15rem),
+    linear-gradient(145deg, #fde4c8 0%, #feebd4 54%, #fbd5be 100%);
+  --employee-card-rose:
+    radial-gradient(circle at 92% 4%, rgba(244, 63, 94, 0.18), transparent 15rem),
+    linear-gradient(145deg, #fcdce2 0%, #fbebee 54%, #f9cad6 100%);
+}
+
+/* Card tone styling overrides for the summary cards and widgets */
+html:not(.dark) .employee-app-shell .card-tone-emerald {
+  background: var(--employee-card-mint) !important;
+  border-color: #76cba4 !important;
+}
+html:not(.dark) .employee-app-shell .card-tone-emerald :is(h1, h2, h3, h4, h5, h6, p, span, div, svg) {
+  color: #064e3b !important;
+}
+
+html:not(.dark) .employee-app-shell .card-tone-yellow,
+html:not(.dark) .employee-app-shell .card-tone-orange {
+  background: var(--employee-card-peach) !important;
+  border-color: #f59e0b !important;
+}
+html:not(.dark) .employee-app-shell .card-tone-yellow :is(h1, h2, h3, h4, h5, h6, p, span, div, svg),
+html:not(.dark) .employee-app-shell .card-tone-orange :is(h1, h2, h3, h4, h5, h6, p, span, div, svg) {
+  color: #78350f !important;
+}
+
+html:not(.dark) .employee-app-shell .card-tone-red,
+html:not(.dark) .employee-app-shell .card-tone-pink {
+  background: var(--employee-card-rose) !important;
+  border-color: #f43f5e !important;
+}
+html:not(.dark) .employee-app-shell .card-tone-red :is(h1, h2, h3, h4, h5, h6, p, span, div, svg),
+html:not(.dark) .employee-app-shell .card-tone-pink :is(h1, h2, h3, h4, h5, h6, p, span, div, svg) {
+  color: #4c0519 !important;
+}
+
+html:not(.dark) .employee-app-shell .card-tone-blue {
+  background: var(--employee-card-blue) !important;
+  border-color: #3b82f6 !important;
+}
+html:not(.dark) .employee-app-shell .card-tone-blue :is(h1, h2, h3, h4, h5, h6, p, span, div, svg) {
+  color: #1e3a8a !important;
+}
+
+/* Weekly Schedule card and elements */
+html:not(.dark) .employee-app-shell .weekly-schedule-panel {
+  background: var(--employee-card-blue) !important;
+  border-color: #8cbcf5 !important;
+}
+html:not(.dark) .employee-app-shell .weekly-schedule-panel h3 {
+  color: #1e3a8a !important;
+}
+html:not(.dark) .employee-app-shell .weekly-schedule-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+  backdrop-filter: blur(8px) !important;
+}
+html:not(.dark) .employee-app-shell .weekly-schedule-card :is(p, span) {
+  color: #1e293b !important;
+}
+html:not(.dark) .employee-app-shell .weekly-schedule-card .bg-emerald-500\/10 {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #a7f3d0 !important;
+}
+html:not(.dark) .employee-app-shell .weekly-schedule-card.border-\[\#60A5FA\]\/30 {
+  background: linear-gradient(135deg, #dbeafe, #eff6ff) !important;
+  border-color: #60a5fa !important;
+}
+
+/* Recent Activities panel and rows */
+html:not(.dark) .employee-app-shell .recent-activities-panel {
+  background: var(--employee-card-lavender) !important;
+  border-color: #a4a1f5 !important;
+}
+html:not(.dark) .employee-app-shell .recent-activities-panel h3 {
+  color: #2e1065 !important;
+}
+html:not(.dark) .employee-app-shell .activity-row {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(139, 92, 246, 0.3) !important;
+}
+html:not(.dark) .employee-app-shell .activity-row p {
+  color: #1e1b4b !important;
+}
+html:not(.dark) .employee-app-shell .activity-row span {
+  color: #4b5563 !important;
+}
+
+/* Attendance Performance and stats card */
+html:not(.dark) .employee-app-shell .attendance-stats-panel {
+  background: var(--employee-card-cyan) !important;
+  border-color: #7ccfe8 !important;
+}
+html:not(.dark) .employee-app-shell .attendance-stats-panel h3 {
+  color: #083344 !important;
+}
+html:not(.dark) .employee-app-shell .performance-sub-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+html:not(.dark) .employee-app-shell .performance-sub-card p {
+  color: #164e63 !important;
+}
+html:not(.dark) .employee-app-shell .perf-stat-card {
+  background: var(--employee-card-blue) !important;
+  border-color: #8cbcf5 !important;
+}
+html:not(.dark) .employee-app-shell .perf-stat-card p {
+  color: #1e3a8a !important;
+}
+html:not(.dark) .employee-app-shell .perf-stat-sub-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+html:not(.dark) .employee-app-shell .perf-stat-sub-card :is(p, span) {
+  color: #1e293b !important;
+}
+
+/* Main Forms and Sidebars in other menus (Izin page, riwayat page, profile page) */
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] {
+  background: var(--employee-card-blue) !important;
+  border-color: #7ba8f2 !important;
+}
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] h3,
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] span:not([class*="bg-"]):not([class*="text-"]) {
+  color: #0f172a !important;
+}
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] input,
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] select,
+html:not(.dark) .employee-app-shell form[class*="border-\[\#3B82F6\]"] textarea {
+  background: #ffffff !important;
+  border-color: #a3c1ad !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .employee-app-shell aside[class*="border-\[\#60A5FA\]"] {
+  background: var(--employee-card-lavender) !important;
+  border-color: #aaa7e8 !important;
+}
+html:not(.dark) .employee-app-shell aside[class*="border-\[\#60A5FA\]"] h3 {
+  color: #2e1065 !important;
+}
+html:not(.dark) .employee-app-shell aside[class*="border-\[\#60A5FA\]"] div[class*="bg-\[linear-gradient"] {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(139, 92, 246, 0.28) !important;
+}
+html:not(.dark) .employee-app-shell aside[class*="border-\[\#60A5FA\]"] div[class*="bg-\[linear-gradient"] p {
+  color: #1e1b4b !important;
+}
+
+/* Make sure all employee page main grids have rich matching colors */
+html:not(.dark) .employee-app-shell main table {
+  background: #ffffff !important;
+}
+html:not(.dark) .employee-app-shell main thead {
+  background: #bfdbfe !important;
+}
+html:not(.dark) .employee-app-shell main thead th {
+  color: #1e3a8a !important;
+}
+html:not(.dark) .employee-app-shell main tbody tr {
+  background: #ffffff !important;
+}
+html:not(.dark) .employee-app-shell main tbody tr:nth-child(even) {
+  background: #f0f7ff !important;
+}
+html:not(.dark) .employee-app-shell main tbody td {
+  color: #1e293b !important;
 }

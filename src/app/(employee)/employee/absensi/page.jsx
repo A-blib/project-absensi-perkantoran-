@@ -20,19 +20,13 @@ import {
   saveEmployeeAttendanceByType,
 } from "@/lib/browser/employee-attendance-store";
 import { createEmployeeNotification } from "@/lib/browser/employee-notification-store";
+import { buildScheduleRecord, getJakartaDate as getScheduleJakartaDate } from "@/lib/schedules/work-schedule";
 
 const OFFICE_LOCATION = {
   latitude: 0.507068,
   longitude: 101.447777,
-  radius: 5000,
+  radius: 80000,
   label: "Area Sudirman Pekanbaru",
-};
-
-const TODAY_SCHEDULE = {
-  hasSchedule: true,
-  start: "08:00",
-  toleranceMinutes: 15,
-  shift: "Regular",
 };
 
 function getStamp() {
@@ -86,10 +80,9 @@ function getMinutesFromTime(value) {
   return hour * 60 + minute;
 }
 
-function getAttendanceStatus(clockIn) {
+function getAttendanceStatus(clockIn, schedule) {
   const clockInMinutes = getMinutesFromTime(clockIn);
-  const targetMinutes =
-    getMinutesFromTime(TODAY_SCHEDULE.start) + TODAY_SCHEDULE.toleranceMinutes;
+  const targetMinutes = getMinutesFromTime(schedule.start) + schedule.tolerance;
   return clockInMinutes <= targetMinutes ? "Hadir" : "Terlambat";
 }
 
@@ -103,6 +96,11 @@ function getDistanceMeters(from, to) {
     Math.sin(deltaLat / 2) ** 2 +
     Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
   return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistanceLimit(value) {
+  if (value >= 1000) return `${Number(value / 1000).toLocaleString("id-ID")} kilometer`;
+  return `${value.toLocaleString("id-ID")} meter`;
 }
 
 function playSuccessSound() {
@@ -183,6 +181,11 @@ export default function EmployeeAttendancePage() {
   const [lastStatus, setLastStatus] = useState("Ready for verification");
   const [savedAttendance, setSavedAttendance] = useState(null);
   const [verificationType, setVerificationType] = useState("masuk");
+  const [holidayTestMode, setHolidayTestMode] = useState(false);
+  const todaySchedule = buildScheduleRecord(getScheduleJakartaDate());
+  const hasWorkSchedule = Boolean(todaySchedule.shiftId && todaySchedule.start !== "-");
+  const isWeekendHoliday =
+    getScheduleJakartaDate().getDay() === 0 || getScheduleJakartaDate().getDay() === 6;
   const hasCheckedOut =
     savedAttendance?.clockOut && savedAttendance.clockOut !== "--:--:--";
   const savedStatusBadgeClass =
@@ -327,9 +330,11 @@ export default function EmployeeAttendancePage() {
     }, 700);
   }
 
-  async function openCamera(type = "masuk") {
-    if (!TODAY_SCHEDULE.hasSchedule) {
-      setWarning("Tidak ada jadwal kerja hari ini.");
+  async function openCamera(type = "masuk", options = {}) {
+    const allowHolidayTest = Boolean(options.allowHolidayTest);
+
+    if (!hasWorkSchedule && !allowHolidayTest) {
+      setWarning("Hari ini libur. Absensi normal dibuka saat ada jadwal kerja.");
       return;
     }
 
@@ -349,6 +354,7 @@ export default function EmployeeAttendancePage() {
     }
 
     setVerificationType(type);
+    setHolidayTestMode(allowHolidayTest);
     setStamp(getStamp());
     setCameraError("");
     setFaceDetected(false);
@@ -389,6 +395,7 @@ export default function EmployeeAttendancePage() {
   function closeCamera() {
     stopCamera();
     setIsCameraOpen(false);
+    setHolidayTestMode(false);
     setFaceDetected(false);
     setFaceConfidence(null);
     setFaceModelLoading(false);
@@ -467,8 +474,8 @@ export default function EmployeeAttendancePage() {
   }
 
   async function handleCapture() {
-    if (!TODAY_SCHEDULE.hasSchedule) {
-      setWarning("Tidak ada jadwal kerja hari ini.");
+    if (!hasWorkSchedule && !holidayTestMode) {
+      setWarning("Hari ini libur. Gunakan tombol tes khusus hari libur.");
       return;
     }
 
@@ -538,7 +545,9 @@ export default function EmployeeAttendancePage() {
         clockOut: verificationType === "keluar" ? time : "--:--:--",
         status:
           verificationType === "masuk"
-            ? getAttendanceStatus(time)
+            ? holidayTestMode
+              ? "Hadir"
+              : getAttendanceStatus(time, todaySchedule)
             : savedAttendance?.status || "Hadir",
         location: OFFICE_LOCATION.label,
         latitude: String(gps.latitude),
@@ -630,12 +639,26 @@ export default function EmployeeAttendancePage() {
     }, 800);
   }
 
-  function resetAttendanceForTest() {
+  async function resetAttendanceForTest() {
     clearEmployeeAttendanceByDate(getTodayDate());
     setSavedAttendance(null);
     setNotice("Mode tes direset. Silakan mulai verifikasi ulang.");
     setWarning("");
     setLastStatus("Ready for verification");
+
+    try {
+      const response = await fetch("/api/employee/attendance", {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.message || "Gagal mereset absensi di Supabase.");
+      }
+    } catch (error) {
+      setWarning(error.message || "Absensi lokal direset, tetapi reset database gagal.");
+    }
   }
 
   useEffect(() => {
@@ -759,12 +782,23 @@ export default function EmployeeAttendancePage() {
                   <button
                     type="button"
                     onClick={() => openCamera("keluar")}
-                    disabled={!savedAttendance?.clockIn || hasCheckedOut}
+                    disabled={!savedAttendance?.clockIn || hasCheckedOut || !hasWorkSchedule}
                     className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-4 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(20,184,166,0.18)] transition hover:-translate-y-1 hover:from-[#2DD4BF] hover:to-[#0F766E] disabled:pointer-events-none disabled:opacity-55"
                   >
                     <Clock3 size={20} />
                     {hasCheckedOut ? "Sudah Absen Keluar" : "Absensi Keluar"}
                   </button>
+                  {isWeekendHoliday ? (
+                    <button
+                      type="button"
+                      onClick={() => openCamera("keluar", { allowHolidayTest: true })}
+                      disabled={!savedAttendance?.clockIn || hasCheckedOut}
+                      className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#A78BFA]/45 bg-[#A78BFA]/10 px-4 text-sm font-semibold text-[#EDE9FE] transition hover:border-[#A78BFA] hover:bg-[#A78BFA]/18 disabled:pointer-events-none disabled:opacity-55"
+                    >
+                      <Clock3 size={18} />
+                      Tes Absen Keluar
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={resetAttendanceForTest}
@@ -804,12 +838,23 @@ export default function EmployeeAttendancePage() {
                 <button
                   type="button"
                   onClick={() => openCamera("masuk")}
-                  disabled={!TODAY_SCHEDULE.hasSchedule}
+                  disabled={!hasWorkSchedule}
                   className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#0F766E] px-6 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(20,184,166,0.18)] transition hover:-translate-y-1 hover:from-[#2DD4BF] hover:to-[#0F766E] disabled:pointer-events-none disabled:opacity-55 sm:min-w-[220px]"
                 >
                   <Camera size={20} />
                   Mulai Verifikasi
                 </button>
+                {isWeekendHoliday ? (
+                  <button
+                    type="button"
+                    onClick={() => openCamera("masuk", { allowHolidayTest: true })}
+                    disabled={Boolean(savedAttendance?.clockIn)}
+                    className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border border-[#38BDF8]/45 bg-[#38BDF8]/10 px-5 text-sm font-semibold text-[#DDF7FF] transition hover:border-[#38BDF8] hover:bg-[#38BDF8]/18 disabled:pointer-events-none disabled:opacity-55"
+                  >
+                    <Camera size={18} />
+                    Tes Absen Hari Libur
+                  </button>
+                ) : null}
                 <div
                   className="attendance-gps-pill flex min-h-11 items-center justify-center gap-2.5 rounded-2xl border px-6 text-sm font-semibold sm:min-w-[240px]"
                   style={cardStyles.pill}
@@ -915,7 +960,7 @@ export default function EmployeeAttendancePage() {
                     : "Menunggu validasi GPS"}
                 </p>
                 <p className="mt-1 text-[#A8B5C7]">
-                  Batas maksimum {OFFICE_LOCATION.radius} meter
+                  Batas maksimum {formatDistanceLimit(OFFICE_LOCATION.radius)}
                 </p>
               </div>
             </div>
@@ -944,6 +989,7 @@ export default function EmployeeAttendancePage() {
               <div>
                 <p className="text-sm text-[#A8B5C7]">
                   {verificationType === "keluar" ? "Absensi Keluar" : "Absensi Masuk"}
+                  {holidayTestMode ? " - Mode Tes" : ""}
                 </p>
                 <h3 className="text-lg font-bold text-[#F3F7FF] sm:text-xl">
                   Capture Absensi

@@ -7,7 +7,6 @@ const DEFAULT_SHIFT = "Regular Shift";
 const OFFICE_LOCATION = "Area Sudirman Pekanbaru";
 const SCHEDULE_START = "08:00";
 const TOLERANCE_MINUTES = 15;
-const SCHEDULE_END = "17:00";
 
 function noStoreJson(payload, init = {}) {
   const response = NextResponse.json(payload, init);
@@ -122,10 +121,8 @@ function getJakartaNow() {
 
 function shouldCreateVirtualAbsence(dateValue, now = getJakartaNow()) {
   if (dateValue > now.dateValue) return false;
-  if (dateValue < now.dateValue) return true;
-
-  const shiftEnd = getMinutesFromTime(SCHEDULE_END);
-  return shiftEnd !== null && now.minutes > shiftEnd;
+  if (dateValue === now.dateValue) return false;
+  return dateValue < now.dateValue;
 }
 
 function normalizeStatus(row) {

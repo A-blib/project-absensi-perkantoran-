@@ -32,6 +32,7 @@ import {
   readEmployeeAttendanceRecords,
   saveEmployeeAttendanceByType,
 } from "@/lib/browser/employee-attendance-store";
+import { buildScheduleRecord } from "@/lib/schedules/work-schedule";
 
 const summaryCards = [
   {
@@ -77,6 +78,13 @@ const notifications = [
   ["Jadwal Kerja", "Briefing finance pukul 09:30 di ruang meeting lantai 3.", "Tadi pagi", BriefcaseBusiness, "blue"],
   ["Pengajuan Izin", "Cuti tahunan Juni masih menunggu persetujuan HR.", "Kemarin", FilePenLine, "violet"],
 ];
+
+const OFFICE_LOCATION = {
+  latitude: 0.507068,
+  longitude: 101.447777,
+  radius: 80000,
+  label: "Kantor Pusat Pekanbaru",
+};
 
 const attendanceStats = [
   ["Tepat Waktu", "95%", "Naik 3% dari bulan lalu", "Target", "90%", "Indikator", "95%", "Trend", "+3%"],
@@ -190,6 +198,22 @@ function getTodayDate() {
   });
 }
 
+function getTodayIsoDate() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  })
+    .formatToParts(new Date())
+    .reduce((values, part) => {
+      values[part.type] = part.value;
+      return values;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function getJakartaDate() {
   return new Date(
     new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }),
@@ -239,6 +263,24 @@ function getClockLabel(value) {
   return value.includes("WIB") ? value : `${value} WIB`;
 }
 
+function getDistanceMeters(from, to) {
+  const earthRadius = 6371000;
+  const lat1 = (from.latitude * Math.PI) / 180;
+  const lat2 = (to.latitude * Math.PI) / 180;
+  const deltaLat = ((to.latitude - from.latitude) * Math.PI) / 180;
+  const deltaLon = ((to.longitude - from.longitude) * Math.PI) / 180;
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLon / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(value) {
+  if (value === null || value === undefined) return "-";
+  if (value >= 1000) return `${(value / 1000).toFixed(1).replace(".", ",")} km`;
+  return `${value} m`;
+}
+
 function getFallbackTodayAttendance() {
   const today = getTodayDate();
   return {
@@ -246,7 +288,7 @@ function getFallbackTodayAttendance() {
     clockIn: null,
     clockOut: null,
     status: "Belum Absen",
-    location: "Kantor Pusat Pekanbaru",
+    location: OFFICE_LOCATION.label,
     gpsValid: true,
     faceVerified: false,
     faceConfidence: null,
@@ -266,7 +308,7 @@ function getStoredTodayAttendance() {
     clockIn: getClockLabel(record.clockIn),
     clockOut: getClockLabel(record.clockOut),
     status: record.status || "Hadir",
-    location: record.location || "Kantor Pusat Pekanbaru",
+    location: record.location || OFFICE_LOCATION.label,
     gpsValid: true,
     faceVerified: true,
     faceConfidence: 98,
@@ -275,6 +317,7 @@ function getStoredTodayAttendance() {
 
 export default function EmployeeHomePage() {
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const detectorRef = useRef(null);
   const faceScanTimerRef = useRef(null);
@@ -288,6 +331,8 @@ export default function EmployeeHomePage() {
   const [faceConfidence, setFaceConfidence] = useState(null);
   const [faceModelLoading, setFaceModelLoading] = useState(false);
   const [gpsValidated, setGpsValidated] = useState(false);
+  const [gpsDistance, setGpsDistance] = useState(null);
+  const [holidayTestMode, setHolidayTestMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [todayAttendance, setTodayAttendance] = useState(
     getFallbackTodayAttendance,
@@ -393,13 +438,20 @@ export default function EmployeeHomePage() {
     }, 700);
   }
 
-  async function openAttendanceCamera(type) {
-    if (type === "masuk" && !canCheckIn) {
+  async function openAttendanceCamera(type, options = {}) {
+    const allowHolidayTest = Boolean(options.allowHolidayTest);
+
+    if (!hasWorkSchedule && !allowHolidayTest) {
+      setLastStatus("Hari ini libur. Absensi normal dibuka saat ada jadwal kerja.");
+      return;
+    }
+
+    if (type === "masuk" && hasCheckedIn) {
       setLastStatus("Absensi masuk hari ini sudah tercatat");
       return;
     }
 
-    if (type === "keluar" && !canCheckOut) {
+    if (type === "keluar" && (!hasCheckedIn || hasCheckedOut)) {
       setLastStatus(
         attendanceCompleted
           ? "Absensi hari ini sudah selesai"
@@ -409,15 +461,18 @@ export default function EmployeeHomePage() {
     }
 
     setPendingType(type);
+    setHolidayTestMode(allowHolidayTest);
     setCameraError("");
     setFaceDetected(false);
     setFaceConfidence(null);
     setGpsValidated(false);
     setCameraOpen(true);
-    setLastStatus(
-      type === "masuk"
-        ? "Membuka kamera untuk absensi masuk"
-        : "Membuka kamera untuk absensi keluar",
+      setLastStatus(
+      allowHolidayTest
+        ? "Membuka kamera mode tes hari libur"
+        : type === "masuk"
+          ? "Membuka kamera untuk absensi masuk"
+          : "Membuka kamera untuk absensi keluar",
     );
 
     try {
@@ -452,17 +507,89 @@ export default function EmployeeHomePage() {
     stopCamera();
     setCameraOpen(false);
     setPendingType(null);
+    setHolidayTestMode(false);
     setFaceDetected(false);
     setFaceConfidence(null);
     setFaceModelLoading(false);
     setGpsValidated(false);
+    setGpsDistance(null);
     setSaving(false);
   }
 
-  function saveAttendance(type) {
+  function validateGpsForAttendance() {
+    setLastStatus("Memvalidasi GPS...");
+
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        setGpsValidated(false);
+        setLastStatus("GPS tidak tersedia di browser.");
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const currentLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          };
+          const distance = Math.round(
+            getDistanceMeters(currentLocation, OFFICE_LOCATION),
+          );
+
+          setGpsDistance(distance);
+          if (distance > OFFICE_LOCATION.radius) {
+            setGpsValidated(false);
+            setLastStatus(
+              `Lokasi di luar radius 80 km (${formatDistance(distance)} dari kantor).`,
+            );
+            resolve(null);
+            return;
+          }
+
+          setGpsValidated(true);
+          resolve({ ...currentLocation, distance });
+        },
+        (error) => {
+          setGpsValidated(false);
+          setLastStatus(
+            error.code === error.PERMISSION_DENIED
+              ? "Aktifkan izin lokasi/GPS terlebih dahulu."
+              : "Lokasi tidak dapat dideteksi.",
+          );
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+      );
+    });
+  }
+
+  function captureAttendanceFrame(savedAt) {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || !video.videoWidth || !video.videoHeight) return null;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.fillStyle = "rgba(219, 234, 254, 0.88)";
+    context.fillRect(20, canvas.height - 112, 330, 88);
+    context.fillStyle = "#0F172A";
+    context.font = "600 18px Arial";
+    context.fillText(savedAt, 38, canvas.height - 78);
+    context.fillText("Rina Pratiwi", 38, canvas.height - 52);
+    context.fillText(OFFICE_LOCATION.label, 38, canvas.height - 26);
+
+    return canvas.toDataURL("image/jpeg", 0.88);
+  }
+
+  async function saveAttendance(type, gps) {
     const savedAt = getStamp();
     const time = savedAt.split(", ")[1] || "--:--:--";
     const clockLabel = getClockLabel(time);
+    const dateValue = getTodayIsoDate();
+    const capturedPhoto = captureAttendanceFrame(savedAt);
     const nextAttendance = {
       date: savedAt.split(",")[0],
       clockIn:
@@ -471,7 +598,7 @@ export default function EmployeeHomePage() {
           : todayAttendance.clockIn || getClockLabel("08:00:22"),
       clockOut: type === "keluar" ? clockLabel : todayAttendance.clockOut,
       status: "Hadir",
-      location: "Kantor Pusat Pekanbaru",
+      location: OFFICE_LOCATION.label,
       gpsValid: true,
       faceVerified: true,
       faceConfidence: faceConfidence || 98,
@@ -479,20 +606,56 @@ export default function EmployeeHomePage() {
 
     saveEmployeeAttendanceByType(type, {
       id: `attendance-${Date.now()}`,
-      photo: null,
+      photo: capturedPhoto,
       savedAt,
       date: nextAttendance.date,
-      clockIn: type === "masuk" ? time : "08:00:22",
+      dateValue,
+      clockIn: type === "masuk" ? time : todayAttendance.clockIn,
       clockOut: type === "keluar" ? time : "--:--:--",
       status: "Hadir",
-      location: "Kantor Pusat Pekanbaru",
+      location: OFFICE_LOCATION.label,
+      latitude: String(gps.latitude),
+      longitude: String(gps.longitude),
+      radius: OFFICE_LOCATION.radius,
+      distance: gps.distance,
     });
+
+    try {
+      const response = await fetch("/api/employee/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type,
+          dateValue,
+          clockIn: type === "masuk" ? time : todayAttendance.clockIn,
+          clockOut: type === "keluar" ? time : "--:--:--",
+          status: "Hadir",
+          photo: capturedPhoto,
+          location: OFFICE_LOCATION.label,
+          latitude: String(gps.latitude),
+          longitude: String(gps.longitude),
+          radius: OFFICE_LOCATION.radius,
+          distance: gps.distance,
+        }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.message || "Gagal menyimpan absensi ke Supabase.");
+      }
+    } catch (error) {
+      setLastStatus(error.message || "Absensi lokal tersimpan, tetapi database gagal diperbarui.");
+      setSaving(false);
+      return false;
+    }
+
     setTodayAttendance(nextAttendance);
     setLastStatus(
       type === "masuk"
         ? `Absensi masuk tercatat pukul ${clockLabel}`
         : `Absensi keluar tercatat pukul ${clockLabel}`,
     );
+    return true;
   }
 
   function confirmAttendance() {
@@ -504,32 +667,41 @@ export default function EmployeeHomePage() {
     }
 
     setSaving(true);
-    setLastStatus("Memvalidasi GPS...");
-    setTimeout(() => {
-      const gpsValid = true;
-
-      if (!gpsValid) {
-        setGpsValidated(false);
+    validateGpsForAttendance().then((gps) => {
+      if (!gps) {
         setSaving(false);
-        setLastStatus("Anda berada di luar area absensi.");
         return;
       }
 
-      setGpsValidated(true);
       setLastStatus("GPS valid. Menyimpan absensi...");
 
-      setTimeout(() => {
-        saveAttendance(pendingType);
-        closeAttendanceCamera();
+      setTimeout(async () => {
+        const saved = await saveAttendance(pendingType, gps);
+        if (saved) closeAttendanceCamera();
       }, 500);
-    }, 700);
+    });
   }
 
-  function resetTodayAttendanceForTest() {
+  async function resetTodayAttendanceForTest() {
     const fallback = getFallbackTodayAttendance();
     clearEmployeeAttendanceByDate(fallback.date);
     setTodayAttendance(fallback);
+    setGpsDistance(null);
     setLastStatus("Mode tes direset. Silakan mulai absensi masuk.");
+
+    try {
+      const response = await fetch("/api/employee/attendance", {
+        method: "DELETE",
+        cache: "no-store",
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload.message || "Gagal mereset absensi di Supabase.");
+      }
+    } catch (error) {
+      setLastStatus(error.message || "Absensi lokal direset, tetapi reset database gagal.");
+    }
   }
 
   useEffect(() => {
@@ -559,8 +731,14 @@ export default function EmployeeHomePage() {
   const hasCheckedIn = Boolean(todayAttendance.clockIn);
   const hasCheckedOut = Boolean(todayAttendance.clockOut);
   const attendanceCompleted = hasCheckedIn && hasCheckedOut;
-  const canCheckIn = !hasCheckedIn;
-  const canCheckOut = hasCheckedIn && !hasCheckedOut;
+  const jakartaToday = getJakartaDate();
+  const todaySchedule = buildScheduleRecord(jakartaToday);
+  const hasWorkSchedule = Boolean(todaySchedule.shiftId && todaySchedule.start !== "-");
+  const isWeekendHoliday = jakartaToday.getDay() === 0 || jakartaToday.getDay() === 6;
+  const canCheckIn = hasWorkSchedule && !hasCheckedIn;
+  const canCheckOut = hasWorkSchedule && hasCheckedIn && !hasCheckedOut;
+  const canHolidayTestCheckIn = isWeekendHoliday && !hasCheckedIn;
+  const canHolidayTestCheckOut = isWeekendHoliday && hasCheckedIn && !hasCheckedOut;
   const statusBadgeClass =
     todayAttendance.status === "Terlambat"
       ? "border border-[#F87171]/30 bg-[#7F1D1D]/30 text-[#FCA5A5]"
@@ -575,7 +753,6 @@ export default function EmployeeHomePage() {
   const gpsStatus = todayAttendance.gpsValid ? "Valid" : "Tidak Valid";
   const faceStatus = todayAttendance.faceVerified ? "Verified" : "Pending";
   const dashboardFaceConfidence = todayAttendance.faceConfidence || 0;
-  const jakartaToday = getJakartaDate();
   const weeklyProgressTotal = weeklySchedule.length;
   const weeklyProgressDone = weeklySchedule.filter(
     (schedule) => schedule.date <= formatScheduleDate(jakartaToday),
@@ -646,8 +823,9 @@ export default function EmployeeHomePage() {
                 Absensi Hari Ini
               </h3>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-[#94A3B8]">
-                Validasi kehadiran sudah siap. Gunakan tombol absensi masuk atau
-                keluar sesuai kebutuhan hari ini.
+                {hasWorkSchedule
+                  ? "Validasi kehadiran sudah siap. Gunakan tombol absensi masuk atau keluar sesuai kebutuhan hari ini."
+                  : "Hari ini tidak ada jadwal kerja. Absensi normal dikunci dan mode tes tersedia khusus akhir pekan."}
               </p>
 
               <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
@@ -659,7 +837,7 @@ export default function EmployeeHomePage() {
                 ].map(([label, value, Icon, color]) => (
                   <div
                     key={label}
-                    className="flex items-center gap-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2.5"
+                    className="attendance-sub-card flex items-center gap-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2.5"
                   >
                     <div className="grid size-9 shrink-0 place-items-center rounded-xl border border-[#60A5FA]/20 bg-[#60A5FA]/10">
                       <Icon size={17} className={color} />
@@ -689,7 +867,7 @@ export default function EmployeeHomePage() {
                   onClick={() => openAttendanceCamera("masuk")}
                   disabled={!canCheckIn}
                   className={[
-                    "group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
+                    "attendance-check-in-button group flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
                     canCheckIn
                       ? "bg-[#059669] shadow-lg shadow-[#059669]/20 hover:scale-[1.02] hover:brightness-110"
                       : "cursor-not-allowed border border-[#334155] bg-[#111827] text-[#71717A]",
@@ -703,7 +881,7 @@ export default function EmployeeHomePage() {
                   onClick={() => openAttendanceCamera("keluar")}
                   disabled={!canCheckOut}
                   className={[
-                    "flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
+                    "attendance-check-out-button flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-bold text-white transition-all duration-200 active:scale-[0.98]",
                     canCheckOut
                       ? "bg-[#3F3F46] text-[#D4D4D8] shadow-lg shadow-black/10 hover:scale-[1.02] hover:brightness-110"
                       : "cursor-not-allowed border border-[#334155] bg-[#111827] text-[#71717A]",
@@ -713,6 +891,43 @@ export default function EmployeeHomePage() {
                   Absensi Keluar
                 </button>
               </div>
+              {!hasWorkSchedule ? (
+                <div className="mt-3 rounded-xl border border-amber-500/45 bg-amber-100/80 px-4 py-3 text-sm font-bold text-[#7C2D12] shadow-[0_10px_24px_rgba(245,158,11,0.10)]">
+                  {todaySchedule.dayName} libur. Absensi normal aktif kembali saat ada jadwal kerja.
+                </div>
+              ) : null}
+              {isWeekendHoliday ? (
+                <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => openAttendanceCamera("masuk", { allowHolidayTest: true })}
+                    disabled={!canHolidayTestCheckIn}
+                    className={[
+                      "flex min-h-10 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-bold transition",
+                      canHolidayTestCheckIn
+                        ? "border-[#38BDF8]/45 bg-[#38BDF8]/12 text-[#DDF7FF] hover:border-[#38BDF8] hover:bg-[#38BDF8]/18"
+                        : "cursor-not-allowed border-[#334155] bg-[#111827] text-[#71717A]",
+                    ].join(" ")}
+                  >
+                    <Camera size={16} />
+                    Tes Absen Masuk
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openAttendanceCamera("keluar", { allowHolidayTest: true })}
+                    disabled={!canHolidayTestCheckOut}
+                    className={[
+                      "flex min-h-10 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-bold transition",
+                      canHolidayTestCheckOut
+                        ? "border-[#A78BFA]/45 bg-[#A78BFA]/12 text-[#EDE9FE] hover:border-[#A78BFA] hover:bg-[#A78BFA]/18"
+                        : "cursor-not-allowed border-[#334155] bg-[#111827] text-[#71717A]",
+                    ].join(" ")}
+                  >
+                    <Square size={15} />
+                    Tes Absen Keluar
+                  </button>
+                </div>
+              ) : null}
               {(hasCheckedIn || hasCheckedOut) ? (
                 <button
                   type="button"
@@ -724,7 +939,7 @@ export default function EmployeeHomePage() {
               ) : null}
             </div>
 
-            <div className="relative grid min-h-[170px] place-items-center overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220] sm:min-h-[200px] xl:min-h-[220px]">
+            <div className="employee-attendance-face-panel relative grid min-h-[170px] place-items-center overflow-hidden rounded-2xl border border-[#24344D] bg-[#0B1220] sm:min-h-[200px] xl:min-h-[220px]">
               <div className="absolute inset-x-0 top-3 z-10 flex justify-center">
                 <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-300">
                   Face ID {faceStatus}
@@ -775,6 +990,7 @@ export default function EmployeeHomePage() {
                   className={[
                     "ems-card group relative flex min-h-[130px] cursor-default flex-col justify-between overflow-hidden rounded-2xl border border-[#334155] border-l-4 bg-[#1E293B] p-5 transition-all duration-300",
                     tone.line,
+                    `card-tone-${card.tone}`,
                     `ems-card-delay-${index + 1}`,
                   ].join(" ")}
                 >
@@ -808,7 +1024,7 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="glass-panel relative overflow-hidden rounded-2xl p-5">
+        <section className="weekly-schedule-panel glass-panel relative overflow-hidden rounded-2xl p-5">
           <div className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
             <div>
               <h3 className="text-xl font-bold text-[#D4E4FA]">
@@ -847,7 +1063,7 @@ export default function EmployeeHomePage() {
                 <div
                   key={schedule.date}
                   className={[
-                    "min-h-[140px] rounded-xl border p-3 transition-all duration-300 hover:-translate-y-1",
+                    "weekly-schedule-card min-h-[140px] rounded-xl border p-3 transition-all duration-300 hover:-translate-y-1",
                     schedule.isToday
                       ? "border-[#60A5FA]/30 bg-[#60A5FA]/10"
                       : "border-[#334155] bg-[#111827]",
@@ -888,7 +1104,7 @@ export default function EmployeeHomePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-[#334155] bg-[linear-gradient(145deg,#22314A,#1E293B)] p-6 shadow-[0_18px_42px_rgba(0,0,0,.28),inset_0_1px_0_rgba(255,255,255,.06)] transition-all duration-300">
+        <section className="recent-activities-panel rounded-2xl border border-[#334155] bg-[linear-gradient(145deg,#22314A,#1E293B)] p-6 shadow-[0_18px_42px_rgba(0,0,0,.28),inset_0_1px_0_rgba(255,255,255,.06)] transition-all duration-300">
           <h3 className="mb-5 text-xl font-bold text-[#F1F5F9]">
             Aktivitas Terbaru
           </h3>
@@ -900,7 +1116,7 @@ export default function EmployeeHomePage() {
               <div
                 key={title}
                 className={[
-                  "flex gap-4 rounded-xl border border-l-4 border-[#334155] bg-[#111827] p-4 shadow-[0_10px_24px_rgba(0,0,0,.20)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#132238]",
+                  "activity-row flex gap-4 rounded-xl border border-l-4 border-[#334155] bg-[#111827] p-4 shadow-[0_10px_24px_rgba(0,0,0,.20)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#132238]",
                   activityTone.line,
                 ].join(" ")}
               >
@@ -928,7 +1144,7 @@ export default function EmployeeHomePage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="glass-panel rounded-2xl p-6">
+          <div className="attendance-stats-panel glass-panel rounded-2xl p-6">
             <div className="mb-5 flex items-center gap-3">
               <div className="grid size-11 place-items-center rounded-xl border border-[#3B82F6]/20 bg-[#3B82F6]/10 text-[#3B82F6]">
                 <BarChart3 size={22} />
@@ -966,7 +1182,7 @@ export default function EmployeeHomePage() {
               {attendanceDetails.map(([label, value]) => (
                 <div
                   key={label}
-                  className="rounded-xl border border-[#334155] bg-[#111827] px-3 py-2"
+                  className="performance-sub-card rounded-xl border border-[#334155] bg-[#111827] px-3 py-2"
                 >
                   <p className="text-xs text-[#C2C6D6]">{label}</p>
                   <p className="mt-1 font-bold text-[#D4E4FA]">{value}</p>
@@ -979,7 +1195,7 @@ export default function EmployeeHomePage() {
             {attendanceStats.map(([label, value, note, targetLabel, targetValue, progressLabel, progress, trendLabel, trendValue]) => (
               <div
                 key={label}
-                className="glass-panel min-h-[190px] rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
+                className="perf-stat-card glass-panel min-h-[190px] rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
               >
                 <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/70">
                   {label}
@@ -996,7 +1212,7 @@ export default function EmployeeHomePage() {
                     <p className="text-sm font-bold text-emerald-300">{trendValue}</p>
                   </div>
                 </div>
-                <div className="mt-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2">
+                <div className="perf-stat-sub-card mt-3 rounded-xl border border-[#334155] bg-[#111827] px-3 py-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-[#C2C6D6]">{targetLabel}</span>
                     <span className="font-bold text-[#D4E4FA]">{targetValue}</span>
@@ -1033,6 +1249,7 @@ export default function EmployeeHomePage() {
                   className={[
                     "ems-card rounded-2xl border border-l-4 border-[#334155] bg-[#1E293B] p-5 transition-all duration-300",
                     widgetTone.line,
+                    `additional-widget-card card-tone-${tone}`,
                     `ems-card-delay-${index + 1}`,
                   ].join(" ")}
                 >
@@ -1063,34 +1280,35 @@ export default function EmployeeHomePage() {
       </div>
 
       {cameraOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/80 p-4 backdrop-blur-xl">
-          <div className="glass-panel w-full max-w-3xl overflow-hidden rounded-3xl">
-            <div className="flex items-center justify-between border-b border-[#24344D] px-6 py-4">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#050B14]/45 p-3 backdrop-blur-md sm:p-4">
+          <div className="w-full max-w-4xl overflow-hidden rounded-3xl border border-[#60A5FA]/45 bg-[linear-gradient(145deg,rgba(248,250,252,0.96),rgba(224,242,254,0.92))] shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+            <div className="flex items-center justify-between border-b border-[#BFDBFE] px-5 py-3 sm:px-6">
               <div>
-                <p className="text-sm text-[#8B9DB5]">
-                  {pendingType === "masuk" ? "Absensi Masuk" : "Absensi Keluar"}
+                <p className="text-sm font-medium text-[#475569]">
+                  {holidayTestMode ? "Mode Tes Hari Libur" : pendingType === "masuk" ? "Absensi Masuk" : "Absensi Keluar"}
                 </p>
-                <h3 className="text-xl font-bold text-[#D4E4FA]">
-                  Verifikasi Kamera
+                <h3 className="text-xl font-bold text-[#0F172A] sm:text-2xl">
+                  Capture Absensi
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={closeAttendanceCamera}
-                className="grid size-11 place-items-center rounded-2xl border border-[#24344D] text-[#C2C6D6] transition hover:bg-[#24344D]"
+                className="grid size-11 place-items-center rounded-2xl bg-red-500 text-[#111827] shadow-lg shadow-red-500/20 transition hover:bg-red-400 sm:size-12"
                 aria-label="Tutup kamera"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="p-6">
-              <div className="relative overflow-hidden rounded-3xl border border-[#24344D] bg-[#0B1220]">
+            <div className="p-4 sm:p-5">
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="relative mx-auto aspect-[3/4] h-[min(52dvh,430px)] max-h-[430px] w-full max-w-[390px] overflow-hidden rounded-3xl border border-[#60A5FA]/45 bg-[#0B1220] shadow-[0_16px_40px_rgba(37,99,235,0.16)] sm:h-[min(54dvh,450px)]">
                 <video
                   ref={videoRef}
                   playsInline
                   muted
-                  className="aspect-video w-full bg-[#0B1220] object-cover"
+                  className="size-full bg-[#0B1220] object-contain"
                 />
                 {!cameraError ? (
                   <div className="absolute inset-0">
@@ -1101,6 +1319,11 @@ export default function EmployeeHomePage() {
                     <span className="corner-br absolute" />
                   </div>
                 ) : null}
+                <div className="absolute bottom-3 left-3 rounded-2xl border border-[#60A5FA]/35 bg-[#DBEAFE]/90 p-3 text-sm text-[#475569] shadow-[0_12px_26px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+                  <p>{getStamp()}</p>
+                  <p className="font-semibold text-[#0F172A]">Rina Pratiwi</p>
+                  <p>{OFFICE_LOCATION.label}</p>
+                </div>
               </div>
 
               {cameraError ? (
@@ -1109,30 +1332,30 @@ export default function EmployeeHomePage() {
                   {cameraError}
                 </div>
               ) : (
-                <div className="mt-4 flex flex-col gap-4">
+                <div className="mt-3 flex flex-col gap-3">
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="flex items-center gap-3 rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3 text-sm font-semibold text-[#D4E4FA]">
+                    <div className="flex min-h-16 items-center gap-3 rounded-2xl border border-[#60A5FA]/45 bg-white/70 px-4 py-3 text-sm font-semibold text-[#0F172A] shadow-[0_10px_24px_rgba(37,99,235,0.08)]">
                       {faceDetected ? (
-                        <CheckCircle2 size={20} className="text-emerald-400" />
+                        <CheckCircle2 size={20} className="text-emerald-500" />
                       ) : (
                         <Clock3 size={20} className="text-[#3B82F6]" />
                       )}
                       {faceDetected
-                        ? "Wajah terdeteksi"
+                        ? "Wajah valid"
                         : faceModelLoading
                           ? "Memuat model..."
                           : "Wajah belum ditemukan"}
                     </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
+                    <div className="min-h-16 rounded-2xl border border-[#60A5FA]/45 bg-white/70 px-4 py-3 shadow-[0_10px_24px_rgba(37,99,235,0.08)]">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#475569]">
                         Confidence
                       </p>
                       <p
                         className={[
                           "mt-1 text-sm font-bold",
                           (faceConfidence || 0) >= 80
-                            ? "text-emerald-300"
-                            : "text-[#C2C6D6]",
+                            ? "text-[#0F172A]"
+                            : "text-[#64748B]",
                         ].join(" ")}
                       >
                         {faceConfidence
@@ -1142,22 +1365,26 @@ export default function EmployeeHomePage() {
                           : "Menunggu"}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-[#24344D] bg-[#0B1220] px-4 py-3">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#C2C6D6]/60">
+                    <div className="min-h-16 rounded-2xl border border-[#60A5FA]/45 bg-white/70 px-4 py-3 shadow-[0_10px_24px_rgba(37,99,235,0.08)]">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#475569]">
                         GPS
                       </p>
                       <p
                         className={[
                           "mt-1 text-sm font-bold",
-                          gpsValidated ? "text-emerald-300" : "text-[#C2C6D6]",
+                          gpsValidated ? "text-[#0F172A]" : "text-[#64748B]",
                         ].join(" ")}
                       >
-                        {gpsValidated ? "Lokasi valid" : "Menunggu validasi"}
+                        {gpsValidated
+                          ? `Valid ${formatDistance(gpsDistance)}`
+                          : gpsDistance
+                            ? `Di luar radius ${formatDistance(gpsDistance)}`
+                            : "Menunggu validasi"}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm font-semibold text-[#C2C6D6]">
+                    <p className="text-sm font-semibold text-[#475569]">
                       {lastStatus}
                     </p>
                   <button
@@ -1169,7 +1396,7 @@ export default function EmployeeHomePage() {
                       (faceConfidence || 0) < 80 ||
                       saving
                     }
-                    className="flex min-h-12 items-center justify-center gap-3 rounded-2xl bg-[#3B82F6] px-6 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:-translate-y-1 hover:bg-[#60A5FA] disabled:pointer-events-none disabled:opacity-50"
+                    className="flex min-h-11 items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#0EA5E9] px-5 text-sm font-semibold text-white shadow-[0_12px_26px_rgba(37,99,235,0.22)] transition hover:-translate-y-1 hover:from-[#3B82F6] hover:to-[#0284C7] disabled:pointer-events-none disabled:opacity-60"
                   >
                     {saving ? <span className="employee-spinner" /> : <Camera size={18} />}
                     {saving ? "Memproses..." : "Validasi GPS & Simpan"}

@@ -329,8 +329,8 @@ export function EmployeeShell({ children }) {
                 <Bell size={24} />
                 <span className="absolute right-2 top-2 size-2 rounded-full bg-[#3B82F6] ring-2 ring-white dark:ring-[#081322]" />
               </Link>
-              <button
-                type="button"
+              <Link
+                href="/employee/profile"
                 className={[
                   "grid size-10 place-items-center rounded-xl transition-colors",
                   "border border-[#93C5FD] bg-white text-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,.12)] hover:border-[#60A5FA] hover:bg-[#DBEAFE] dark:border-[#2D4568]/70 dark:bg-[#0D1728]/70 dark:text-[#B6C8E3] dark:hover:border-[#38BDF8]/50 dark:hover:text-[#38BDF8]",
@@ -338,7 +338,7 @@ export function EmployeeShell({ children }) {
                 aria-label="Pengaturan"
               >
                 <Settings size={24} />
-              </button>
+              </Link>
               <ThemeToggle placement="inline" />
             </div>
             <div className="hidden h-8 w-px bg-[#93C5FD] dark:bg-[#2C5B9A]/45 sm:block" />

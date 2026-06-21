@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { EmployeeShell } from "@/features/dashboard/employee-shell";
+import { readEmployeeLeaveRequests } from "@/lib/browser/employee-leave-store";
 
 const PAGE_SIZE = 10;
 const statusOptions = ["Semua", "Menunggu", "Disetujui", "Ditolak"];
@@ -74,6 +75,51 @@ function formatDateTime(value) {
     minute: "2-digit",
     timeZone: "Asia/Jakarta",
   }).format(new Date(value));
+}
+
+function getValidDate(value) {
+  if (!value) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
+    ? new Date(`${value}T00:00:00+07:00`)
+    : new Date(value);
+
+  if (!Number.isFinite(date.getTime()) || date.getFullYear() < 2000) {
+    return null;
+  }
+
+  return date;
+}
+
+function getJakartaDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getSubmittedDateValue(request) {
+  if (getValidDate(request.createdAt)) return request.createdAt;
+
+  const today = getJakartaDateString();
+  if (request.startDate && request.startDate >= today) return today;
+  return request.startDate || today;
+}
+
+function formatSubmittedDate(request) {
+  const date = getValidDate(getSubmittedDateValue(request));
+  if (!date) return "-";
+
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  }).format(date);
 }
 
 function durationDays(startDate, endDate) {
@@ -187,6 +233,35 @@ function requestCardStyle(status) {
   };
 }
 
+function mergeLocalSubmissionDates(requests) {
+  const localRequests = readEmployeeLeaveRequests();
+  const createdAtById = new Map(
+    localRequests
+      .filter((request) => request.id && getValidDate(request.createdAt))
+      .map((request) => [request.id, request.createdAt]),
+  );
+
+  return requests.map((request) => ({
+    ...request,
+    createdAt: getValidDate(request.createdAt)
+      ? request.createdAt
+      : createdAtById.get(request.id) || null,
+  }));
+}
+
+function getSubmissionTime(request) {
+  const date = getValidDate(getSubmittedDateValue(request));
+  return date ? date.getTime() : 0;
+}
+
+function sortBySubmissionDate(requests) {
+  return [...requests].sort((first, second) => {
+    const timeDiff = getSubmissionTime(second) - getSubmissionTime(first);
+    if (timeDiff !== 0) return timeDiff;
+    return String(second.id || "").localeCompare(String(first.id || ""));
+  });
+}
+
 export default function EmployeeLeaveHistoryPage() {
   const [rows, setRows] = useState([]);
   const [summary, setSummary] = useState({
@@ -253,7 +328,7 @@ export default function EmployeeLeaveHistoryPage() {
         setPage(nextTotalPages);
       }
 
-      setRows(payload.requests || []);
+      setRows(sortBySubmissionDate(mergeLocalSubmissionDates(payload.requests || [])));
       setTotal(nextTotal);
       setSummary(
         payload.summary || {
@@ -490,7 +565,7 @@ export default function EmployeeLeaveHistoryPage() {
                   <div className="relative mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold text-[#94A3B8]">
                     <span>Lampiran: {request.attachmentName || "Tidak ada"}</span>
                     <span className="hidden text-[#2D4568] sm:inline">|</span>
-                    <span>Dibuat: {formatDateTime(request.createdAt)}</span>
+                    <span>Diajukan: {formatSubmittedDate(request)}</span>
                   </div>
                 </article>
               ))}

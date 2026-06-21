@@ -320,6 +320,7 @@ export default function EmployeeSchedulePage() {
               {scheduleState.weekSchedules.map((schedule) => {
                 const isToday = schedule.date === scheduleState.todayKey;
                 const isSelected = schedule.date === selectedDate;
+                const hasWorkShift = Boolean(schedule.shiftId && schedule.start !== "-");
                 const meta = getStatusMeta(schedule.status);
 
                 return (
@@ -328,19 +329,33 @@ export default function EmployeeSchedulePage() {
                     type="button"
                     onClick={() => setSelectedDate(schedule.date)}
                     className={[
-                      "relative overflow-hidden rounded-2xl border bg-[#0D1728] px-3 py-3 text-left transition hover:-translate-y-0.5 hover:bg-[#142136]",
-                      isSelected
+                      "relative overflow-hidden rounded-2xl border px-3 py-3 text-left transition hover:-translate-y-0.5 hover:bg-[#142136]",
+                      isToday
+                        ? "border-[#22C55E] bg-[linear-gradient(145deg,rgba(34,197,94,0.18),rgba(240,253,244,0.96)_54%,rgba(219,234,254,0.92))] shadow-[0_0_0_2px_rgba(34,197,94,0.20),0_16px_34px_rgba(34,197,94,0.16)] dark:bg-[linear-gradient(145deg,rgba(34,197,94,0.20),#0D1728_58%)] dark:shadow-[0_0_0_2px_rgba(34,197,94,0.18),0_16px_34px_rgba(34,197,94,0.12)]"
+                        : isSelected
                         ? "border-[#38BDF8] shadow-[0_0_0_2px_rgba(56,189,248,0.14),0_12px_26px_rgba(56,189,248,0.08)]"
-                        : "border-[#2D4568] shadow-[0_10px_24px_rgba(0,0,0,0.16)]",
+                        : "border-[#2D4568] bg-[#0D1728] shadow-[0_10px_24px_rgba(0,0,0,0.16)]",
                     ].join(" ")}
                   >
                     <div className="absolute inset-y-0 left-0 w-1" style={{ background: meta.color }} />
+                    {isToday ? (
+                      <>
+                        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[#86EFAC]" />
+                        <div className="pointer-events-none absolute -right-10 -top-12 size-28 rounded-full bg-[#22C55E]/18 blur-2xl" />
+                      </>
+                    ) : null}
+                    {isToday && hasWorkShift ? (
+                      <div className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-[#22C55E]/35 bg-[#DCFCE7]/90 px-2 py-1 text-[10px] font-bold uppercase text-[#166534] shadow-[0_8px_18px_rgba(34,197,94,0.15)] dark:bg-[#052E1B]/80 dark:text-[#BBF7D0]">
+                        <span className="size-1.5 rounded-full bg-[#22C55E] shadow-[0_0_12px_rgba(34,197,94,0.9)]" />
+                        Aktif
+                      </div>
+                    ) : null}
                     <div className="ml-2 flex items-center justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2 pr-16">
                           <p className="font-bold text-[#F8FAFC]">{schedule.dayName}</p>
                           {isToday ? (
-                            <span className="rounded-full bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                            <span className="rounded-full border border-[#22C55E]/30 bg-[#22C55E]/15 px-2 py-0.5 text-[10px] font-bold text-[#BBF7D0]">
                               Hari ini
                             </span>
                           ) : null}

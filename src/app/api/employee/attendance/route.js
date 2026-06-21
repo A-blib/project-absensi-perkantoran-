@@ -244,3 +244,39 @@ export async function POST(request) {
   console.log("[attendance:save:success]", data);
   return NextResponse.json({ attendance: data });
 }
+
+export async function DELETE() {
+  const session = await getCurrentSession();
+
+  if (!session || session.role !== "employee") {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    session.id?.startsWith("demo-")
+  ) {
+    return NextResponse.json({
+      skipped: true,
+      message: "Supabase belum aktif untuk akun demo.",
+    });
+  }
+
+  const dateValue = getJakartaIsoDate();
+  const supabase = createSupabaseServerClient();
+  const { error } = await supabase
+    .from("attendances")
+    .delete()
+    .eq("user_id", session.id)
+    .eq("attendance_date", dateValue);
+
+  if (error) {
+    return NextResponse.json(
+      { message: `Gagal mereset absensi hari ini: ${error.message}` },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json({ deleted: true, dateValue });
+}
