@@ -1,8 +1,9 @@
-import jwt from "jsonwebtoken";
+import { SignJWT, jwtVerify } from "jose";
 import { SESSION_COOKIE } from "@/server/auth/constants";
 
 function getJwtSecret() {
-  return process.env.JWT_SECRET || "development-secret-change-me";
+  const secret = process.env.JWT_SECRET || "development-secret-change-me";
+  return new TextEncoder().encode(secret);
 }
 
 function getMidnightExpiry() {
@@ -11,15 +12,12 @@ function getMidnightExpiry() {
   return expires;
 }
 
-export function createAuthCookie(payload) {
+export async function createAuthCookie(payload) {
   const expires = getMidnightExpiry();
-  const token = jwt.sign(
-    {
-      ...payload,
-      exp: Math.floor(expires.getTime() / 1000),
-    },
-    getJwtSecret(),
-  );
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime(Math.floor(expires.getTime() / 1000))
+    .sign(getJwtSecret());
 
   return {
     name: SESSION_COOKIE,
@@ -32,11 +30,12 @@ export function createAuthCookie(payload) {
   };
 }
 
-export function verifySessionToken(token) {
+export async function verifySessionToken(token) {
   if (!token) return null;
 
   try {
-    return jwt.verify(token, getJwtSecret());
+    const { payload } = await jwtVerify(token, getJwtSecret());
+    return payload;
   } catch {
     return null;
   }

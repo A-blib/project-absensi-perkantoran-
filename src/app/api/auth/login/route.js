@@ -56,7 +56,7 @@ export async function POST(request) {
     const response = NextResponse.json({ redirectTo });
 
     response.cookies.set(
-      createAuthCookie({
+      await createAuthCookie({
         id: user.id,
         role: user.role,
       }),
