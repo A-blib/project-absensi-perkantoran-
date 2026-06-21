@@ -521,10 +521,10 @@ on conflict (user_id, attendance_date) do update set
 
 -- Storage bucket untuk foto profil
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('avatars', 'avatars', true, 2097152, array['image/jpeg','image/png','image/webp'])
+values ('avatars', 'avatars', true, 8388608, array['image/jpeg','image/png','image/webp'])
 on conflict (id) do update set
   public = true,
-  file_size_limit = 2097152,
+  file_size_limit = 8388608,
   allowed_mime_types = array['image/jpeg','image/png','image/webp'];
 
 -- RLS: siapapun bisa baca (public bucket)

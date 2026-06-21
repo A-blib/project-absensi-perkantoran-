@@ -9,7 +9,7 @@ export const leaveRequestSchema = z
     attachmentName: z.string().trim().min(1).max(180),
     attachmentType: z
       .enum(["image/jpeg", "image/png", "image/webp", "application/pdf"]),
-    attachmentData: z.string().min(1).max(3_000_000),
+    attachmentData: z.string().min(1).max(10_000_000),
   })
   .superRefine((value, context) => {
     const expectedPrefix = `data:${value.attachmentType};base64,`;
