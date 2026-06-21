@@ -238,7 +238,7 @@ export function EmployeeShell({ children, initialUser = null }) {
                 className="size-10 rounded-full border-2 border-[#3B82F6]/20 object-cover"
               />
               <ChevronDown size={16} className="hidden text-[#C2C6D6] sm:block" />
-              <div className="hidden sm:block">
+              <div className="hidden sm:block lg:hidden">
                 <LogoutButton audience="employee" />
               </div>
             </div>
